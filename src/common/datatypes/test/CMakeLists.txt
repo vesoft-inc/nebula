@@ -105,6 +105,19 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        vector_test
+    SOURCES
+        VectorTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        gtest
+)
+
+nebula_add_test(
+    NAME
         value_to_json_test
     SOURCES
         ValueToJsonTest.cpp

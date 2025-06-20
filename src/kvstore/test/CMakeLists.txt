@@ -98,6 +98,23 @@ nebula_add_test(
         curl
 )
 
+
+nebula_add_test(
+    NAME
+        rocks_engine_multicf_test
+    SOURCES
+        RocksEngineMultiCFTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
 nebula_add_test(
     NAME
         nebula_store_test
@@ -119,6 +136,22 @@ nebula_add_test(
         rocks_engine_config_test
     SOURCES
         RocksEngineConfigTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        rocks_engine_config_multicf_test
+    SOURCES
+        RocksEngineConfigMultiCFTest.cpp
     OBJECTS
         ${KVSTORE_TEST_LIBS}
     LIBRARIES

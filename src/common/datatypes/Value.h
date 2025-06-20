@@ -12,6 +12,7 @@
 
 #include "common/datatypes/Date.h"
 #include "common/datatypes/Duration.h"
+#include "common/datatypes/Vector.h"
 #include "common/thrift/ThriftTypes.h"
 
 namespace apache {
@@ -33,6 +34,7 @@ struct List;
 struct Set;
 struct DataSet;
 struct Geography;
+struct Vector;
 
 enum class NullType {
   __NULL__ = 0,
@@ -43,6 +45,7 @@ enum class NullType {
   UNKNOWN_PROP = 5,
   DIV_BY_ZERO = 6,
   OUT_OF_RANGE = 7,
+  VEC_DIM_NOT_MATCH = 8,
 };
 
 struct Value {
@@ -55,6 +58,7 @@ struct Value {
   static const Value kNullUnknownProp;
   static const Value kNullDivByZero;
   static const Value kNullOutOfRange;
+  static const Value kVectorDimNotMatch;
 
   static const uint64_t kEmptyNullType;
   static const uint64_t kNumericType;
@@ -79,6 +83,7 @@ struct Value {
     DATASET = 1UL << 14,
     GEOGRAPHY = 1UL << 15,
     DURATION = 1UL << 16,
+    VECTOR = 1UL << 17,
     NULLVALUE = 1UL << 63,
   };
 
@@ -136,6 +141,8 @@ struct Value {
   Value(Duration&& v);                                       // NOLINT
   Value(const std::unordered_map<std::string, Value>& map);  // NOLINT
   Value(std::unordered_map<std::string, Value>&& map);       // NOLINT
+  Value(Vector&& v);                                         // NOLINT
+  Value(const Vector& v);                                    // NOLINT
   ~Value() {
     clear();
   }
@@ -213,6 +220,9 @@ struct Value {
   bool isDuration() const {
     return type_ == Type::DURATION;
   }
+  bool isVector() const {
+    return type_ == Type::VECTOR;
+  }
 
   void clear() {
     if (isNumeric()) {
@@ -285,6 +295,9 @@ struct Value {
   void setDuration(const Duration& v);
   void setDuration(Duration&& v);
   void setDuration(std::unique_ptr<Duration>&& v);
+  void setVector(const Vector& v);
+  void setVector(Vector&& v);
+  void setVector(std::unique_ptr<Vector>&& v);
 
   const NullType& getNull() const {
     return value_.nVal;
@@ -318,6 +331,8 @@ struct Value {
   const Geography* getGeographyPtr() const;
   const Duration& getDuration() const;
   const Duration* getDurationPtr() const;
+  const Vector& getVector() const;
+  const Vector* getVectorPtr() const;
 
   NullType moveNull();
   bool moveBool();
@@ -336,6 +351,7 @@ struct Value {
   DataSet moveDataSet();
   Geography moveGeography();
   Duration moveDuration();
+  Vector moveVector();
 
   NullType& mutableNull();
   bool& mutableBool();
@@ -354,6 +370,7 @@ struct Value {
   DataSet& mutableDataSet();
   Geography& mutableGeography();
   Duration& mutableDuration();
+  Vector& mutableVector();
 
   static const Value& null() noexcept {
     return kNullValue;
@@ -404,6 +421,7 @@ struct Value {
     std::unique_ptr<DataSet> gVal;
     std::unique_ptr<Geography> ggVal;
     std::unique_ptr<Duration> duVal;
+    std::unique_ptr<Vector> vecVal;
 
     Storage() {}
     ~Storage() {}
@@ -483,6 +501,11 @@ struct Value {
   void setDU(std::unique_ptr<Duration>&& v);
   void setDU(const Duration& v);
   void setDU(Duration&& v);
+  // Vector value
+  void setVec(const std::unique_ptr<Vector>& v);
+  void setVec(std::unique_ptr<Vector>&& v);
+  void setVec(const Vector& v);
+  void setVec(Vector&& v);
 };
 
 static_assert(sizeof(Value) == 16UL, "The size of Value should be 16UL");

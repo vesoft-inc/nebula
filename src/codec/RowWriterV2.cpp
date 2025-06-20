@@ -11,6 +11,7 @@
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
 #include "common/utils/DefaultValueContext.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
 
@@ -218,6 +219,9 @@ RowWriterV2::RowWriterV2(RowReaderWrapper& reader) : RowWriterV2(reader.getSchem
       case Value::Type::SET:
         set(i, v.moveSet());
         break;
+      case Value::Type::VECTOR:
+        set(i, v.moveVector());
+        break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
         isSet_[i] = false;
@@ -310,6 +314,8 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
       return write(index, val.getList());
     case Value::Type::SET:
       return write(index, val.getSet());
+    case Value::Type::VECTOR:
+      return write(index, val.getVector());
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -976,6 +982,35 @@ WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   return WriteResult::SUCCEEDED;
 }
 
+WriteResult RowWriterV2::write(ssize_t index, const Vector& vector) {
+  auto field = schema_->field(index);
+  auto offset = headerLen_ + numNullBytes_ + field->offset();
+  if (isSet_[index]) {
+    // The string value has already been set, we need to turn it
+    // into out-of-space strings then
+    outOfSpaceStr_ = true;
+  }
+  int32_t vecOffset;
+  int32_t vecLen;
+  if (outOfSpaceStr_) {
+    strList_.emplace_back(reinterpret_cast<const char*>(vector.data().data()),
+                          sizeof(float) * vector.dim());
+    vecOffset = 0;
+    // Length field is the index to the out-of-space string list
+    vecLen = strList_.size() - 1;
+  } else {
+    // Append to the end
+    vecOffset = buf_.size();
+    vecLen = sizeof(float) * vector.dim();
+    buf_.append(reinterpret_cast<const char*>(vector.data().data()), vecLen);
+  }
+  memcpy(&buf_[offset], reinterpret_cast<void*>(&vecOffset), sizeof(int32_t));
+  memcpy(&buf_[offset + sizeof(int32_t)], reinterpret_cast<void*>(&vecLen), sizeof(int32_t));
+  approxStrLen_ += vecLen;
+  isSet_[index] = true;
+  return WriteResult::SUCCEEDED;
+}
+
 WriteResult RowWriterV2::checkUnsetFields() {
   DefaultValueContext expCtx;
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
@@ -1059,7 +1094,8 @@ std::string RowWriterV2::processOutOfSpace() {
   // Now let's process all strings
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
     auto field = schema_->field(i);
-    if (field->type() != PropertyType::STRING && field->type() != PropertyType::GEOGRAPHY) {
+    if (field->type() != PropertyType::STRING && field->type() != PropertyType::GEOGRAPHY &&
+        field->type() != PropertyType::VECTOR) {
       continue;
     }
 

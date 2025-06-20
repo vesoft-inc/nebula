@@ -175,6 +175,9 @@ std::size_t NebulaSchemaProvider::fieldSize(PropertyType type, std::size_t fixed
     case PropertyType::SET_INT:
     case PropertyType::SET_FLOAT:
       return 8;
+    case PropertyType::VECTOR: {
+      return 8;
+    }
     case PropertyType::UNKNOWN:
       break;
   }

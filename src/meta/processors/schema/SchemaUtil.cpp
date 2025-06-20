@@ -276,6 +276,10 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
     case PropertyType::SET_FLOAT: {
       return extractIntOrFloat<Set, double>(value, name);
     }
+    case PropertyType::VECTOR: {
+      // TODO(LZY)
+      return false;
+    }
     case PropertyType::UNKNOWN:
     case PropertyType::VID:
       DLOG(INFO) << "Don't supported type "

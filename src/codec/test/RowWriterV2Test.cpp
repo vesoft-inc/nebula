@@ -10,6 +10,8 @@
 #include "common/base/Base.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/time/WallClock.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
 
@@ -44,6 +46,9 @@ const Geography geogPolygon = Polygon(
                                                                  Coordinate(-100.1, 41.4)}});
 const Duration du = Duration(1, 2, 3);
 
+const Vector vec({1.0, 2.0, 3.0}, 3);
+const Vector longvec({1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}, 8);
+
 TEST(RowWriterV2, NoDefaultValue) {
   meta::NebulaSchemaProvider schema(12 /*Schema version*/);
   schema.addField("Col01", PropertyType::BOOL);
@@ -66,6 +71,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   schema.addField("Col18", PropertyType::GEOGRAPHY, 0, false, "", meta::cpp2::GeoShape::POLYGON);
   schema.addField("Col19", PropertyType::GEOGRAPHY, 0, true, "", meta::cpp2::GeoShape::ANY);
   schema.addField("Col20", PropertyType::DURATION);
+  schema.addField("Col21", PropertyType::VECTOR);
 
   ASSERT_EQ(Value::Type::STRING, sVal.type());
   ASSERT_EQ(Value::Type::INT, iVal.type());
@@ -91,6 +97,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(17, geogPolygon));
   // Purposely skip the col19
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(19, du));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setValue(20, vec));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer1.finish());
 
   RowWriterV2 writer2(&schema);
@@ -114,6 +121,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col18", geogPolygon));
   // Purposely skip the col19
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col20", du));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col21", vec));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
 
   std::string encoded1 = std::move(writer1).moveEncodedStr();
@@ -260,6 +268,13 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(Value::Type::DURATION, v1.type());
   EXPECT_EQ(du, v1.getDuration());
   EXPECT_EQ(v1, v2);
+
+  // Col21
+  v1 = reader1->getValueByName("Col21");
+  v2 = reader2->getValueByIndex(20);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(vec, v1.getVector());
+  EXPECT_EQ(v1, v2);
 }
 
 TEST(RowWriterV2, WithDefaultValue) {
@@ -311,6 +326,36 @@ TEST(RowWriterV2, WithDefaultValue) {
   EXPECT_EQ(fixed, v1.getStr());
   EXPECT_EQ(v1, v2);
 }
+TEST(RowWriterV2, DoubleSetVector) {
+  meta::NebulaSchemaProvider schema(3 /*Schema version*/);
+
+  schema.addField("Col01", PropertyType::VECTOR);
+  schema.addField("Col02", PropertyType::VECTOR);
+
+  RowWriterV2 writer(&schema);
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", vec));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", longvec));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col02", longvec));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col02", vec));
+  ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+
+  std::string encoded = std::move(writer).moveEncodedStr();
+  auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
+
+  // Col01
+  Value v1 = reader->getValueByName("Col01");
+  Value v2 = reader->getValueByIndex(0);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(longvec, v1.getVector());
+  EXPECT_EQ(v1, v2);
+
+  // Col02
+  v1 = reader->getValueByName("Col02");
+  v2 = reader->getValueByIndex(1);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(vec, v1.getVector());
+  EXPECT_EQ(v1, v2);
+}
 
 TEST(RowWriterV2, DoubleSet) {
   meta::NebulaSchemaProvider schema(3 /*Schema version*/);
@@ -319,6 +364,7 @@ TEST(RowWriterV2, DoubleSet) {
   schema.addField("Col03", PropertyType::STRING);
   schema.addField("Col04", PropertyType::STRING, 0, true);
   schema.addField("Col05", PropertyType::FIXED_STRING, 12);
+  schema.addField("Col06", PropertyType::VECTOR);
 
   RowWriterV2 writer(&schema);
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", false));
@@ -333,6 +379,8 @@ TEST(RowWriterV2, DoubleSet) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.setNull("Col04"));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col05", fixed));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col05", str));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col06", vec));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col06", longvec));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
 
   std::string encoded = std::move(writer).moveEncodedStr();
@@ -370,6 +418,13 @@ TEST(RowWriterV2, DoubleSet) {
   EXPECT_EQ(Value::Type::STRING, v1.type());
   EXPECT_EQ(str, v1.getStr());
   EXPECT_EQ(v1, v2);
+
+  // Col06
+  v1 = reader->getValueByName("Col06");
+  v2 = reader->getValueByIndex(5);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(longvec, v1.getVector());
+  EXPECT_EQ(v1, v2);
 }
 
 TEST(RowWriterV2, Update) {
@@ -379,6 +434,7 @@ TEST(RowWriterV2, Update) {
   schema.addField("Col03", PropertyType::STRING);
   schema.addField("Col04", PropertyType::STRING, 0, true);
   schema.addField("Col05", PropertyType::FIXED_STRING, 12);
+  schema.addField("Col06", PropertyType::VECTOR);
 
   RowWriterV2 writer(&schema);
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", true));
@@ -386,6 +442,7 @@ TEST(RowWriterV2, Update) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col03", str));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.setNull("Col04"));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col05", fixed));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col06", vec));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
 
   std::string encoded1 = writer.moveEncodedStr();
@@ -402,6 +459,8 @@ TEST(RowWriterV2, Update) {
   EXPECT_EQ(WriteResult::SUCCEEDED, updater2.set("Col04", str));
   EXPECT_EQ(WriteResult::SUCCEEDED, updater1.set("Col05", str));
   EXPECT_EQ(WriteResult::SUCCEEDED, updater2.set("Col05", str));
+  EXPECT_EQ(WriteResult::SUCCEEDED, updater1.set("Col06", longvec));
+  EXPECT_EQ(WriteResult::SUCCEEDED, updater2.set("Col06", longvec));
   ASSERT_EQ(WriteResult::SUCCEEDED, updater1.finish());
   ASSERT_EQ(WriteResult::SUCCEEDED, updater2.finish());
 
@@ -446,6 +505,13 @@ TEST(RowWriterV2, Update) {
   v2 = reader2->getValueByIndex(4);
   EXPECT_EQ(Value::Type::STRING, v1.type());
   EXPECT_EQ(str, v1.getStr());
+  EXPECT_EQ(v1, v2);
+
+  // Col06
+  v1 = reader1->getValueByName("Col06");
+  v2 = reader2->getValueByIndex(5);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(longvec, v1.getVector());
   EXPECT_EQ(v1, v2);
 }
 

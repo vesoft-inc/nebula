@@ -313,6 +313,8 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
     case nebula::cpp2::PropertyType::SET_INT:
     case nebula::cpp2::PropertyType::SET_FLOAT:
       return Value::Type::SET;
+    case nebula::cpp2::PropertyType::VECTOR:
+      return Value::Type::VECTOR;
     case nebula::cpp2::PropertyType::UNKNOWN:
       return Value::Type::__EMPTY__;
   }

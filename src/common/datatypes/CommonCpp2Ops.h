@@ -29,6 +29,7 @@ struct LineString;
 struct Polygon;
 struct Geography;
 struct Duration;
+struct Vector;
 }  // namespace nebula
 
 namespace apache::thrift {
@@ -54,6 +55,7 @@ SPECIALIZE_CPP2OPS(nebula::LineString);
 SPECIALIZE_CPP2OPS(nebula::Polygon);
 SPECIALIZE_CPP2OPS(nebula::Geography);
 SPECIALIZE_CPP2OPS(nebula::Duration);
+SPECIALIZE_CPP2OPS(nebula::Vector);
 
 }  // namespace apache::thrift
 

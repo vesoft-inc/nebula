@@ -4,6 +4,8 @@
  */
 #include "codec/RowReaderV2.h"
 
+#include "common/utils/IndexKeyUtils.h"
+
 namespace nebula {
 
 using nebula::cpp2::PropertyType;
@@ -301,6 +303,18 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
       return nebula::extractIntOrFloat<int32_t, Set>(data_, offset);
     case PropertyType::SET_FLOAT:
       return nebula::extractIntOrFloat<float, Set>(data_, offset);
+    case PropertyType::VECTOR: {
+      int32_t vecOffset;
+      int32_t vecLen;
+      memcpy(reinterpret_cast<void*>(&vecOffset), &data_[offset], sizeof(int32_t));
+      memcpy(reinterpret_cast<void*>(&vecLen), &data_[offset + sizeof(int32_t)], sizeof(int32_t));
+
+      CHECK_LT(vecOffset, data_.size());
+      return Value{Vector(
+          std::vector<float>(reinterpret_cast<const float*>(data_.data() + vecOffset),
+                             reinterpret_cast<const float*>(data_.data() + vecOffset + vecLen)),
+          vecLen / sizeof(float))};
+    }
     case PropertyType::UNKNOWN:
       break;
   }

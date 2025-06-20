@@ -6,6 +6,8 @@
 #ifndef CODEC_ROWWRITERV2_H_
 #define CODEC_ROWWRITERV2_H_
 
+#include <sys/types.h>
+
 #include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -63,6 +65,7 @@ enum class WriteResult {
         DATE            (4 bytes)
         DATETIME        (15 bytes)
         GEOGRAPHY       (8 bytes) *
+        VECTOR          (8 bytes) *
 
   All except STRING typed properties are stored in-place. The STRING property
   stored the offset of the string content in the first 4 bytes and the length
@@ -271,6 +274,8 @@ class RowWriterV2 {
   // Supports storing unordered sets of strings, integers, and floats,
   // including SET_STRING, SET_INT, and SET_FLOAT
   WriteResult write(ssize_t index, const Set& set);
+
+  WriteResult write(ssize_t index, const Vector& vector);
 };
 
 }  // namespace nebula

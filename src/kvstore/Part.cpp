@@ -212,6 +212,7 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
   }
 }
 
+// LZY: This function is used to commit kv in logs to RocksDB from the log iterator.
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
     std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
   // We should apply any membership change which happens before start time. Because when we start

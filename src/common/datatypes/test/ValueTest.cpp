@@ -40,6 +40,9 @@ TEST(Value, Arithmetics) {
   Value vList2(List({6, 4, 5}));
   Value vSet(Set({8, 7}));
   Value vMap(Map({{"a", 9}, {"b", 10}}));
+  Value vVec1(Vector({1.11, 2.22, 3.33}));
+  Value vVec2(Vector({4.44, 5.55, 6.66}));
+  Value vVecEmpty((Vector()));
 
   // +
   {
@@ -138,6 +141,15 @@ TEST(Value, Arithmetics) {
     v = Value(-30.142857142857142) + Value("Allen Wilson");
     EXPECT_EQ(Value::Type::STRING, v.type());
     EXPECT_EQ(std::string("-30.142857142857142Allen Wilson"), v.getStr());
+
+    // vector + vector
+    v = vVec1 + vVec2;
+    EXPECT_EQ(Value::Type::VECTOR, v.type());
+    bool flag = v.getVector() == Vector({5.55, 7.77, 9.99});
+    EXPECT_EQ(flag, true);
+    // vectors with different dimensions
+    v = vVec1 + vVecEmpty;
+    EXPECT_EQ(Value::kVectorDimNotMatch, v);
   }
   {
     // Duration
@@ -343,6 +355,14 @@ TEST(Value, Arithmetics) {
     v = vDate1 - vInt2;
     EXPECT_EQ(Value::Type::DATE, v.type());
     EXPECT_EQ(Date(2019, 12, 30), v.getDate());
+
+    // vector - vector
+    v = vVec1 - vVec2;
+    EXPECT_EQ(Value::Type::VECTOR, v.type());
+    EXPECT_EQ(Vector({-3.33, -3.33, -3.33}), v.getVector());
+    // vectors with different dimensions
+    v = vVec1 - vVecEmpty;
+    EXPECT_EQ(Value::kVectorDimNotMatch, v);
   }
   {
     // Duration
@@ -708,6 +728,9 @@ TEST(Value, Comparison) {
   Value vGeo1 = Geography::fromWKT("POINT(4 7)").value();
   Value vGeo2 = Geography::fromWKT("POINT(5 7)").value();
   Value vGeo3 = Geography::fromWKT("POINT(5 7)").value();
+  Value vVec1 = Vector({5.55, 7.77, 9.99});
+  Value vVec2 = Vector({1.11, 2.22, 3.33});
+  Value vVec3 = Vector({1.11, 2.22, 3.33, 4.44});
 
   // null/empty
   {
@@ -1092,6 +1115,37 @@ TEST(Value, Comparison) {
     Value rhs{Duration(1, 2, 3)};
     EXPECT_TRUE(lhs.lessThan(rhs).isNull());
     EXPECT_TRUE(lhs.equal(rhs).getBool());
+  }
+  // vector
+  {
+    Value v = vVec1 == vVec2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vVec1 != vVec2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vVec1 > vVec2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vVec1 < vVec2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    // vector with different size
+    v = vVec1 == vVec3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vVec1 > vVec3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vVec1 <= vVec3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
   }
 }
 
@@ -1560,6 +1614,7 @@ TEST(Value, typeName) {
   EXPECT_EQ("dataset", Value(DataSet()).typeName());
   EXPECT_EQ("geography", Value(Geography()).typeName());
   EXPECT_EQ("duration", Value(Duration()).typeName());
+  EXPECT_EQ("vector", Value(Vector()).typeName());
   EXPECT_EQ("__NULL__", Value::kNullValue.typeName());
   EXPECT_EQ("NaN", Value::kNullNaN.typeName());
   EXPECT_EQ("BAD_DATA", Value::kNullBadData.typeName());
@@ -1567,6 +1622,7 @@ TEST(Value, typeName) {
   EXPECT_EQ("ERR_OVERFLOW", Value::kNullOverflow.typeName());
   EXPECT_EQ("UNKNOWN_PROP", Value::kNullUnknownProp.typeName());
   EXPECT_EQ("DIV_BY_ZERO", Value::kNullDivByZero.typeName());
+  EXPECT_EQ("VEC_DIM_NOT_MATCH", Value::kVectorDimNotMatch.typeName());
 }
 
 using serializer = apache::thrift::CompactSerializer;
@@ -1672,6 +1728,10 @@ TEST(Value, DecodeEncode) {
       Value(Duration()),
       Value(Duration(1, 2, 3)),
       Value(Duration(-1, -2, -3)),
+
+      // Vector
+      Value(Vector({1, 2, 3})),
+      Value(Vector({1, 2, 3, 4}, 4)),
   };
   for (const auto& val : values) {
     std::string buf;
@@ -1727,6 +1787,12 @@ TEST(Value, Ctor) {
   Value vD{Duration()};
   Value vD2{Duration(1, 2, 3)};
 
+  // Vector
+  Value vVec1{Vector({1, 2, 3})};
+  EXPECT_TRUE(vVec1.isVector());
+  Value vVec2{Vector({1, 2, 3, 4}, 4)};
+  EXPECT_TRUE(vVec2.isVector());
+
   // Disabled
   // Lead to compile error
   // Value v(nullptr);
@@ -1752,6 +1818,13 @@ TEST(Value, ToString) {
     d.addSeconds(10);
     d.addMicroseconds(20000000);
     EXPECT_EQ(d.toString(), "P14MT43200030.000000000S");
+  }
+  // Vector
+  {
+    Value vVec1{Vector({1, 2, 3})};
+    EXPECT_EQ(vVec1.toString(), "Vector(3, [1.000000,2.000000,3.000000])");
+    Value vVec2{Vector({1, 2, 3, 4}, 4)};
+    EXPECT_EQ(vVec2.toString(), "Vector(4, [1.000000,2.000000,3.000000,4.000000])");
   }
 }
 
