@@ -3,6 +3,9 @@ FROM vesoft/nebula-dev:centos7 as builder
 
 ENV BUILD_IN_DOCKER=true
 ARG VERSION=
+ENV CCACHE_DIR=/root/.ccache
+ENV CCACHE_MAXSIZE=15G
+ARG J=
 
 COPY . /home/nebula/BUILD
 
@@ -23,9 +26,9 @@ COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.r
 WORKDIR /usr/local/nebula
 
 # Install RPMs and clean up
-RUN rpm -ivh /tmp/*.rpm && \
-    rm -rf /tmp/*.rpm && \
-    chmod -R g+rwX /usr/local/nebula
+RUN rpm -ivh *.rpm  \
+    && rm -rf *.rpm \
+    && chmod -R g+rwX /usr/local/nebula
 
 # Do NOT set USER — OpenShift will inject a random non-root UID
 # `fsGroup` in the Pod spec will ensure proper write access to mounted volumes
