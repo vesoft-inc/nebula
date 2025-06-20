@@ -1,6 +1,7 @@
+# --- Builder Stage ---
 FROM vesoft/nebula-dev:centos7 as builder
 
-ENV BUILD_IN_DOCKER TRUE
+ENV BUILD_IN_DOCKER=true
 ARG VERSION=
 
 COPY . /home/nebula/BUILD
@@ -8,21 +9,26 @@ COPY . /home/nebula/BUILD
 RUN cd /home/nebula/BUILD/package \
   && ./package.sh -v "${VERSION}"
 
+# --- Runtime Stage ---
 FROM centos:7
 
-RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
+# Create required directories and ensure group-writable access
+RUN mkdir -p /usr/local/nebula/{logs,data,pids,logrotate} && \
+    chmod -R g+rwX /usr/local/nebula
 
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /usr/local/nebula/nebula-storaged.rpm
+# Copy built RPMs
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /tmp/
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /tmp/
 
 WORKDIR /usr/local/nebula
 
-RUN rpm -ivh *.rpm \
-  && mkdir -p ./{logs,data,pids} \
-  && rm -rf *.rpm \
-  && chown -R nebula:nebula /usr/local/nebula
+# Install RPMs and clean up
+RUN rpm -ivh /tmp/*.rpm && \
+    rm -rf /tmp/*.rpm && \
+    chmod -R g+rwX /usr/local/nebula
 
-USER nebula
+# Do NOT set USER — OpenShift will inject a random non-root UID
+# `fsGroup` in the Pod spec will ensure proper write access to mounted volumes
 
 EXPOSE 9777 9778 9779 9780 19779 19780
 
