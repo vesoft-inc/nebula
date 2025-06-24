@@ -13,8 +13,6 @@ RUN cd /home/nebula/BUILD/package \
 
 FROM centos:7 as graphd
 
-RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
-
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-graph.rpm /usr/local/nebula/nebula-graphd.rpm
 
@@ -23,11 +21,10 @@ WORKDIR /usr/local/nebula
 RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm \
-  && chown -R nebula:nebula /usr/local/nebula
+  && chgrp -R 0 /usr/local/nebula \
+  && chmod -R g+rwX /usr/local/nebula \
 
 EXPOSE 9669 19669 19670
-
-USER nebula
 
 ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false", "--containerized=true"]
 
