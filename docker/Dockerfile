@@ -22,7 +22,7 @@ RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm \
   && chgrp -R 0 /usr/local/nebula \
-  && chmod -R g+rwX /usr/local/nebula \
+  && chmod -R g+rwX /usr/local/nebula
 
 EXPOSE 9669 19669 19670
 
