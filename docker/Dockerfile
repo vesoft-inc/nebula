@@ -3,14 +3,14 @@ FROM vesoft/nebula-dev:centos7 as builder
 ENV BUILD_IN_DOCKER TRUE
 ARG VERSION=
 ENV CCACHE_DIR=/root/.ccache
-ENV CCACHE_MAXSIZE=15G
+ENV CCACHE_MAXSIZE=35G
 ARG J=
 
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
   && ./package.sh -v "${VERSION}"
-  
+
 FROM centos:7 as graphd
 
 RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
@@ -33,8 +33,6 @@ ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula
 
 FROM centos:7 as metad
 
-RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
-
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-meta.rpm /usr/local/nebula/nebula-metad.rpm
 
@@ -43,16 +41,14 @@ WORKDIR /usr/local/nebula
 RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm \
-  && chown -R nebula:nebula /usr/local/nebula
+  && chgrp -R 0 /usr/local/nebula \
+  && chmod -R g+rwX /usr/local/nebula
 
 EXPOSE 9559 9560 19559 19560
-
-USER nebula
 
 ENTRYPOINT ["/usr/local/nebula/bin/nebula-metad", "--flagfile=/usr/local/nebula/etc/nebula-metad.conf", "--daemonize=false", "--containerized=true"]
 
 FROM centos:7 as storaged
-
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /usr/local/nebula/nebula-storaged.rpm
@@ -62,7 +58,7 @@ WORKDIR /usr/local/nebula
 RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids,logrotate} \
   && rm -rf *.rpm \
-  && chown -R nebula:nebula /usr/local/nebula \
+  && chgrp -R 0 /usr/local/nebula \
   && chmod -R g+rwX /usr/local/nebula
 
 EXPOSE 9777 9778 9779 9780 19779 19780
