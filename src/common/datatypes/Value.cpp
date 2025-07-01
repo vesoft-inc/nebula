@@ -1954,7 +1954,6 @@ Value Value::lessThan(const Value& v) const {
       // e.g. What is the result of `duration('P1M') < duration('P30D')`?
       return kNullBadType;
     }
-
     case Value::Type::VECTOR:
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
