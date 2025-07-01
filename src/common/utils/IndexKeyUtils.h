@@ -62,6 +62,8 @@ class IndexKeyUtils final {
       case PropertyType::SET_INT:
       case PropertyType::SET_FLOAT:
         return Value::Type::SET;
+      case PropertyType::VECTOR:
+        return Value::Type::VECTOR;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }
@@ -102,6 +104,8 @@ class IndexKeyUtils final {
       case Value::Type::GEOGRAPHY: {
         len = sizeof(uint64_t);  // S2CellId
         break;
+      }
+      case Value::Type::VECTOR: {
       }
       default:
         LOG(ERROR) << "Unsupported default value type";

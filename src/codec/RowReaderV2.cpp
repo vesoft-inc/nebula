@@ -301,6 +301,9 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
       return nebula::extractIntOrFloat<int32_t, Set>(data_, offset);
     case PropertyType::SET_FLOAT:
       return nebula::extractIntOrFloat<float, Set>(data_, offset);
+      case PropertyType::VECTOR:
+      // TODO(LZY)
+      break;
     case PropertyType::UNKNOWN:
       break;
   }

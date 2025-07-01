@@ -276,6 +276,12 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
     case PropertyType::SET_FLOAT: {
       return extractIntOrFloat<Set, double>(value, name);
     }
+    case PropertyType::VECTOR: {
+      // detect column dim and value dim
+      return column.get_type().type_length_ref().has_value() && value.isVector() &&
+             value.getVector().dim() ==
+                 static_cast<size_t>(column.get_type().type_length_ref().value());
+    }
     case PropertyType::UNKNOWN:
     case PropertyType::VID:
       DLOG(INFO) << "Don't supported type "

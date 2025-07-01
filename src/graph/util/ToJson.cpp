@@ -79,6 +79,7 @@ folly::dynamic toJson(const Value &value) {
     case Value::Type::SET:
     case Value::Type::DATASET:
     case Value::Type::GEOGRAPHY:
+    case Value::Type::VECTOR:
       // TODO store to object or array
       return value.toString();
   }

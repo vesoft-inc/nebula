@@ -26,6 +26,7 @@ cpp_include "common/datatypes/KeyValueOps-inl.h"
 cpp_include "common/datatypes/HostAddrOps-inl.h"
 cpp_include "common/datatypes/GeographyOps-inl.h"
 cpp_include "common/datatypes/DurationOps-inl.h"
+cpp_include "common/datatypes/VectorOps-inl.h"
 
 /*
  *
@@ -98,6 +99,7 @@ enum NullType {
     UNKNOWN_PROP = 5,
     DIV_BY_ZERO = 6,
     OUT_OF_RANGE = 7,
+    VEC_DIM_NOT_MATCH = 8,
 } (cpp.enum_strict, cpp.type = "nebula::NullType")
 
 
@@ -120,8 +122,13 @@ union Value {
     15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
     16: Geography (cpp.type = "nebula::Geography")   ggVal (cpp.ref_type = "unique");
     17: Duration (cpp.type = "nebula::Duration")     duVal (cpp.ref_type = "unique");
+    18: Vector (cpp.type = "nebula::Vector")    vecVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
+// Vector type
+struct Vector {
+    1: list<double> values;
+} (cpp.type = "nebula::Vector")
 
 // Ordered list
 struct NList {
@@ -301,6 +308,9 @@ enum PropertyType {
     SET_STRING = 35,
     SET_INT = 36,
     SET_FLOAT = 37,
+
+    // Vector type
+    VECTOR = 38,
 
 } (cpp.enum_strict)
 
