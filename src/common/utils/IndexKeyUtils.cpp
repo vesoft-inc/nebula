@@ -258,6 +258,9 @@ Status IndexKeyUtils::checkValue(const Value& v, bool isNullable) {
     case nebula::NullType::OUT_OF_RANGE: {
       return Status::Error("Out of range");
     }
+    case nebula::NullType::VEC_DIM_NOT_MATCH: {
+      return Status::Error("Vector dimension not match");
+    }
   }
   DLOG(FATAL) << "Unknown Null type " << static_cast<int>(v.getNull());
   return Status::Error("Unknown Null type");

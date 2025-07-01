@@ -19,6 +19,7 @@
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Path.h"
 #include "common/datatypes/Set.h"
+#include "common/datatypes/Vector.h"
 #include "common/datatypes/Vertex.h"
 
 namespace nebula {
@@ -32,6 +33,7 @@ const Value Value::kNullOverflow(NullType::ERR_OVERFLOW);
 const Value Value::kNullUnknownProp(NullType::UNKNOWN_PROP);
 const Value Value::kNullDivByZero(NullType::DIV_BY_ZERO);
 const Value Value::kNullOutOfRange(NullType::OUT_OF_RANGE);
+const Value Value::kVectorDimNotMatch(NullType::VEC_DIM_NOT_MATCH);
 
 const uint64_t Value::kEmptyNullType = Value::Type::__EMPTY__ | Value::Type::NULLVALUE;
 const uint64_t Value::kNumericType = Value::Type::INT | Value::Type::FLOAT;
@@ -115,6 +117,10 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
     }
     case Type::DURATION: {
       setDU(rhs.value_.duVal);
+      break;
+    }
+    case Type::VECTOR: {
+      setVec(rhs.value_.vecVal);
       break;
     }
     default: {
@@ -300,6 +306,14 @@ Value::Value(std::unordered_map<std::string, Value>&& map) {
   setM(std::make_unique<Map>(std::move(map)));
 }
 
+Value::Value(const Vector& v) {
+  setVec(std::make_unique<Vector>(v));
+}
+
+Value::Value(Vector&& v) {
+  setVec(std::make_unique<Vector>(std::move(v)));
+}
+
 const std::string& Value::typeName() const {
   static const std::unordered_map<Type, std::string> typeNames = {
       {Type::__EMPTY__, "__EMPTY__"},
@@ -320,6 +334,7 @@ const std::string& Value::typeName() const {
       {Type::DATASET, "dataset"},
       {Type::GEOGRAPHY, "geography"},
       {Type::DURATION, "duration"},
+      {Type::VECTOR, "vector"},
   };
 
   static const std::unordered_map<NullType, std::string> nullTypes = {
@@ -330,6 +345,7 @@ const std::string& Value::typeName() const {
       {NullType::ERR_OVERFLOW, "ERR_OVERFLOW"},
       {NullType::UNKNOWN_PROP, "UNKNOWN_PROP"},
       {NullType::DIV_BY_ZERO, "DIV_BY_ZERO"},
+      {NullType::VEC_DIM_NOT_MATCH, "VEC_DIM_NOT_MATCH"},
   };
 
   static const std::string unknownType = "__UNKNOWN__";
@@ -598,6 +614,21 @@ void Value::setDuration(std::unique_ptr<Duration>&& v) {
   setDU(std::move(v));
 }
 
+void Value::setVector(const Vector& v) {
+  clear();
+  setVec(v);
+}
+
+void Value::setVector(Vector&& v) {
+  clear();
+  setVec(std::move(v));
+}
+
+void Value::setVector(std::unique_ptr<Vector>&& v) {
+  clear();
+  setVec(std::move(v));
+}
+
 const double& Value::getFloat() const {
   CHECK_EQ(type_, Type::FLOAT);
   return value_.fVal;
@@ -713,6 +744,16 @@ const Duration* Value::getDurationPtr() const {
   return value_.duVal.get();
 }
 
+const Vector& Value::getVector() const {
+  CHECK_EQ(type_, Type::VECTOR);
+  return *(value_.vecVal);
+}
+
+const Vector* Value::getVectorPtr() const {
+  CHECK_EQ(type_, Type::VECTOR);
+  return value_.vecVal.get();
+}
+
 NullType& Value::mutableNull() {
   CHECK_EQ(type_, Type::NULLVALUE);
   return value_.nVal;
@@ -796,6 +837,11 @@ Geography& Value::mutableGeography() {
 Duration& Value::mutableDuration() {
   CHECK_EQ(type_, Type::DURATION);
   return *value_.duVal;
+}
+
+Vector& Value::mutableVector() {
+  CHECK_EQ(type_, Type::VECTOR);
+  return *(value_.vecVal);
 }
 
 NullType Value::moveNull() {
@@ -917,6 +963,13 @@ Duration Value::moveDuration() {
   return v;
 }
 
+Vector Value::moveVector() {
+  CHECK_EQ(type_, Type::VECTOR);
+  Vector v = std::move(*(value_.vecVal));
+  clear();
+  return v;
+}
+
 void Value::clearSlow() {
   switch (type_) {
     case Type::__EMPTY__: {
@@ -1000,6 +1053,10 @@ void Value::clearSlow() {
     }
     case Type::DURATION: {
       destruct(value_.duVal);
+      break;
+    }
+    case Type::VECTOR: {
+      destruct(value_.vecVal);
       break;
     }
   }
@@ -1089,6 +1146,10 @@ Value& Value::operator=(Value&& rhs) noexcept {
       setDU(std::move(rhs.value_.duVal));
       break;
     }
+    case Type::VECTOR: {
+      setVec(std::move(rhs.value_.vecVal));
+      break;
+    }
     default: {
       assert(false);
       break;
@@ -1173,6 +1234,10 @@ Value& Value::operator=(const Value& rhs) {
     }
     case Type::DURATION: {
       setDU(rhs.value_.duVal);
+      break;
+    }
+    case Type::VECTOR: {
+      setVec(rhs.value_.vecVal);
       break;
     }
     default: {
@@ -1446,6 +1511,26 @@ void Value::setDU(Duration&& v) {
   type_ = Type::DURATION;
 }
 
+void Value::setVec(const Vector& v) {
+  new (std::addressof(value_.vecVal)) std::unique_ptr<Vector>(new Vector(v));
+  type_ = Type::VECTOR;
+}
+
+void Value::setVec(Vector&& v) {
+  new (std::addressof(value_.vecVal)) std::unique_ptr<Vector>(new Vector(std::move(v)));
+  type_ = Type::VECTOR;
+}
+
+void Value::setVec(const std::unique_ptr<Vector>& v) {
+  new (std::addressof(value_.vecVal)) std::unique_ptr<Vector>(new Vector(*v));
+  type_ = Type::VECTOR;
+}
+
+void Value::setVec(std::unique_ptr<Vector>&& v) {
+  new (std::addressof(value_.vecVal)) std::unique_ptr<Vector>(std::move(v));
+  type_ = Type::VECTOR;
+}
+
 // Convert Nebula::Value to a value compatible with Json standard
 // DATE, TIME, DATETIME will be converted to strings in UTC
 // VERTEX, EDGES, PATH will be converted to objects
@@ -1511,6 +1596,9 @@ folly::dynamic Value::toJson() const {
     }
     case Value::Type::DURATION: {
       return getDuration().toJson();
+    }
+    case Value::Type::VECTOR: {
+      return getVector().toJson();
     }
       // no default so the compiler will warning when lack
   }
@@ -1588,6 +1676,8 @@ std::string Value::toString() const {
           return "__NULL_UNKNOWN_PROP__";
         case NullType::OUT_OF_RANGE:
           return "__NULL_OUT_OF_RANGE__";
+        case NullType::VEC_DIM_NOT_MATCH:
+          return "__NULL_VEC_DIM_NOT_MATCH__";
       }
       DLOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
       return "__NULL_BAD_TYPE__";
@@ -1639,6 +1729,9 @@ std::string Value::toString() const {
     }
     case Value::Type::DURATION: {
       return getDuration().toString();
+    }
+    case Value::Type::VECTOR: {
+      return getVector().toString();
     }
       // no default so the compiler will warning when lack
   }
@@ -1861,6 +1954,9 @@ Value Value::lessThan(const Value& v) const {
       // e.g. What is the result of `duration('P1M') < duration('P30D')`?
       return kNullBadType;
     }
+    case Value::Type::VECTOR: {
+      return getVector() < v.getVector();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return kNullBadType;
@@ -1960,6 +2056,9 @@ Value Value::equal(const Value& v) const {
     case Value::Type::DURATION: {
       return getDuration() == v.getDuration();
     }
+    case Value::Type::VECTOR: {
+      return getVector() == v.getVector();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
@@ -2053,6 +2152,9 @@ void swap(Value& a, Value& b) {
     }
     case Value::Type::DURATION: {
       return "DURATION";
+    }
+    case Value::Type::VECTOR: {
+      return "VECTOR";
     }
     default: {
       return "__UNKNOWN__";
@@ -2268,6 +2370,9 @@ Value operator+(const Value& lhs, const Value& rhs) {
         }
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
+        }
+        case Value::Type::VECTOR: {
+          return Value::kNullBadType;
         }
       }
       DLOG(FATAL) << "Unknown type: " << rhs.type();
@@ -2707,6 +2812,10 @@ bool operator<(const Value& lhs, const Value& rhs) {
       DLOG(FATAL) << "Duration is not comparable.";
       return false;
     }
+    case Value::Type::VECTOR: {
+      DLOG(FATAL) << "Vector is not comparable.";
+      return false;
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
@@ -2803,6 +2912,9 @@ bool Value::equals(const Value& rhs) const {
     case Value::Type::DURATION: {
       return getDuration() == rhs.getDuration();
     }
+    case Value::Type::VECTOR: {
+      return getVector() == rhs.getVector();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
@@ -2864,6 +2976,9 @@ std::size_t Value::hash() const {
     }
     case Type::DURATION: {
       return std::hash<Duration>()(getDuration());
+    }
+    case Type::VECTOR: {
+      return std::hash<Vector>()(getVector());
     }
     case Type::DATASET: {
       DLOG(FATAL) << "Hash for DATASET has not been implemented";

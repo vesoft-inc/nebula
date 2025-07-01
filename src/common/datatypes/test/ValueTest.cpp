@@ -1560,6 +1560,7 @@ TEST(Value, typeName) {
   EXPECT_EQ("dataset", Value(DataSet()).typeName());
   EXPECT_EQ("geography", Value(Geography()).typeName());
   EXPECT_EQ("duration", Value(Duration()).typeName());
+  EXPECT_EQ("vector", Value(Vector()).typeName());
   EXPECT_EQ("__NULL__", Value::kNullValue.typeName());
   EXPECT_EQ("NaN", Value::kNullNaN.typeName());
   EXPECT_EQ("BAD_DATA", Value::kNullBadData.typeName());
@@ -1567,6 +1568,7 @@ TEST(Value, typeName) {
   EXPECT_EQ("ERR_OVERFLOW", Value::kNullOverflow.typeName());
   EXPECT_EQ("UNKNOWN_PROP", Value::kNullUnknownProp.typeName());
   EXPECT_EQ("DIV_BY_ZERO", Value::kNullDivByZero.typeName());
+  EXPECT_EQ("VEC_DIM_NOT_MATCH", Value::kVectorDimNotMatch.typeName());
 }
 
 using serializer = apache::thrift::CompactSerializer;
@@ -1672,6 +1674,10 @@ TEST(Value, DecodeEncode) {
       Value(Duration()),
       Value(Duration(1, 2, 3)),
       Value(Duration(-1, -2, -3)),
+
+      // Vector
+      Value(Vector({1, 2, 3})),
+      Value(Vector({1, 2, 3, 4})),
   };
   for (const auto& val : values) {
     std::string buf;
@@ -1727,6 +1733,10 @@ TEST(Value, Ctor) {
   Value vD{Duration()};
   Value vD2{Duration(1, 2, 3)};
 
+  // Vector
+  Value vVec1{Vector({1, 2, 3})};
+  EXPECT_TRUE(vVec1.isVector());
+
   // Disabled
   // Lead to compile error
   // Value v(nullptr);
@@ -1752,6 +1762,11 @@ TEST(Value, ToString) {
     d.addSeconds(10);
     d.addMicroseconds(20000000);
     EXPECT_EQ(d.toString(), "P14MT43200030.000000000S");
+  }
+  // Vector
+  {
+    Value vVec1{Vector({1, 2, 3})};
+    EXPECT_EQ(vVec1.toString(), "[1.000000,2.000000,3.000000]");
   }
 }
 

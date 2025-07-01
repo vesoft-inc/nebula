@@ -26,6 +26,7 @@
 #include "common/datatypes/PathOps-inl.h"
 #include "common/datatypes/SetOps-inl.h"
 #include "common/datatypes/Value.h"
+#include "common/datatypes/VectorOps-inl.h"
 #include "common/datatypes/VertexOps-inl.h"
 
 namespace apache {
@@ -88,6 +89,9 @@ struct TccStructTraits<nebula::Value> {
       _ftype = apache::thrift::protocol::T_STRUCT;
     } else if (_fname == "duVal") {
       fid = 17;
+      _ftype = apache::thrift::protocol::T_STRUCT;
+    } else if (_fname == "vecVal") {
+      fid = 18;
       _ftype = apache::thrift::protocol::T_STRUCT;
     }
   }
@@ -264,6 +268,19 @@ uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj
       xfer += proto->writeFieldEnd();
       break;
     }
+    case nebula::Value::Type::VECTOR: {
+      xfer += proto->writeFieldBegin("vecVal", protocol::T_STRUCT, 18);
+      if (obj->getVectorPtr()) {
+        xfer += Cpp2Ops<nebula::Vector>::write(proto, obj->getVectorPtr());
+      } else {
+        xfer += proto->writeStructBegin("Vector");
+        xfer += proto->writeStructEnd();
+        xfer += proto->writeFieldStop();
+      }
+      xfer += proto->writeFieldEnd();
+      break;
+    }
+
     case nebula::Value::Type::__EMPTY__: {
       break;
     }
@@ -466,6 +483,18 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
         }
         break;
       }
+      case 18: {
+        // Vector type
+        if (readState.fieldType == apache::thrift::protocol::T_STRUCT) {
+          obj->setVector(nebula::Vector());
+          auto ptr = std::make_unique<nebula::Vector>();
+          Cpp2Ops<nebula::Vector>::read(proto, ptr.get());
+          obj->setVector(std::move(ptr));
+        } else {
+          proto->skip(readState.fieldType);
+        }
+        break;
+      }
       default: {
         proto->skip(readState.fieldType);
         break;
@@ -620,6 +649,16 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSize(Protocol const* proto, nebula::V
       }
       break;
     }
+    case nebula::Value::Type::VECTOR: {
+      xfer += proto->serializedFieldSize("vecVal", protocol::T_STRUCT, 18);
+      if (obj->getVectorPtr()) {
+        xfer += Cpp2Ops<nebula::Vector>::serializedSize(proto, obj->getVectorPtr());
+      } else {
+        xfer += proto->serializedStructSize("Vector");
+        xfer += proto->serializedSizeStop();
+      }
+      break;
+    }
     case nebula::Value::Type::__EMPTY__: {
       break;
     }
@@ -764,6 +803,16 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSizeZC(Protocol const* proto, nebula:
         xfer += Cpp2Ops<nebula::Duration>::serializedSizeZC(proto, obj->getDurationPtr());
       } else {
         xfer += proto->serializedStructSize("Duration");
+        xfer += proto->serializedSizeStop();
+      }
+      break;
+    }
+    case nebula::Value::Type::VECTOR: {
+      xfer += proto->serializedFieldSize("vecVal", protocol::T_STRUCT, 18);
+      if (obj->getVectorPtr()) {
+        xfer += Cpp2Ops<nebula::Vector>::serializedSizeZC(proto, obj->getVectorPtr());
+      } else {
+        xfer += proto->serializedStructSize("Vector");
         xfer += proto->serializedSizeStop();
       }
       break;
