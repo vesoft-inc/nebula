@@ -8,6 +8,10 @@
 #include "common/utils/IndexKeyUtils.h"
 
 namespace nebula {
+// static
+const char NebulaKeyUtils::kDefaultColumnFamilyName[] = "default";
+const char NebulaKeyUtils::kVectorColumnFamilyName[] = "vector";
+const char NebulaKeyUtils::kIdVidMapColumnFamilyName[] = "idvidmap";
 
 // static
 bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, const VertexID& srcVId, const VertexID& dstVId) {

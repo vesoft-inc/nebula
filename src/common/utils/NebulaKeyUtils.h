@@ -313,6 +313,11 @@ class NebulaKeyUtils final {
 
   static constexpr char kLockVersion = 0;
   static constexpr char kEdgeVersion = 1;
+
+ public:
+  static const char kDefaultColumnFamilyName[];
+  static const char kVectorColumnFamilyName[];
+  static const char kIdVidMapColumnFamilyName[];
 };
 
 }  // namespace nebula

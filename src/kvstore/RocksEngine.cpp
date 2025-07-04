@@ -7,6 +7,8 @@
 
 #include <folly/String.h>
 #include <rocksdb/convenience.h>
+#include <rocksdb/db.h>
+#include <rocksdb/options.h>
 
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
@@ -63,48 +65,112 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
 
   openBackupEngine(spaceId);
 
-  rocksdb::Options options;
+  std::vector<std::string> cfNames = {NebulaKeyUtils::kDefaultColumnFamilyName,
+                                      NebulaKeyUtils::kVectorColumnFamilyName,
+                                      NebulaKeyUtils::kIdVidMapColumnFamilyName};
+
+  rocksdb::DBOptions dbOptions;
+  rocksdb::ColumnFamilyOptions basecfOptions;
   rocksdb::DB* db = nullptr;
-  rocksdb::Status status = initRocksdbOptions(options, spaceId, vIdLen);
+  rocksdb::Status status = initRocksdbOptions(dbOptions, basecfOptions, spaceId, vIdLen);
   CHECK(status.ok()) << status.ToString();
-  if (mergeOp != nullptr) {
-    options.merge_operator = mergeOp;
+
+  std::vector<rocksdb::ColumnFamilyDescriptor> cfDescriptors;
+  for (const auto& name : cfNames) {
+    rocksdb::ColumnFamilyOptions cfOptions = basecfOptions;
+    if (mergeOp != nullptr) {
+      cfOptions.merge_operator = mergeOp;
+    }
+    if (cfFactory != nullptr) {
+      cfOptions.compaction_filter_factory = cfFactory;
+    }
+    cfDescriptors.emplace_back(name, cfOptions);
   }
-  if (cfFactory != nullptr) {
-    options.compaction_filter_factory = cfFactory;
+  cfHandles_.clear();
+  if (readonly) {
+    status = rocksdb::DB::OpenForReadOnly(dbOptions, path, cfDescriptors, &cfHandles_, &db);
+  } else {
+    status = rocksdb::DB::Open(dbOptions, path, cfDescriptors, &cfHandles_, &db);
   }
 
-  if (readonly) {
-    status = rocksdb::DB::OpenForReadOnly(options, path, &db);
-  } else {
-    status = rocksdb::DB::Open(options, path, &db);
+  if (!status.ok()) {
+    if (readonly) {
+      LOG(FATAL) << "Failed to open cf not found by readonly: " << status.ToString();
+    }
+    LOG(INFO) << "DB::Open failed: " << status.ToString() << ". Trying to create column families.";
+    // We need first open the db with default column family, then create the other column families.
+    // Last we reopen the db with all column families.
+    rocksdb::Options singleCFOptions(dbOptions, cfDescriptors[0].options);
+    initRocksdbOptions(singleCFOptions, spaceId, vIdLen);
+    status = rocksdb::DB::Open(singleCFOptions, path, &db);
+    CHECK(status.ok()) << "Failed to open DB with default CF for creation: " << status.ToString();
+    size_t cfCount = cfDescriptors.size();
+    for (size_t i = 0; i < cfCount; ++i) {
+      if (cfDescriptors[i].name == NebulaKeyUtils::kDefaultColumnFamilyName) {
+        continue;
+      }
+      rocksdb::ColumnFamilyHandle* handle = nullptr;
+      status = db->CreateColumnFamily(cfDescriptors[i].options, cfDescriptors[i].name, &handle);
+      if (!status.ok()) {
+        LOG(FATAL) << "Failed to create column family " << cfDescriptors[i].name << ": "
+                   << status.ToString();
+      }
+      // cfHandles_.emplace_back(handle);
+    }
+
+    delete db;
+    db = nullptr;
+    cfHandles_.clear();
+    status = rocksdb::DB::Open(dbOptions, path, cfDescriptors, &cfHandles_, &db);
+    std::vector<std::string> column_families;
+    // rocksdb::DB::ListColumnFamilies(dbOptions, path, &column_families);
+    // for (auto& column : column_families) {
+    //   if (std::find(cfNames.begin(), cfNames.end(), column) == cfNames.end()) {
+    //     LOG(INFO) << "Column family " << column << " not found in the expected list, "
+    //               << "will be ignored.";
+    //   } else {
+    //     LOG(INFO) << "Column family " << column << " found in the expected list.";
+    //   }
+    // }
+    CHECK(status.ok()) << "Failed to reopen DB with new CFs: " << status.ToString();
   }
-  CHECK(status.ok()) << status.ToString();
+
+  db_.reset(db);
+  CHECK(db_ != nullptr) << "DB should not be null after opening";
+  CHECK(cfNames.size() == cfHandles_.size());
+  cfHandleMap_.clear();
+  for (size_t i = 0; i < cfNames.size(); ++i) {
+    cfHandleMap_.insert({cfNames[i], cfHandles_[i]});
+  }
   if (!readonly && spaceId_ != kDefaultSpaceId /* only for storage*/) {
     rocksdb::ReadOptions readOptions;
     std::string dataVersionValue = "";
-    status = db->Get(readOptions, NebulaKeyUtils::dataVersionKey(), &dataVersionValue);
+
+    status = db_->Get(readOptions,
+                      cfHandleMap_[NebulaKeyUtils::kDefaultColumnFamilyName],
+                      NebulaKeyUtils::dataVersionKey(),
+                      &dataVersionValue);
     if (status.IsNotFound()) {
       rocksdb::WriteOptions writeOptions;
-      status = db->Put(
-          writeOptions, NebulaKeyUtils::dataVersionKey(), NebulaKeyUtils::dataVersionValue());
+      status = db_->Put(writeOptions,
+                        cfHandleMap_[NebulaKeyUtils::kDefaultColumnFamilyName],
+                        NebulaKeyUtils::dataVersionKey(),
+                        NebulaKeyUtils::dataVersionValue());
     }
     CHECK(status.ok()) << status.ToString();
   }
-  db_.reset(db);
-  std::string factoryName = options.table_factory->Name();
+
+  std::string factoryName = basecfOptions.table_factory->Name();
   if (factoryName == rocksdb::TableFactory::kBlockBasedTableName()) {
     extractorLen_ = sizeof(PartitionID) + vIdLen;
   } else if (factoryName == rocksdb::TableFactory::kPlainTableName()) {
-    // PlainTable only support prefix-based seek, which means if the prefix is not inserted into
-    // rocksdb, we can't read them from "prefix" api anymore. For simplicity, we just set the length
-    // of prefix extractor to the minimum length we used in "prefix" api, which is 4 when we seek by
-    // tagPrefix(partId) or edgePrefix(partId).
     isPlainTable_ = true;
     extractorLen_ = sizeof(PartitionID);
   }
+
   partsNum_ = allParts().size();
-  LOG(INFO) << "open rocksdb on " << path;
+  LOG(INFO) << "open rocksdb on " << path
+            << " with column families: " << folly::join(", ", cfNames);
 
   backup();
 }
@@ -118,7 +184,8 @@ void RocksEngine::stop() {
 }
 
 std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
-  return std::make_unique<RocksWriteBatch>();
+  return std::make_unique<RocksWriteBatch>(&cfHandleMap_,
+                                           cfHandleMap_[NebulaKeyUtils::kDefaultColumnFamilyName]);
 }
 
 nebula::cpp2::ErrorCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
@@ -148,7 +215,38 @@ nebula::cpp2::ErrorCode RocksEngine::get(const std::string& key,
   if (UNLIKELY(snapshot != nullptr)) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
-  rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), value);
+  auto it = cfHandleMap_.find(NebulaKeyUtils::kDefaultColumnFamilyName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << NebulaKeyUtils::kDefaultColumnFamilyName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  rocksdb::Status status = db_->Get(options, it->second, rocksdb::Slice(key), value);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else if (status.IsNotFound()) {
+    VLOG(4) << "Get: " << key << " Not Found";
+    return nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
+  } else {
+    VLOG(4) << "Get Failed: " << key << " " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::get(const std::string& cfName,
+                                         const std::string& key,
+                                         std::string* value,
+                                         const void* snapshot) {
+  memory::MemoryCheckOffGuard guard;
+  rocksdb::ReadOptions options;
+  if (UNLIKELY(snapshot != nullptr)) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  rocksdb::Status status = db_->Get(options, it->second, rocksdb::Slice(key), value);
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else if (status.IsNotFound()) {
@@ -165,11 +263,51 @@ std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
   memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   std::vector<rocksdb::Slice> slices;
+  std::vector<rocksdb::ColumnFamilyHandle*> cfHandles;
+
   for (size_t index = 0; index < keys.size(); index++) {
     slices.emplace_back(keys[index]);
+    auto it = cfHandleMap_.find(NebulaKeyUtils::kDefaultColumnFamilyName);
+    if (it == cfHandleMap_.end()) {
+      cfHandles.emplace_back(nullptr);
+    } else {
+      cfHandles.emplace_back(it->second);
+    }
   }
 
-  auto status = db_->MultiGet(options, slices, values);
+  auto status = db_->MultiGet(options, cfHandles, slices, values);
+  std::vector<Status> ret;
+  std::transform(status.begin(), status.end(), std::back_inserter(ret), [](const auto& s) {
+    if (s.ok()) {
+      return Status::OK();
+    } else if (s.IsNotFound()) {
+      return Status::KeyNotFound();
+    } else {
+      return Status::Error();
+    }
+  });
+  return ret;
+}
+
+std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& cfName,
+                                          const std::vector<std::string>& keys,
+                                          std::vector<std::string>* values) {
+  memory::MemoryCheckOffGuard guard;
+  rocksdb::ReadOptions options;
+  std::vector<rocksdb::Slice> slices;
+  std::vector<rocksdb::ColumnFamilyHandle*> cfHandles;
+
+  for (size_t index = 0; index < keys.size(); index++) {
+    slices.emplace_back(keys[index]);
+    auto it = cfHandleMap_.find(cfName[index]);
+    if (it == cfHandleMap_.end()) {
+      cfHandles.emplace_back(nullptr);
+    } else {
+      cfHandles.emplace_back(it->second);
+    }
+  }
+
+  auto status = db_->MultiGet(options, cfHandles, slices, values);
   std::vector<Status> ret;
   std::transform(status.begin(), status.end(), std::back_inserter(ret), [](const auto& s) {
     if (s.ok()) {
@@ -195,7 +333,38 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
   } else {
     options.prefix_same_as_start = true;
   }
-  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
+  auto it = cfHandleMap_.find(NebulaKeyUtils::kDefaultColumnFamilyName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << NebulaKeyUtils::kDefaultColumnFamilyName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
+  if (iter) {
+    iter->Seek(rocksdb::Slice(start));
+    dynamic_cast<RocksRangeIter*>(storageIter->get())->reset(std::move(iter));
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode RocksEngine::range(const std::string& cfName,
+                                           const std::string& start,
+                                           const std::string& end,
+                                           std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
+  storageIter->reset(new RocksRangeIter(start, end));
+  rocksdb::ReadOptions options;
+  options.iterate_upper_bound = dynamic_cast<RocksRangeIter*>(storageIter->get())->upperBound();
+  if (!isPlainTable_) {
+    options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
+  } else {
+    options.prefix_same_as_start = true;
+  }
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
     dynamic_cast<RocksRangeIter*>(storageIter->get())->reset(std::move(iter));
@@ -210,10 +379,78 @@ nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
   // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
   // sure the prefix bloom filter exists. But this is quite error-prone, so we do a check here.
   if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {
-    return prefixWithExtractor(prefix, snapshot, storageIter);
+    return prefixWithExtractor(
+        NebulaKeyUtils::kDefaultColumnFamilyName, prefix, snapshot, storageIter);
   } else {
-    return prefixWithoutExtractor(prefix, snapshot, storageIter);
+    return prefixWithoutExtractor(
+        NebulaKeyUtils::kDefaultColumnFamilyName, prefix, snapshot, storageIter);
   }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& cfName,
+                                            const std::string& prefix,
+                                            std::unique_ptr<KVIterator>* storageIter,
+                                            const void* snapshot) {
+  memory::MemoryCheckOffGuard guard;
+  // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
+  // sure the prefix bloom filter exists. But this is quite error-prone, so we do a check here.
+  if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {
+    return prefixWithExtractor(cfName, prefix, snapshot, storageIter);
+  } else {
+    return prefixWithoutExtractor(cfName, prefix, snapshot, storageIter);
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& cfName,
+                                                         const std::string& prefix,
+                                                         const void* snapshot,
+                                                         std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
+  storageIter->reset(new RocksPrefixIter(prefix));
+  rocksdb::ReadOptions options;
+  options.iterate_upper_bound = dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
+  if (UNLIKELY(snapshot != nullptr)) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
+  options.prefix_same_as_start = true;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
+  if (iter) {
+    iter->Seek(rocksdb::Slice(prefix));
+    dynamic_cast<RocksPrefixIter*>(storageIter->get())->reset(std::move(iter));
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
+    const std::string& cfName,
+    const std::string& prefix,
+    const void* snapshot,
+    std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
+  storageIter->reset(new RocksPrefixIter(prefix));
+  rocksdb::ReadOptions options;
+  options.iterate_upper_bound = dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
+  if (snapshot != nullptr) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
+  // prefix_same_as_start is false by default
+  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
+  if (iter) {
+    iter->Seek(rocksdb::Slice(prefix));
+    dynamic_cast<RocksPrefixIter*>(storageIter->get())->reset(std::move(iter));
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& prefix,
@@ -226,7 +463,6 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
   if (UNLIKELY(snapshot != nullptr)) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
-  options.prefix_same_as_start = true;
   std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(prefix));
@@ -274,6 +510,33 @@ nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& cfName,
+                                                     const std::string& start,
+                                                     const std::string& prefix,
+                                                     std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
+  storageIter->reset(new RocksPrefixIter(prefix));
+  rocksdb::ReadOptions options;
+  options.iterate_upper_bound = dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
+  if (!isPlainTable_) {
+    options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
+  } else {
+    options.prefix_same_as_start = true;
+  }
+
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
+  if (iter) {
+    iter->Seek(rocksdb::Slice(start));
+    dynamic_cast<RocksPrefixIter*>(storageIter->get())->reset(std::move(iter));
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 nebula::cpp2::ErrorCode RocksEngine::scan(std::unique_ptr<KVIterator>* storageIter) {
   memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
@@ -284,10 +547,44 @@ nebula::cpp2::ErrorCode RocksEngine::scan(std::unique_ptr<KVIterator>* storageIt
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+nebula::cpp2::ErrorCode RocksEngine::scan(const std::string& cfName,
+                                          std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
+  rocksdb::ReadOptions options;
+  options.total_order_seek = true;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
+  iter->SeekToFirst();
+  storageIter->reset(new RocksCommonIter(std::move(iter)));
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 nebula::cpp2::ErrorCode RocksEngine::put(std::string key, std::string value) {
   rocksdb::WriteOptions options;
   options.disableWAL = FLAGS_rocksdb_disable_wal;
   rocksdb::Status status = db_->Put(options, key, value);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    VLOG(4) << "Put Failed: " << key << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+nebula::cpp2::ErrorCode RocksEngine::put(const std::string& cfName,
+                                         std::string key,
+                                         std::string value) {
+  rocksdb::WriteOptions options;
+  options.disableWAL = FLAGS_rocksdb_disable_wal;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  rocksdb::Status status = db_->Put(options, it->second, key, value);
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
@@ -312,10 +609,73 @@ nebula::cpp2::ErrorCode RocksEngine::multiPut(std::vector<KV> keyValues) {
   }
 }
 
+nebula::cpp2::ErrorCode RocksEngine::multiPut(const std::string& cfName,
+                                              std::vector<KV> keyValues) {
+  rocksdb::WriteBatch updates(FLAGS_rocksdb_batch_size);
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+
+  for (size_t i = 0; i < keyValues.size(); i++) {
+    updates.Put(it->second, keyValues[i].first, keyValues[i].second);
+  }
+  rocksdb::WriteOptions options;
+  options.disableWAL = FLAGS_rocksdb_disable_wal;
+  rocksdb::Status status = db_->Write(options, &updates);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    VLOG(4) << "MultiPut Failed: " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::multiPut(const std::vector<std::string>& cfNames,
+                                              std::vector<KV> keyValues) {
+  rocksdb::WriteBatch updates(FLAGS_rocksdb_batch_size);
+  for (size_t i = 0; i < keyValues.size(); i++) {
+    auto it = cfHandleMap_.find(cfNames[i]);
+    if (it == cfHandleMap_.end()) {
+      LOG(ERROR) << "Column family " << cfNames[i] << " not found";
+      continue;
+    }
+    updates.Put(it->second, keyValues[i].first, keyValues[i].second);
+  }
+
+  rocksdb::WriteOptions options;
+  options.disableWAL = FLAGS_rocksdb_disable_wal;
+  rocksdb::Status status = db_->Write(options, &updates);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    VLOG(4) << "MultiPut Failed: " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
 nebula::cpp2::ErrorCode RocksEngine::remove(const std::string& key) {
   rocksdb::WriteOptions options;
   options.disableWAL = FLAGS_rocksdb_disable_wal;
   auto status = db_->Delete(options, key);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    VLOG(4) << "Remove Failed: " << key << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::remove(const std::string& cfName, const std::string& key) {
+  rocksdb::WriteOptions options;
+  options.disableWAL = FLAGS_rocksdb_disable_wal;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  auto status = db_->Delete(options, it->second, key);
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
@@ -340,10 +700,51 @@ nebula::cpp2::ErrorCode RocksEngine::multiRemove(std::vector<std::string> keys) 
   }
 }
 
+nebula::cpp2::ErrorCode RocksEngine::multiRemove(const std::vector<std::string>& cfNames,
+                                                 std::vector<std::string> keys) {
+  rocksdb::WriteBatch deletes(FLAGS_rocksdb_batch_size);
+  for (size_t i = 0; i < keys.size(); i++) {
+    auto it = cfHandleMap_.find(cfNames[i]);
+    if (it == cfHandleMap_.end()) {
+      LOG(ERROR) << "Column family " << cfNames[i] << " not found";
+      continue;
+    }
+    deletes.Delete(it->second, keys[i]);
+  }
+  rocksdb::WriteOptions options;
+  options.disableWAL = FLAGS_rocksdb_disable_wal;
+  rocksdb::Status status = db_->Write(options, &deletes);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    VLOG(4) << "MultiRemove Failed: " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
 nebula::cpp2::ErrorCode RocksEngine::removeRange(const std::string& start, const std::string& end) {
   rocksdb::WriteOptions options;
   options.disableWAL = FLAGS_rocksdb_disable_wal;
   auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    VLOG(4) << "RemoveRange Failed: " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::removeRange(const std::string& cfName,
+                                                 const std::string& start,
+                                                 const std::string& end) {
+  rocksdb::WriteOptions options;
+  options.disableWAL = FLAGS_rocksdb_disable_wal;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  auto status = db_->DeleteRange(options, it->second, start, end);
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
@@ -486,11 +887,53 @@ nebula::cpp2::ErrorCode RocksEngine::ingest(const std::vector<std::string>& file
   }
 }
 
+nebula::cpp2::ErrorCode RocksEngine::ingest(const std::string& cfName,
+                                            const std::vector<std::string>& files,
+                                            bool verifyFileChecksum) {
+  if (files.empty()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+  rocksdb::IngestExternalFileOptions options;
+  options.move_files = FLAGS_move_files;
+  options.verify_file_checksum = verifyFileChecksum;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  rocksdb::Status status = db_->IngestExternalFile(it->second, files, options);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    LOG(WARNING) << "Ingest Failed: " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
 nebula::cpp2::ErrorCode RocksEngine::setOption(const std::string& configKey,
                                                const std::string& configValue) {
   std::unordered_map<std::string, std::string> configOptions = {{configKey, configValue}};
 
   rocksdb::Status status = db_->SetOptions(configOptions);
+  if (status.ok()) {
+    LOG(INFO) << "SetOption Succeeded: " << configKey << ":" << configValue;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    LOG(WARNING) << "SetOption Failed: " << configKey << ":" << configValue;
+    return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::setOption(const std::string& cfName,
+                                               const std::string& configKey,
+                                               const std::string& configValue) {
+  std::unordered_map<std::string, std::string> configOptions = {{configKey, configValue}};
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  rocksdb::Status status = db_->SetOptions(it->second, configOptions);
   if (status.ok()) {
     LOG(INFO) << "SetOption Succeeded: " << configKey << ":" << configValue;
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -537,9 +980,47 @@ nebula::cpp2::ErrorCode RocksEngine::compact() {
   }
 }
 
+nebula::cpp2::ErrorCode RocksEngine::compact(const std::string& cfName) {
+  rocksdb::CompactRangeOptions options;
+  options.change_level = FLAGS_rocksdb_compact_change_level;
+  options.target_level = FLAGS_rocksdb_compact_target_level;
+  auto it = cfHandleMap_.find(cfName);
+  if (it == cfHandleMap_.end()) {
+    LOG(ERROR) << "Column family " << cfName << " not found";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  rocksdb::Status status = db_->CompactRange(options, it->second, nullptr, nullptr);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    LOG(WARNING) << "CompactAll Failed: " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
 nebula::cpp2::ErrorCode RocksEngine::flush() {
   rocksdb::FlushOptions options;
   rocksdb::Status status = db_->Flush(options);
+  if (status.ok()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  } else {
+    LOG(WARNING) << "Flush Failed: " << status.ToString();
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::flush(const std::vector<std::string>& cfNames) {
+  rocksdb::FlushOptions options;
+  std::vector<rocksdb::ColumnFamilyHandle*> cfHandles;
+  for (const auto& cfName : cfNames) {
+    auto it = cfHandleMap_.find(cfName);
+    if (it == cfHandleMap_.end()) {
+      LOG(ERROR) << "Column family " << cfName << " not found";
+      return nebula::cpp2::ErrorCode::E_UNKNOWN;
+    }
+    cfHandles.emplace_back(it->second);
+  }
+  rocksdb::Status status = db_->Flush(options, cfHandles);
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
@@ -648,6 +1129,75 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
 
   std::unique_ptr<KVIterator> iter;
   auto ret = prefix(tablePrefix, &iter);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
+  }
+  if (!iter->valid()) {
+    return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
+  }
+
+  rocksdb::Options options;
+  options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
+  rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
+  auto s = sstFileWriter.Open(backupPath);
+  if (!s.ok()) {
+    LOG(WARNING) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
+    return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
+  }
+
+  for (; iter->valid(); iter->next()) {
+    if (filter && filter(iter->key())) {
+      continue;
+    }
+
+    s = sstFileWriter.Put(iter->key().toString(), iter->val().toString());
+    if (!s.ok()) {
+      LOG(WARNING) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
+      sstFileWriter.Finish();
+      return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
+    }
+  }
+
+  s = sstFileWriter.Finish();
+  if (!s.ok()) {
+    LOG(WARNING) << "Failed to insert data when backupTable,  " << backupPath
+                 << ", error: " << s.ToString();
+    return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
+  }
+  if (sstFileWriter.FileSize() == 0) {
+    return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
+  }
+
+  if (backupPath[0] == '/') {
+    return backupPath;
+  }
+  auto result = FileUtils::realPath(backupPath.c_str());
+  if (!result.ok()) {
+    return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
+  }
+  return result.value();
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
+    const std::string& cfName,
+    const std::string& name,
+    const std::string& tablePrefix,
+    std::function<bool(const folly::StringPiece& key)> filter) {
+  auto backupPath = folly::stringPrintf(
+      "%s/checkpoints/%s/%s.sst", dataPath_.c_str(), name.c_str(), tablePrefix.c_str());
+  VLOG(3) << "Start writing the sst file with table (" << tablePrefix
+          << ") to file: " << backupPath;
+
+  auto parent = backupPath.substr(0, backupPath.rfind('/'));
+  if (!FileUtils::exist(parent)) {
+    if (!FileUtils::makeDir(parent)) {
+      LOG(WARNING) << "Make dir " << parent << " failed";
+      return nebula::cpp2::ErrorCode::E_BACKUP_FAILED;
+    }
+  }
+
+  std::unique_ptr<KVIterator> iter;
+  auto ret = prefix(cfName, tablePrefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }

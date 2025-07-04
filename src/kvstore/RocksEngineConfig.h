@@ -83,6 +83,20 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts,
                                    int32_t vidLen = 8);
 
 /**
+ * @brief Build multi column family rocksdb options form gflags
+ *
+ * @param dbOpts Rocksdb DBoptions
+ * @param cfOpts Rocksdb ColumnFamilyOptions
+ * @param spaceId
+ * @param vidLen
+ * @return rocksdb::Status
+ */
+rocksdb::Status initRocksdbOptions(rocksdb::DBOptions &dbOpts,
+                                   rocksdb::ColumnFamilyOptions &cfOpts,
+                                   GraphSpaceID spaceId,
+                                   int32_t vidLen = 8);
+
+/**
  * @brief Load a gflag into map
  *
  * @param map
