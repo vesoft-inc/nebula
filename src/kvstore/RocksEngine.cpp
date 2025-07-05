@@ -184,8 +184,7 @@ void RocksEngine::stop() {
 }
 
 std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
-  return std::make_unique<RocksWriteBatch>(&cfHandleMap_,
-                                           cfHandleMap_[NebulaKeyUtils::kDefaultColumnFamilyName]);
+  return std::make_unique<RocksWriteBatch>(&cfHandleMap_);
 }
 
 nebula::cpp2::ErrorCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,

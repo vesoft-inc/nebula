@@ -184,18 +184,16 @@ class RocksWriteBatch : public WriteBatch {
  private:
   rocksdb::WriteBatch batch_;
   std::unordered_map<std::string, rocksdb::ColumnFamilyHandle*>* cfHandles_{nullptr};
-  rocksdb::ColumnFamilyHandle* defaultCf_{nullptr};
 
  public:
   RocksWriteBatch() : batch_(FLAGS_rocksdb_batch_size) {}
-  RocksWriteBatch(std::unordered_map<std::string, rocksdb::ColumnFamilyHandle*>* cfHandles,
-                  rocksdb::ColumnFamilyHandle* defaultCf)
-      : batch_(FLAGS_rocksdb_batch_size), cfHandles_(cfHandles), defaultCf_(defaultCf) {}
+  explicit RocksWriteBatch(std::unordered_map<std::string, rocksdb::ColumnFamilyHandle*>* cfHandles)
+      : batch_(FLAGS_rocksdb_batch_size), cfHandles_(cfHandles) {}
 
   virtual ~RocksWriteBatch() = default;
 
   nebula::cpp2::ErrorCode put(folly::StringPiece key, folly::StringPiece value) override {
-    if (batch_.Put(defaultCf_, toSlice(key), toSlice(value)).ok()) {
+    if (batch_.Put(toSlice(key), toSlice(value)).ok()) {
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     } else {
       return nebula::cpp2::ErrorCode::E_UNKNOWN;
@@ -204,7 +202,7 @@ class RocksWriteBatch : public WriteBatch {
 
   nebula::cpp2::ErrorCode put(const std::string& cfName,
                               folly::StringPiece key,
-                              folly::StringPiece value) {
+                              folly::StringPiece value) override {
     auto it = cfHandles_->find(cfName);
     if (it == cfHandles_->end()) {
       LOG(ERROR) << "Column family " << cfName << " not found";
@@ -225,7 +223,7 @@ class RocksWriteBatch : public WriteBatch {
     }
   }
 
-  nebula::cpp2::ErrorCode remove(const std::string& cfName, folly::StringPiece key) {
+  nebula::cpp2::ErrorCode remove(const std::string& cfName, folly::StringPiece key) override {
     auto it = cfHandles_->find(cfName);
     if (it == cfHandles_->end()) {
       LOG(ERROR) << "Column family " << cfName << " not found";
@@ -249,7 +247,7 @@ class RocksWriteBatch : public WriteBatch {
 
   nebula::cpp2::ErrorCode removeRange(const std::string& cfName,
                                       folly::StringPiece start,
-                                      folly::StringPiece end) {
+                                      folly::StringPiece end) override {
     auto it = cfHandles_->find(cfName);
     if (it == cfHandles_->end()) {
       LOG(ERROR) << "Column family " << cfName << " not found";
@@ -375,7 +373,7 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode get(const std::string& cfName,
                               const std::string& key,
                               std::string* value,
-                              const void* snapshot = nullptr);
+                              const void* snapshot = nullptr) override;
   /**
    * @brief Read a list of keys
    *
@@ -386,9 +384,9 @@ class RocksEngine : public KVEngine {
    */
   std::vector<Status> multiGet(const std::vector<std::string>& keys,
                                std::vector<std::string>* values) override;
-  std::vector<Status> multiGet(const std::vector<std::string>& cfName,
+  std::vector<Status> multiGet(const std::vector<std::string>& cfNames,
                                const std::vector<std::string>& keys,
-                               std::vector<std::string>* values);
+                               std::vector<std::string>* values) override;
 
   /**
    * @brief Get all results in range [start, end)
@@ -404,7 +402,7 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode range(const std::string& cfName,
                                 const std::string& start,
                                 const std::string& end,
-                                std::unique_ptr<KVIterator>* iter);
+                                std::unique_ptr<KVIterator>* iter) override;
 
   /**
    * @brief Get all results with 'prefix' str as prefix.
@@ -419,7 +417,7 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode prefix(const std::string& cfName,
                                  const std::string& prefix,
                                  std::unique_ptr<KVIterator>* iter,
-                                 const void* snapshot = nullptr);
+                                 const void* snapshot = nullptr) override;
 
   /**
    * @brief Get all results with 'prefix' str as prefix starting form 'start'
@@ -435,7 +433,7 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& cfName,
                                           const std::string& start,
                                           const std::string& prefix,
-                                          std::unique_ptr<KVIterator>* iter);
+                                          std::unique_ptr<KVIterator>* iter) override;
 
   /**
    * @brief Prefix scan with prefix extractor
@@ -475,7 +473,8 @@ class RocksEngine : public KVEngine {
    */
   nebula::cpp2::ErrorCode scan(std::unique_ptr<KVIterator>* iter) override;
 
-  nebula::cpp2::ErrorCode scan(const std::string& cfName, std::unique_ptr<KVIterator>* iter);
+  nebula::cpp2::ErrorCode scan(const std::string& cfName,
+                               std::unique_ptr<KVIterator>* iter) override;
   /*********************
    * Data modification
    ********************/
@@ -487,7 +486,9 @@ class RocksEngine : public KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode put(std::string key, std::string value) override;
-  nebula::cpp2::ErrorCode put(const std::string& cfName, std::string key, std::string value);
+  nebula::cpp2::ErrorCode put(const std::string& cfName,
+                              std::string key,
+                              std::string value) override;
 
   /**
    * @brief Write a batch of records
@@ -498,7 +499,7 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode multiPut(std::vector<KV> keyValues) override;
   nebula::cpp2::ErrorCode multiPut(const std::string& cfName, std::vector<KV> keyValues);
   nebula::cpp2::ErrorCode multiPut(const std::vector<std::string>& cfNames,
-                                   std::vector<KV> keyValues);
+                                   std::vector<KV> keyValues) override;
 
   /**
    * @brief Remove a single key
@@ -507,7 +508,7 @@ class RocksEngine : public KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode remove(const std::string& key) override;
-  nebula::cpp2::ErrorCode remove(const std::string& cfName, const std::string& key);
+  nebula::cpp2::ErrorCode remove(const std::string& cfName, const std::string& key) override;
 
   /**
    * @brief Remove a batch of keys
@@ -517,7 +518,7 @@ class RocksEngine : public KVEngine {
    */
   nebula::cpp2::ErrorCode multiRemove(std::vector<std::string> keys) override;
   nebula::cpp2::ErrorCode multiRemove(const std::vector<std::string>& cfName,
-                                      std::vector<std::string> keys);
+                                      std::vector<std::string> keys) override;
 
   /**
    * @brief Remove key in range [start, end)
@@ -529,7 +530,7 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode removeRange(const std::string& start, const std::string& end) override;
   nebula::cpp2::ErrorCode removeRange(const std::string& cfName,
                                       const std::string& start,
-                                      const std::string& end);
+                                      const std::string& end) override;
 
   /*********************
    * Non-data operation

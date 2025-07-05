@@ -30,6 +30,9 @@ class WriteBatch {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode put(folly::StringPiece key, folly::StringPiece value) = 0;
+  virtual nebula::cpp2::ErrorCode put(const std::string& cfName,
+                                      folly::StringPiece key,
+                                      folly::StringPiece value) = 0;
 
   /**
    * @brief Encode the operation of remove key into write batch
@@ -38,6 +41,7 @@ class WriteBatch {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode remove(folly::StringPiece key) = 0;
+  virtual nebula::cpp2::ErrorCode remove(const std::string& cfName, folly::StringPiece key) = 0;
 
   /**
    * @brief Encode the operation of remove keys in range [start, end) into write batch
@@ -47,6 +51,9 @@ class WriteBatch {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode removeRange(folly::StringPiece start, folly::StringPiece end) = 0;
+  virtual nebula::cpp2::ErrorCode removeRange(const std::string& cfName,
+                                              folly::StringPiece start,
+                                              folly::StringPiece end) = 0;
 };
 
 /**
@@ -120,6 +127,10 @@ class KVEngine {
   virtual nebula::cpp2::ErrorCode get(const std::string& key,
                                       std::string* value,
                                       const void* snapshot = nullptr) = 0;
+  virtual nebula::cpp2::ErrorCode get(const std::string& cfName,
+                                      const std::string& key,
+                                      std::string* value,
+                                      const void* snapshot = nullptr) = 0;
 
   /**
    * @brief Read a list of keys
@@ -131,6 +142,9 @@ class KVEngine {
    */
   virtual std::vector<Status> multiGet(const std::vector<std::string>& keys,
                                        std::vector<std::string>* values) = 0;
+  virtual std::vector<Status> multiGet(const std::vector<std::string>& cfNames,
+                                       const std::vector<std::string>& keys,
+                                       std::vector<std::string>* values) = 0;
 
   /**
    * @brief Get all results in range [start, end)
@@ -141,6 +155,10 @@ class KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode range(const std::string& start,
+                                        const std::string& end,
+                                        std::unique_ptr<KVIterator>* iter) = 0;
+  virtual nebula::cpp2::ErrorCode range(const std::string& cfName,
+                                        const std::string& start,
                                         const std::string& end,
                                         std::unique_ptr<KVIterator>* iter) = 0;
 
@@ -155,6 +173,10 @@ class KVEngine {
   virtual nebula::cpp2::ErrorCode prefix(const std::string& prefix,
                                          std::unique_ptr<KVIterator>* iter,
                                          const void* snapshot = nullptr) = 0;
+  virtual nebula::cpp2::ErrorCode prefix(const std::string& cfName,
+                                         const std::string& prefix,
+                                         std::unique_ptr<KVIterator>* iter,
+                                         const void* snapshot = nullptr) = 0;
 
   /**
    * @brief Get all results with 'prefix' str as prefix starting form 'start'
@@ -167,6 +189,10 @@ class KVEngine {
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& start,
                                                   const std::string& prefix,
                                                   std::unique_ptr<KVIterator>* iter) = 0;
+  virtual nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& cfName,
+                                                  const std::string& start,
+                                                  const std::string& prefix,
+                                                  std::unique_ptr<KVIterator>* iter) = 0;
 
   /**
    * @brief Scan all keys in kv engine
@@ -175,6 +201,8 @@ class KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode scan(std::unique_ptr<KVIterator>* storageIter) = 0;
+  virtual nebula::cpp2::ErrorCode scan(const std::string& cfName,
+                                       std::unique_ptr<KVIterator>* storageIter) = 0;
 
   /**
    * @brief Write a single record
@@ -184,6 +212,9 @@ class KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode put(std::string key, std::string value) = 0;
+  virtual nebula::cpp2::ErrorCode put(const std::string& cfName,
+                                      std::string key,
+                                      std::string value) = 0;
 
   /**
    * @brief Write a batch of records
@@ -192,6 +223,8 @@ class KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode multiPut(std::vector<KV> keyValues) = 0;
+  virtual nebula::cpp2::ErrorCode multiPut(const std::vector<std::string>& cfNames,
+                                           std::vector<KV> keyValues) = 0;
 
   /**
    * @brief Remove a single key
@@ -200,6 +233,7 @@ class KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode remove(const std::string& key) = 0;
+  virtual nebula::cpp2::ErrorCode remove(const std::string& cfName, const std::string& key) = 0;
 
   /**
    * @brief Remove a batch of keys
@@ -209,6 +243,8 @@ class KVEngine {
    */
   virtual nebula::cpp2::ErrorCode multiRemove(std::vector<std::string> keys) = 0;
 
+  virtual nebula::cpp2::ErrorCode multiRemove(const std::vector<std::string>& cfNames,
+                                              std::vector<std::string> keys) = 0;
   /**
    * @brief Remove key in range [start, end)
    *
@@ -217,6 +253,9 @@ class KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode removeRange(const std::string& start, const std::string& end) = 0;
+  virtual nebula::cpp2::ErrorCode removeRange(const std::string& cfName,
+                                              const std::string& start,
+                                              const std::string& end) = 0;
 
   /**
    * @brief Add partId into current storage engine.
