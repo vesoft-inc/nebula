@@ -12,7 +12,7 @@ import re
 import threading
 import json
 
-from nebula3.common.ttypes import NList, NMap, Value, ErrorCode
+from nebula3.common.ttypes import Vector, NList, NMap, Value, ErrorCode
 from nebula3.data.DataObject import ValueWrapper
 from nebula3.Exception import AuthFailedException
 from pytest_bdd import given, parsers, then, when
@@ -153,10 +153,18 @@ def value(any):
         v.set_lVal(list2Nlist(any))
     elif isinstance(any, dict):
         v.set_mVal(map2NMap(any))
+    elif isinstance(any, tuple):
+        v.set_vecVal(tuple2Vector(any))
     else:
         raise TypeError("Do not support convert " + str(type(any)) + " to nebula.Value")
     return v
 
+def tuple2Vector(tuple)->Vector:
+    vector = Vector()
+    vector.values = []
+    for item in tuple:
+        vector.values.append(item)
+    return vector
 
 def list2Nlist(list):
     nlist = NList()

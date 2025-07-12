@@ -35,7 +35,8 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
     auto type = spec->type();
     column.name_ref() = *spec->name();
     column.type.type_ref() = type;
-    if (nebula::cpp2::PropertyType::FIXED_STRING == type) {
+    bool isVectorCol = nebula::cpp2::PropertyType::VECTOR == type;
+    if (nebula::cpp2::PropertyType::FIXED_STRING == type || isVectorCol) {
       column.type.type_length_ref() = spec->typeLen();
     } else if (nebula::cpp2::PropertyType::GEOGRAPHY == type) {
       column.type.geo_shape_ref() = spec->geoShape();
@@ -66,7 +67,15 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
       return Status::SemanticError("Column `%s' must have a default value if it's not nullable",
                                    spec->name()->c_str());
     }
-    schema.columns_ref().value().emplace_back(std::move(column));
+    if (isVectorCol) {
+      if (!schema.vector_columns_ref().has_value()) {
+        schema.vector_columns_ref().ensure().emplace_back(std::move(column));
+      } else {
+        schema.vector_columns_ref().value().emplace_back(std::move(column));
+      }
+    } else {
+      schema.columns_ref().value().emplace_back(std::move(column));
+    }
   }
   return Status::OK();
 }

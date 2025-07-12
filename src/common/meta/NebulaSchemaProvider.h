@@ -140,10 +140,60 @@ class NebulaSchemaProvider {
     }
   };
 
- public:
-  explicit NebulaSchemaProvider(SchemaVer ver) : ver_(ver), numNullableFields_(0) {}
+  class VectorIterator final {
+    friend class NebulaSchemaProvider;
 
-  NebulaSchemaProvider() : ver_(0), numNullableFields_(0) {}
+   public:
+    const SchemaField& operator*() const {
+      return *field_;
+    }
+
+    const SchemaField* operator->() const {
+      return field_;
+    }
+
+    VectorIterator& operator++() {
+      if (field_) {
+        index_++;
+        field_ = schema_->field(index_);
+      }
+      return *this;
+    }
+
+    VectorIterator& operator+(uint16_t steps) {
+      if (field_) {
+        index_ += steps;
+        field_ = schema_->field(index_);
+      }
+      return *this;
+    }
+
+    operator bool() const {
+      return static_cast<bool>(field_);
+    }
+
+    bool operator==(const VectorIterator& rhs) const {
+      return schema_ == rhs.schema_ && (index_ == rhs.index_ || (!field_ && !rhs.field_));
+    }
+
+   private:
+    const NebulaSchemaProvider* schema_;
+    size_t numFields_;
+    int64_t index_;
+    const SchemaField* field_;
+
+   private:
+    explicit VectorIterator(const NebulaSchemaProvider* schema, int64_t idx = 0)
+        : schema_(schema), numFields_(schema_->getNumFields()), index_(idx) {
+      field_ = schema_->vectorField(index_);
+    }
+  };
+
+ public:
+  explicit NebulaSchemaProvider(SchemaVer ver)
+      : ver_(ver), numNullableFields_(0), numVectorNullableFields_(0) {}
+
+  NebulaSchemaProvider() : ver_(0), numNullableFields_(0), numVectorNullableFields_(0) {}
 
   SchemaVer getVersion() const noexcept;
   // Returns the size of fields_
@@ -177,6 +227,33 @@ class NebulaSchemaProvider {
     return Iterator(this, getNumFields());
   }
 
+  size_t getVectorNumFields() const noexcept;
+  size_t getVectorNumNullableFields() const noexcept;
+  size_t vectorSize() const noexcept;
+
+  int64_t getVectorFieldIndex(const std::string& name) const;
+  const char* getVectorFieldName(int64_t index) const;
+
+  nebula::cpp2::PropertyType getVectorFieldType(int64_t index) const;
+  nebula::cpp2::PropertyType getVectorFieldType(const std::string& name) const;
+
+  const SchemaField* vectorField(int64_t index) const;
+  const SchemaField* vectorField(const std::string& name) const;
+
+  void addVectorField(const std::string& name,
+                      nebula::cpp2::PropertyType type,
+                      size_t fixedStrLen,
+                      bool nullable,
+                      std::string defaultValue,
+                      cpp2::GeoShape geoShape);
+  VectorIterator vecbegin() const {
+    return VectorIterator(this, 0);
+  }
+
+  VectorIterator vecend() const {
+    return VectorIterator(this, getVectorNumFields());
+  }
+
   void setProp(cpp2::SchemaProp schemaProp);
 
   const cpp2::SchemaProp getProp() const;
@@ -184,7 +261,7 @@ class NebulaSchemaProvider {
   StatusOr<std::pair<std::string, int64_t>> getTTLInfo() const;
 
   bool hasNullableCol() const {
-    return numNullableFields_ != 0;
+    return numNullableFields_ != 0 && numVectorNullableFields_ != 0;
   }
 
  private:
@@ -197,6 +274,10 @@ class NebulaSchemaProvider {
   std::unordered_map<std::string, int64_t> fieldNameIndex_;
   std::vector<SchemaField> fields_;
   size_t numNullableFields_;
+  // for vector columns
+  std::unordered_map<std::string, int64_t> vectorFieldNameIndex_;
+  std::vector<SchemaField> vector_fields_;
+  size_t numVectorNullableFields_;
   cpp2::SchemaProp schemaProp_;
 };
 

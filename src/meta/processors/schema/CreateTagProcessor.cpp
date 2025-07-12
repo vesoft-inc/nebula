@@ -43,8 +43,23 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     return;
   }
 
+  std::vector<cpp2::ColumnDef> vectorColumns;
+  if (req.get_schema().get_vector_columns() != nullptr) {
+    vectorColumns = std::move(*req.get_schema().get_vector_columns());
+    if (!vectorColumns.empty()) {
+      if (!SchemaUtil::checkType(vectorColumns)) {
+        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+      }
+    }
+  }
+
   cpp2::Schema schema;
   schema.columns_ref() = std::move(columns);
+  if (!vectorColumns.empty()) {
+    schema.vector_columns_ref() = std::move(vectorColumns);
+  }
   schema.schema_prop_ref() = req.get_schema().get_schema_prop();
 
   auto ret = getTagId(spaceId, tagName);

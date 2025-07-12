@@ -158,6 +158,7 @@ using namespace nebula;
     nebula::meta::cpp2::ServiceClient      *service_client_item;
     nebula::ServiceClientList              *service_client_list;
     nebula::QueryUniqueIdentifier          *query_unique_identifier;
+    std::vector<float>                     *vector_list;
 }
 
 /* destructors */
@@ -170,7 +171,7 @@ using namespace nebula;
 
 /* keywords */
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
-%token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME KW_DURATION
+%token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME KW_DURATION KW_VECTOR
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES KW_IGNORE_EXISTED_INDEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
@@ -236,6 +237,7 @@ using namespace nebula;
 
 %type <strval> name_label unreserved_keyword predicate_name opt_analyzer
 %type <expr> expression expression_internal
+%type <vector_list> vector_element_list
 %type <expr> property_expression
 %type <expr> vertex_prop_expression
 %type <expr> edge_prop_expression
@@ -584,6 +586,7 @@ unreserved_keyword
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_CLEAR              { $$ = new std::string("clear"); }
     | KW_ANALYZER           { $$ = new std::string("analyzer"); }
+    | KW_VECTOR             { $$ = new std::string("vector"); }
     ;
 
 expression
@@ -748,6 +751,22 @@ constant_expression
     }
     | INTEGER {
         $$ = ConstantExpression::make(qctx->objPool(), $1);
+    }
+    | L_PAREN vector_element_list R_PAREN {
+        $$ = ConstantExpression::make(qctx->objPool(), nebula::Vector(*$2));
+        delete $2;
+    }
+    ;
+
+vector_element_list
+    : DOUBLE COMMA DOUBLE {
+        $$ = new std::vector<float>;
+        $$->emplace_back($1);
+        $$->emplace_back($3);
+    }
+    | vector_element_list COMMA DOUBLE {
+        $$ = $1;
+        $$->emplace_back($3);
     }
     ;
 
@@ -1321,6 +1340,11 @@ type_spec
     | KW_SET LT KW_FLOAT GT {
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->type_ref() = nebula::cpp2::PropertyType::SET_FLOAT;
+    } 
+    | KW_VECTOR L_PAREN INTEGER R_PAREN {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::VECTOR;
+        $$->type_length_ref() = $3;
     }
     ;
 

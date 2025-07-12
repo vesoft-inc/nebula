@@ -278,9 +278,19 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
     }
     case PropertyType::VECTOR: {
       // detect column dim and value dim
-      return column.get_type().type_length_ref().has_value() && value.isVector() &&
-             value.getVector().dim() ==
-                 static_cast<size_t>(column.get_type().type_length_ref().value());
+      if (!value.isVector()) {
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        return false;
+      }
+      if (!column.get_type().type_length_ref().has_value() ||
+          value.getVector().dim() !=
+              static_cast<size_t>(column.get_type().type_length_ref().value())) {
+        LOG(INFO) << "Invalid default value for ` " << name << "', value dim is "
+                  << value.getVector().dim() << ", but column dim is "
+                  << column.get_type().type_length_ref().value();
+        return false;
+      }
+      return true;
     }
     case PropertyType::UNKNOWN:
     case PropertyType::VID:

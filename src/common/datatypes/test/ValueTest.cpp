@@ -1572,7 +1572,30 @@ TEST(Value, typeName) {
 }
 
 using serializer = apache::thrift::CompactSerializer;
-
+TEST(Value, VectorDecodeEncode) {
+  std::vector<Value> values{
+      // Vector
+      Value(Vector({1, 2, 3})),
+  };
+  for (const auto& val : values) {
+    std::string buf;
+    buf.reserve(128);
+    serializer::serialize(val, &buf);
+    Value valCopy;
+    std::size_t s = serializer::deserialize(buf, valCopy);
+    ASSERT_EQ(s, buf.size());
+    if (val.isNull()) {
+      EXPECT_EQ(valCopy.isNull(), true);
+      EXPECT_EQ(val.getNull(), valCopy.getNull());
+      continue;
+    }
+    if (val.empty()) {
+      EXPECT_EQ(valCopy.empty(), true);
+      continue;
+    }
+    EXPECT_EQ(val, valCopy);
+  }
+}
 TEST(Value, DecodeEncode) {
   std::vector<Value> values{
       // empty

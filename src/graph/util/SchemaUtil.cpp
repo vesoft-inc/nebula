@@ -70,6 +70,23 @@ std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProv
                         exprStr,
                         col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
   }
+  if (schema.get_vector_columns() == nullptr) {
+    return schemaPtr;
+  }
+  for (auto col : *schema.get_vector_columns()) {
+    bool hasDef = col.default_value_ref().has_value();
+    std::string exprStr;
+    if (hasDef) {
+      exprStr = *col.default_value_ref();
+    }
+    // For vector type, we need prop id and dimension
+    schemaPtr->addVectorField(col.get_name(),
+                              col.get_type().get_type(),
+                              col.type.type_length_ref().value_or(0),
+                              col.nullable_ref().value_or(false),
+                              exprStr,
+                              col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+  }
   return schemaPtr;
 }
 
@@ -182,6 +199,39 @@ StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
     }
     dataSet.emplace_back(std::move(row));
   }
+  if (schema.get_vector_columns() != nullptr) {
+    for (auto &col : *schema.get_vector_columns()) {
+      Row row;
+      row.values.emplace_back(Value(col.get_name()));
+      row.values.emplace_back(typeToString(col));
+      auto nullable = col.nullable_ref().has_value() ? *col.nullable_ref() : false;
+      row.values.emplace_back(nullable ? "YES" : "NO");
+      auto defaultValue = Value::kEmpty;
+      ObjectPool tempPool;
+
+      if (col.default_value_ref().has_value()) {
+        auto expr = Expression::decode(&tempPool, *col.default_value_ref());
+        if (expr == nullptr) {
+          LOG(ERROR) << "Internal error: Wrong default value expression.";
+          defaultValue = Value();
+          continue;
+        }
+        if (expr->kind() == Expression::Kind::kConstant) {
+          QueryExpressionContext ctx;
+          defaultValue = Expression::eval(expr, ctx(nullptr));
+        } else {
+          defaultValue = Value(expr->toString());
+        }
+      }
+      row.values.emplace_back(std::move(defaultValue));
+      if (col.comment_ref().has_value()) {
+        row.values.emplace_back(*col.comment_ref());
+      } else {
+        row.values.emplace_back();
+      }
+      dataSet.emplace_back(std::move(row));
+    }
+  }
   return dataSet;
 }
 
@@ -231,6 +281,38 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
   if (!(*schema.columns_ref()).empty()) {
     createStr.resize(createStr.size() - 2);
     createStr += "\n";
+  }
+  if (schema.get_vector_columns() != nullptr) {
+    for (auto &col : *schema.get_vector_columns()) {
+      createStr += " `" + col.get_name() + "`";
+      createStr += " " + typeToString(col);
+      auto nullable = col.nullable_ref().has_value() ? *col.nullable_ref() : false;
+      if (!nullable) {
+        createStr += " NOT NULL";
+      } else {
+        createStr += " NULL";
+      }
+
+      if (col.default_value_ref().has_value()) {
+        auto encodeStr = *col.default_value_ref();
+        auto expr = Expression::decode(&tempPool, encodeStr);
+        if (expr == nullptr) {
+          LOG(ERROR) << "Internal error: the default value is wrong expression.";
+          continue;
+        }
+        createStr += " DEFAULT " + expr->toString();
+      }
+      if (col.comment_ref().has_value()) {
+        createStr += " COMMENT \"";
+        createStr += *col.comment_ref();
+        createStr += "\"";
+      }
+      createStr += ",\n";
+    }
+    if (!(*schema.get_vector_columns()).empty()) {
+      createStr.resize(createStr.size() - 2);
+      createStr += "\n";
+    }
   }
   createStr += ")";
   auto prop = schema.get_schema_prop();

@@ -69,6 +69,10 @@ std::string ColumnSpecification::toString() const {
     buf += "FIXED_STRING(";
     buf += std::to_string(typeLen_);
     buf += ")";
+  } else if (nebula::cpp2::PropertyType::VECTOR == type_) {
+    buf += "VECTOR(";
+    buf += std::to_string(typeLen_);
+    buf += ")";
   } else {
     buf += apache::thrift::util::enumNameSafe(type_);
   }

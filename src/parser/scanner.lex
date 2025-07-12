@@ -139,6 +139,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "DATE"                      { return TokenType::KW_DATE; }
 "TIME"                      { return TokenType::KW_TIME; }
 "DATETIME"                  { return TokenType::KW_DATETIME; }
+"VECTOR"                    { return TokenType::KW_VECTOR; }
 "TAG"                       { return TokenType::KW_TAG; }
 "TAGS"                      { return TokenType::KW_TAGS; }
 "UNION"                     { return TokenType::KW_UNION; }

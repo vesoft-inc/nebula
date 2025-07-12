@@ -58,7 +58,7 @@ class TestUtils {
     column.nullable_ref() = isNull;
     cpp2::ColumnTypeDef typeDef;
     typeDef.type_ref() = type;
-    if (type == PropertyType::FIXED_STRING) {
+    if (type == PropertyType::FIXED_STRING || type == PropertyType::VECTOR) {
       typeDef.type_length_ref() = typeLen;
     }
     column.type_ref() = std::move(typeDef);
