@@ -27,6 +27,7 @@ using Port = int32_t;
 // be appended to the end
 using VertexID = std::string;
 using TagID = int32_t;
+using PropID = int32_t;
 using TagVersion = int64_t;
 using EdgeType = int32_t;
 using EdgeRanking = int64_t;

@@ -55,6 +55,52 @@ class KeyUtilsTestBase : public ::testing::Test {
     ASSERT_EQ(rank, NebulaKeyUtils::getRank(vIdLen_, edgeKey));
   }
 
+  void verifyVectorTag(
+      PartitionID partId, const VertexID& vId, TagID tagId, PropID propId, size_t actualSize) {
+    auto vecTagKey = NebulaKeyUtils::vectorTagKey(vIdLen_, partId, vId, tagId, propId);
+    // Expected size: sizeof(PartitionID) + vIdLen_ + sizeof(TagID) + sizeof(PropID)
+    ASSERT_EQ(vecTagKey.size(), kVectorTagLen + vIdLen_);
+    ASSERT_TRUE(NebulaKeyUtils::isVector(vIdLen_, vecTagKey));
+    ASSERT_FALSE(NebulaKeyUtils::isVectorEdge(vIdLen_, vecTagKey));
+
+    ASSERT_EQ(partId, NebulaKeyUtils::getPart(vecTagKey));
+    ASSERT_EQ(vId, NebulaKeyUtils::getVectorVertexId(vIdLen_, vecTagKey).subpiece(0, actualSize));
+    ASSERT_EQ(tagId, NebulaKeyUtils::getVectorTagId(vIdLen_, vecTagKey));
+    ASSERT_EQ(propId, NebulaKeyUtils::getVectorPropId(vIdLen_, vecTagKey));
+  }
+
+  void verifyVectorEdge(PartitionID partId,
+                        const VertexID& srcId,
+                        EdgeType type,
+                        EdgeRanking rank,
+                        const VertexID& dstId,
+                        PropID propId,
+                        EdgeVerPlaceHolder edgeVersion,
+                        size_t actualSize) {
+    auto vecEdgeKey = NebulaKeyUtils::vectorEdgeKey(
+        vIdLen_, partId, srcId, type, rank, dstId, propId, edgeVersion);
+
+    ASSERT_EQ(vecEdgeKey.size(), kVectorEdgeLen + (vIdLen_ << 1));
+
+    ASSERT_TRUE(NebulaKeyUtils::isVectorEdge(vIdLen_, vecEdgeKey));
+    ASSERT_FALSE(NebulaKeyUtils::isVector(vIdLen_, vecEdgeKey));
+
+    ASSERT_EQ(vecEdgeKey.substr(0, sizeof(PartitionID) + vIdLen_),
+              NebulaKeyUtils::vectorEdgePrefix(vIdLen_, partId, srcId));
+    ASSERT_EQ(vecEdgeKey.substr(0, sizeof(PartitionID) + vIdLen_ + sizeof(EdgeType)),
+              NebulaKeyUtils::vectorEdgePrefix(vIdLen_, partId, srcId, type));
+    ASSERT_EQ(
+        vecEdgeKey.substr(
+            0, sizeof(PartitionID) + vIdLen_ + sizeof(EdgeType) + sizeof(EdgeRanking) + vIdLen_),
+        NebulaKeyUtils::vectorEdgePrefix(vIdLen_, partId, srcId, type, rank, dstId));
+
+    ASSERT_EQ(partId, NebulaKeyUtils::getPart(vecEdgeKey));
+    ASSERT_EQ(srcId, NebulaKeyUtils::getSrcId(vIdLen_, vecEdgeKey).subpiece(0, actualSize));
+    ASSERT_EQ(dstId, NebulaKeyUtils::getDstId(vIdLen_, vecEdgeKey).subpiece(0, actualSize));
+    ASSERT_EQ(type, NebulaKeyUtils::getEdgeType(vIdLen_, vecEdgeKey));
+    ASSERT_EQ(rank, NebulaKeyUtils::getRank(vIdLen_, vecEdgeKey));
+  }
+
  protected:
   size_t vIdLen_;
 };
@@ -175,6 +221,113 @@ TEST_F(V2LongTest, RankTest) {
 
   rank = 9223372036854775807L;
   verifyEdge(partId, srcId, type, rank, dstId, edgeVersion, 10);
+}
+
+TEST_F(V1Test, VectorSimpleTest) {
+  PartitionID partId = 123;
+  PropID propId = 3030;
+
+  VertexID vId = getStringId(1001L);
+  TagID tagId = 2020;
+  verifyVectorTag(partId, vId, tagId, propId, sizeof(int64_t));
+
+  VertexID srcId = getStringId(1001L), dstId = getStringId(2001L);
+  EdgeType type = 1010;
+  EdgeRanking rank = 10L;
+  EdgeVerPlaceHolder edgeVersion = 1;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, sizeof(int64_t));
+}
+
+TEST_F(V1Test, VectorNegativeEdgeTypeTest) {
+  PartitionID partId = 123;
+  PropID propId = 3030;
+  VertexID vId = getStringId(1001L);
+  TagID tagId = 2020;
+  verifyVectorTag(partId, vId, tagId, propId, sizeof(int64_t));
+
+  VertexID srcId = getStringId(1001L), dstId = getStringId(2001L);
+  EdgeType type = -1010;
+  EdgeRanking rank = 10L;
+  EdgeVerPlaceHolder edgeVersion = 1;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, sizeof(int64_t));
+}
+
+TEST_F(V2ShortTest, VectorSimpleTest) {
+  PartitionID partId = 123;
+  PropID propId = 3030;
+
+  VertexID vId = "0123456789";
+  TagID tagId = 2020;
+  verifyVectorTag(partId, vId, tagId, propId, 10);
+
+  VertexID srcId = "0123456789", dstId = "9876543210";
+  EdgeType type = 1010;
+  EdgeRanking rank = 10L;
+  EdgeVerPlaceHolder edgeVersion = 1;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, 10);
+}
+
+TEST_F(V2ShortTest, VectorNegativeEdgeTypeTest) {
+  PartitionID partId = 123;
+  PropID propId = 3030;
+
+  VertexID vId = "0123456789";
+  TagID tagId = 2020;
+  verifyVectorTag(partId, vId, tagId, propId, 10);
+
+  VertexID srcId = "0123456789", dstId = "9876543210";
+  EdgeType type = -1010;
+  EdgeRanking rank = 10L;
+  EdgeVerPlaceHolder edgeVersion = 1;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, 10);
+}
+
+TEST_F(V2LongTest, VectorSimpleTest) {
+  PartitionID partId = 123;
+  PropID propId = 3030;
+
+  VertexID vId = "a_long_vertex_id_string_less_than_100_bytes";
+  TagID tagId = 2020;
+  verifyVectorTag(partId, vId, tagId, propId, vId.size());
+
+  VertexID srcId = "a_long_src_id_string", dstId = "a_long_dst_id_string";
+  EdgeType type = 1010;
+  EdgeRanking rank = 10L;
+  EdgeVerPlaceHolder edgeVersion = 1;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, srcId.size());
+}
+
+TEST_F(V2LongTest, VectorNegativeEdgeTypeTest) {
+  PartitionID partId = 123;
+  PropID propId = 3030;
+
+  VertexID vId = "a_long_vertex_id_string_less_than_100_bytes";
+  TagID tagId = 2020;
+  verifyVectorTag(partId, vId, tagId, propId, vId.size());
+
+  VertexID srcId = "a_long_src_id_string", dstId = "a_long_dst_id_string";
+  EdgeType type = -1010;
+  EdgeRanking rank = 10L;
+  EdgeVerPlaceHolder edgeVersion = 1;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, srcId.size());
+}
+
+TEST_F(V2LongTest, VectorRankTest) {
+  PartitionID partId = 123;
+  VertexID srcId = "0123456789", dstId = "9876543210";
+  EdgeType type = -1010;
+  EdgeRanking rank = 10L;
+  EdgeVerPlaceHolder edgeVersion = 1;
+  PropID propId = 3030;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, 10);
+
+  rank = 0L;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, 10);
+
+  rank = -1L;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, 10);
+  rank = 9223372036854775807L;
+  verifyVectorEdge(partId, srcId, type, rank, dstId, propId, edgeVersion, 10);
 }
 
 TEST(KeyUtilsTest, MiscTest) {

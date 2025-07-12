@@ -21,6 +21,7 @@ enum class NebulaKeyType : uint32_t {
   kVertex = 0x00000007,
   kPrime = 0x00000008,        // used in TOSS, if we write a lock succeed
   kDoublePrime = 0x00000009,  // used in TOSS, if we get RPC back from remote.
+  kVector_ = 0x000000F0,      // used for vector data
 };
 
 enum class NebulaSystemKeyType : uint32_t {
@@ -44,6 +45,10 @@ static typename std::enable_if<std::is_integral<T>::value, T>::type readInt(cons
   return *reinterpret_cast<const T*>(data);
 }
 
+static constexpr int32_t kVectorTagLen = sizeof(PartitionID) + sizeof(TagID) + sizeof(PropID);
+static constexpr int32_t kVectorEdgeLen = sizeof(PartitionID) + sizeof(EdgeType) +
+                                          sizeof(EdgeRanking) + sizeof(EdgeVerPlaceHolder) +
+                                          sizeof(PropID);
 // size of tag key except vertexId
 static constexpr int32_t kTagLen = sizeof(PartitionID) + sizeof(TagID);
 
@@ -59,6 +64,8 @@ static constexpr uint8_t kPartitionOffset = 8;
 // The key type bits Mask
 // See KeyType enum
 static constexpr uint32_t kTypeMask = 0x000000FF;
+static constexpr uint32_t kTypeMaskWithVector = 0x000000F0;
+static constexpr uint32_t kTypeMaskWithoutVector = 0x0000000F;
 
 static constexpr int32_t kTagIndexLen = sizeof(PartitionID) + sizeof(IndexID);
 
