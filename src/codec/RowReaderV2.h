@@ -50,8 +50,15 @@ class RowReaderV2 {
     return data_.toString();
   }
 
+  Value getVectorValueByName(const std::string& prop) const;
+  Value getVectorValueByIndex(const int64_t index) const;
+  size_t vectorNumFields() const noexcept {
+    return schema_->getVectorNumFields();
+  }
+
  private:
   bool resetImpl(meta::NebulaSchemaProvider const* schema, folly::StringPiece row);
+  // bool resetVectorImpl(meta::NebulaSchemaProvider const* schema, folly::StringPiece row);
 
  private:
   meta::NebulaSchemaProvider const* schema_;
@@ -63,6 +70,7 @@ class RowReaderV2 {
 
   // Check whether the flag at the given position is set or not
   bool isNull(size_t pos) const;
+  bool isVecNull() const;
 };
 
 }  // namespace nebula

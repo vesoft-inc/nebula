@@ -77,6 +77,12 @@ bool RowReaderV2::isNull(size_t pos) const {
   return flag != 0;
 }
 
+bool RowReaderV2::isVecNull() const {
+  size_t offset = headerLen_;
+  int8_t flag = data_[offset] & 0x80;
+  return flag != 0;
+}
+
 Value RowReaderV2::getValueByName(const std::string& prop) const {
   int64_t index = schema_->getFieldIndex(prop);
   return getValueByIndex(index);
@@ -301,11 +307,50 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
       return nebula::extractIntOrFloat<int32_t, Set>(data_, offset);
     case PropertyType::SET_FLOAT:
       return nebula::extractIntOrFloat<float, Set>(data_, offset);
-      case PropertyType::VECTOR:
+    case PropertyType::VECTOR:
       // TODO(LZY)
       break;
     case PropertyType::UNKNOWN:
       break;
+  }
+  LOG(FATAL) << "Should not reach here, illegal property type: " << static_cast<int>(field->type());
+  return Value::kNullBadType;
+}
+
+Value RowReaderV2::getVectorValueByName(const std::string& prop) const {
+  int64_t index = schema_->getVectorFieldIndex(prop);
+  return getVectorValueByIndex(index);
+}
+
+Value RowReaderV2::getVectorValueByIndex(const int64_t index) const {
+  if (index < 0 || static_cast<size_t>(index) >= schema_->getVectorNumFields()) {
+    return Value(NullType::UNKNOWN_PROP);
+  }
+
+  auto field = schema_->vectorField(index);
+  size_t offset = headerLen_ + numNullBytes_;
+
+  if (field->nullable() && isVecNull()) {
+    return NullType::__NULL__;
+  }
+
+  switch (field->type()) {
+    case PropertyType::VECTOR: {
+      int32_t vecOffset;
+      int32_t vecLen;
+      memcpy(reinterpret_cast<void*>(&vecOffset), &data_[offset], sizeof(int32_t));
+      memcpy(reinterpret_cast<void*>(&vecLen), &data_[offset + sizeof(int32_t)], sizeof(int32_t));
+
+      CHECK_LT(vecOffset, data_.size());
+      return Value{Vector(
+          std::vector<float>(reinterpret_cast<const float*>(data_.data() + vecOffset),
+                             reinterpret_cast<const float*>(data_.data() + vecOffset + vecLen)))};
+    }
+    case PropertyType::UNKNOWN:
+      break;
+    default: {
+      LOG(ERROR) << "Unsupported vector property type: " << static_cast<int>(field->type());
+    }
   }
   LOG(FATAL) << "Should not reach here, illegal property type: " << static_cast<int>(field->type());
   return Value::kNullBadType;

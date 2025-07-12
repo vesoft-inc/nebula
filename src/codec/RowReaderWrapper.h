@@ -153,6 +153,16 @@ class RowReaderWrapper {
     return currReader_->getValueByIndex(index);
   }
 
+  Value getVectorValueByName(const std::string& prop) const {
+    DCHECK(!!currReader_);
+    return currReader_->getVectorValueByName(prop);
+  }
+
+  Value getVectorValueByIndex(const int64_t index) const {
+    DCHECK(!!currReader_);
+    return currReader_->getVectorValueByIndex(index);
+  }
+
   int64_t getTimestamp() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->getTimestamp();
@@ -172,6 +182,11 @@ class RowReaderWrapper {
   size_t numFields() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->numFields();
+  }
+
+  size_t vectorNumFields() const noexcept {
+    DCHECK(!!currReader_);
+    return currReader_->vectorNumFields();
   }
 
   const meta::NebulaSchemaProvider* getSchema() const {
