@@ -254,7 +254,6 @@ class NebulaSchemaProvider {
                       std::string defaultValue = "",
                       cpp2::GeoShape geoShape = cpp2::GeoShape::ANY);
 
-
   void setProp(cpp2::SchemaProp schemaProp);
 
   const cpp2::SchemaProp getProp() const;
@@ -268,23 +267,22 @@ class NebulaSchemaProvider {
   bool hasVectorCol() const {
     return !vector_fields_.empty();
 
+   private:
+    std::size_t fieldSize(nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
 
- private:
-  std::size_t fieldSize(nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
+   private:
+    SchemaVer ver_{-1};
 
- private:
-  SchemaVer ver_{-1};
-
-  // fieldname -> index
-  std::unordered_map<std::string, int64_t> fieldNameIndex_;
-  std::vector<SchemaField> fields_;
-  size_t numNullableFields_;
-  // for vector columns
-  std::unordered_map<std::string, int64_t> vectorFieldNameIndex_;
-  std::vector<SchemaField> vector_fields_;
-  size_t numVectorNullableFields_;
-  cpp2::SchemaProp schemaProp_;
-};
+    // fieldname -> index
+    std::unordered_map<std::string, int64_t> fieldNameIndex_;
+    std::vector<SchemaField> fields_;
+    size_t numNullableFields_;
+    // for vector columns
+    std::unordered_map<std::string, int64_t> vectorFieldNameIndex_;
+    std::vector<SchemaField> vector_fields_;
+    size_t numVectorNullableFields_;
+    cpp2::SchemaProp schemaProp_;
+  };
 
 }  // namespace meta
 }  // namespace nebula
