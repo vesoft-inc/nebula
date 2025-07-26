@@ -45,8 +45,14 @@ uint32_t Cpp2Ops<nebula::Vector>::write(Protocol* proto, nebula::Vector const* o
   xfer += proto->writeStructBegin("Vector");
 
   xfer += proto->writeFieldBegin("values", apache::thrift::protocol::T_LIST, 1);
+  // Convert float vector to double vector for serialization
+  std::vector<double> doubleValues;
+  doubleValues.reserve(obj->values.size());
+  for (const auto& val : obj->values) {
+    doubleValues.emplace_back(static_cast<double>(val));
+  }
   xfer += detail::pm::protocol_methods<type_class::list<type_class::floating_point>,
-                                       std::vector<float>>::write(*proto, obj->values);
+                                       std::vector<double>>::write(*proto, doubleValues);
   xfer += proto->writeFieldEnd();
 
   xfer += proto->writeFieldStop();
@@ -67,9 +73,15 @@ void Cpp2Ops<nebula::Vector>::read(Protocol* proto, nebula::Vector* obj) {
   }
 
 _readField_values : {
-  obj->values = std::vector<float>();
+  // Read as double vector and convert to float vector
+  std::vector<double> doubleValues;
   detail::pm::protocol_methods<type_class::list<type_class::floating_point>,
-                               std::vector<float>>::read(*proto, obj->values);
+                               std::vector<double>>::read(*proto, doubleValues);
+  obj->values.clear();
+  obj->values.reserve(doubleValues.size());
+  for (const auto& val : doubleValues) {
+    obj->values.emplace_back(static_cast<float>(val));
+  }
 }
 
   if (UNLIKELY(!readState.advanceToNextField(proto, 1, 0, protocol::T_STOP))) {
@@ -110,9 +122,15 @@ uint32_t Cpp2Ops<nebula::Vector>::serializedSize(Protocol const* proto, nebula::
   xfer += proto->serializedStructSize("Vector");
 
   xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_LIST, 2);
-  xfer +=
-      detail::pm::protocol_methods<type_class::list<type_class::floating_point>,
-                                   std::vector<float>>::serializedSize<false>(*proto, obj->values);
+  // Convert float vector to double vector for size calculation
+  std::vector<double> doubleValues;
+  doubleValues.reserve(obj->values.size());
+  for (const auto& val : obj->values) {
+    doubleValues.emplace_back(static_cast<double>(val));
+  }
+  xfer += detail::pm::protocol_methods<type_class::list<type_class::floating_point>,
+                                       std::vector<double>>::serializedSize<false>(*proto,
+                                                                                   doubleValues);
   xfer += proto->serializedSizeStop();
   return xfer;
 }
@@ -124,9 +142,15 @@ uint32_t Cpp2Ops<nebula::Vector>::serializedSizeZC(Protocol const* proto,
   xfer += proto->serializedStructSize("Vector");
 
   xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_LIST, 2);
-  xfer +=
-      detail::pm::protocol_methods<type_class::list<type_class::floating_point>,
-                                   std::vector<float>>::serializedSize<false>(*proto, obj->values);
+  // Convert float vector to double vector for size calculation
+  std::vector<double> doubleValues;
+  doubleValues.reserve(obj->values.size());
+  for (const auto& val : obj->values) {
+    doubleValues.emplace_back(static_cast<double>(val));
+  }
+  xfer += detail::pm::protocol_methods<type_class::list<type_class::floating_point>,
+                                       std::vector<double>>::serializedSize<false>(*proto,
+                                                                                   doubleValues);
   xfer += proto->serializedSizeStop();
   return xfer;
 }

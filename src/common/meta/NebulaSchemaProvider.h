@@ -141,9 +141,10 @@ class NebulaSchemaProvider {
   };
 
  public:
-  explicit NebulaSchemaProvider(SchemaVer ver) : ver_(ver), numNullableFields_(0) {}
+  explicit NebulaSchemaProvider(SchemaVer ver)
+      : ver_(ver), numNullableFields_(0), numVectorNullableFields_(0) {}
 
-  NebulaSchemaProvider() : ver_(0), numNullableFields_(0) {}
+  NebulaSchemaProvider() : ver_(0), numNullableFields_(0), numVectorNullableFields_(0) {}
 
   SchemaVer getVersion() const noexcept;
   // Returns the size of fields_
@@ -177,6 +178,26 @@ class NebulaSchemaProvider {
     return Iterator(this, getNumFields());
   }
 
+  size_t getVectorNumFields() const noexcept;
+  size_t getVectorNumNullableFields() const noexcept;
+  size_t vectorSize() const noexcept;
+
+  int64_t getVectorFieldIndex(const std::string& name) const;
+  const char* getVectorFieldName(int64_t index) const;
+
+  nebula::cpp2::PropertyType getVectorFieldType(int64_t index) const;
+  nebula::cpp2::PropertyType getVectorFieldType(const std::string& name) const;
+
+  const SchemaField* vectorField(int64_t index) const;
+  const SchemaField* vectorField(const std::string& name) const;
+
+  void addVectorField(const std::string& name,
+                      nebula::cpp2::PropertyType type,
+                      size_t fixedStrLen,
+                      bool nullable,
+                      std::string defaultValue,
+                      cpp2::GeoShape geoShape);
+
   void setProp(cpp2::SchemaProp schemaProp);
 
   const cpp2::SchemaProp getProp() const;
@@ -184,7 +205,7 @@ class NebulaSchemaProvider {
   StatusOr<std::pair<std::string, int64_t>> getTTLInfo() const;
 
   bool hasNullableCol() const {
-    return numNullableFields_ != 0;
+    return numNullableFields_ != 0 && numVectorNullableFields_ != 0;
   }
 
  private:
@@ -197,6 +218,10 @@ class NebulaSchemaProvider {
   std::unordered_map<std::string, int64_t> fieldNameIndex_;
   std::vector<SchemaField> fields_;
   size_t numNullableFields_;
+  // for vector columns
+  std::unordered_map<std::string, int64_t> vectorFieldNameIndex_;
+  std::vector<SchemaField> vector_fields_;
+  size_t numVectorNullableFields_;
   cpp2::SchemaProp schemaProp_;
 };
 

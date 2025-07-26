@@ -35,7 +35,8 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
     auto type = spec->type();
     column.name_ref() = *spec->name();
     column.type.type_ref() = type;
-    if (nebula::cpp2::PropertyType::FIXED_STRING == type) {
+    if (nebula::cpp2::PropertyType::FIXED_STRING == type ||
+        nebula::cpp2::PropertyType::VECTOR == type) {
       column.type.type_length_ref() = spec->typeLen();
     } else if (nebula::cpp2::PropertyType::GEOGRAPHY == type) {
       column.type.geo_shape_ref() = spec->geoShape();
@@ -91,6 +92,10 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
         meta::cpp2::ColumnDef column;
         column.name = *colName;
         schema.columns_ref().value().emplace_back(std::move(column));
+        // TODO(LZY): we don not know whether the column is a vector column or not
+        // meta::cpp2::ColumnDef vecColumn;
+        // vecColumn.name = *colName;
+        // schema.vector_columns_ref().ensure().emplace_back(std::move(vecColumn));
       }
     } else {
       const auto &specs = schemaOpt->columnSpecs();

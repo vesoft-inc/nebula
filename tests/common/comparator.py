@@ -183,6 +183,20 @@ class DataSetComparator:
             if not rhs.getType() == Value.PVAL:
                 return False
             return self.compare_path(lhs.get_pVal(), rhs.get_pVal())
+        if lhs.getType() == Value.VECVAL:
+            print("Comparing vector values")
+            if not rhs.getType() == Value.VECVAL:
+                return False
+            lvec = lhs.get_vecVal()
+            rvec = rhs.get_vecVal()
+            if lvec.values is None or rvec.values is None:
+                return lvec.values is None and rvec.values is None
+            if len(lvec.values) != len(rvec.values):
+                return False
+            for i in range(len(lvec.values)):
+                if not math.isclose(lvec.values[i], rvec.values[i], rel_tol=1e-6):
+                    return False
+            return True
         return False
 
     def compare_path(self, lhs: Path, rhs: Path):

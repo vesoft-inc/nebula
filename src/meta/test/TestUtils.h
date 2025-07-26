@@ -58,7 +58,7 @@ class TestUtils {
     column.nullable_ref() = isNull;
     cpp2::ColumnTypeDef typeDef;
     typeDef.type_ref() = type;
-    if (type == PropertyType::FIXED_STRING) {
+    if (type == PropertyType::FIXED_STRING || type == PropertyType::VECTOR) {
       typeDef.type_length_ref() = typeLen;
     }
     column.type_ref() = std::move(typeDef);
@@ -484,13 +484,15 @@ class TestUtils {
     cols.emplace_back(TestUtils::columnDef(9, PropertyType::TIMESTAMP, Value(123456), true));
     cols.emplace_back(TestUtils::columnDef(10, PropertyType::DATE, Value(Date()), true));
     cols.emplace_back(TestUtils::columnDef(11, PropertyType::DATETIME, Value(DateTime()), true));
+    cols.emplace_back(
+        TestUtils::columnDef(12, PropertyType::VECTOR, Value(Vector({0.1, 0.2, 0.3})), false, 3));
     schema.columns_ref() = std::move(cols);
     return schema;
   }
 
   static void checkSchemaWithAllType(const cpp2::Schema& schema) {
     DefaultValueContext defaultContext;
-    ASSERT_EQ((*schema.columns_ref()).size(), 12);
+    ASSERT_EQ((*schema.columns_ref()).size(), 13);
     ASSERT_EQ((*schema.columns_ref())[0].get_name(), "col_0");
     ASSERT_EQ((*schema.columns_ref())[0].get_type().get_type(), PropertyType::BOOL);
     auto expr = Expression::decode(metaPool, *(*schema.columns_ref())[0].get_default_value());
@@ -563,6 +565,13 @@ class TestUtils {
     expr = Expression::decode(metaPool, *(*schema.columns_ref())[11].get_default_value());
     ASSERT_EQ(Expression::eval(expr, defaultContext), Value(DateTime()));
     ASSERT_EQ(*(*schema.columns_ref())[11].get_nullable(), true);
+
+    ASSERT_EQ((*schema.columns_ref())[12].get_name(), "col_12");
+    ASSERT_EQ((*schema.columns_ref())[12].get_type().get_type(), PropertyType::VECTOR);
+    expr = Expression::decode(metaPool, *(*schema.columns_ref())[12].get_default_value());
+    ASSERT_EQ(Expression::eval(expr, defaultContext), Value(Vector({0.1, 0.2, 0.3})));
+    ASSERT_EQ(*(*schema.columns_ref())[12].get_nullable(), false);
+    ASSERT_EQ(*(*schema.columns_ref())[12].get_type().get_type_length(), 3);
   }
 
   static bool verifySchema(cpp2::Schema& result, cpp2::Schema& expected) {

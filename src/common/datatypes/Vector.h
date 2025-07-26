@@ -23,7 +23,8 @@ struct Vector {
   Vector() = default;
   Vector(const Vector& rhs) = default;
   Vector(Vector&& rhs) noexcept = default;
-  explicit Vector(std::vector<float> vals) : values(std::move(vals)) {}
+  explicit Vector(const std::vector<float>& vals) : values(vals) {}
+  explicit Vector(std::vector<float>&& vals) : values(std::move(vals)) {}
 
   Vector& operator=(const Vector& rhs) {
     if (this == &rhs) {

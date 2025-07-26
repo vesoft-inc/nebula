@@ -86,6 +86,11 @@ class DataSetPrinter:
             return '{' + self.list_to_string(val.get_uVal().values) + '}'
         if val.getType() == Value.GVAL:
             return self.ds_to_string(val.get_gVal())
+        if val.getType() == Value.VECVAL:
+            vec = val.get_vecVal()
+            if vec.values is None or len(vec.values) == 0:
+                return "()"
+            return f"({','.join(str(float(v)) for v in vec.values)})"
         return ""
 
     def list_to_string(self, lst: List[Value], delimiter: str = ",") -> str:

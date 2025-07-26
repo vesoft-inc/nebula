@@ -17,7 +17,7 @@ std::string Vector::toString() const {
     return std::to_string(v);
   });
   std::stringstream os;
-  os << "[" << folly::join(",", value) << "]";
+  os << "vector (" << folly::join(",", value) << ")";
   return os.str();
 }
 

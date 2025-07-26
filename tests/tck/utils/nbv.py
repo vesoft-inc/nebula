@@ -23,6 +23,7 @@ from nebula3.common.ttypes import (
     Edge,
     Path,
     Step,
+    Vector,
 )
 
 Value.__hash__ = lambda self: self.value.__hash__()
@@ -560,11 +561,29 @@ def murmurhash2(v):
     raise ValueError(f"Invalid value type: {type(v)}")
 
 
+def vector(*args):
+    """Create a Vector from numeric values"""
+    vec = Vector()
+    vec.values = []
+    for arg in args:
+        if isinstance(arg, Value):
+            if arg.getType() == Value.FVAL:
+                vec.values.append(arg.get_fVal())
+            else:
+                raise ValueError(f"Vector elements must be numeric, got Value type {arg.getType()}")
+        else:
+            raise ValueError(f"Vector elements must be numeric, got {type(arg)}")
+    val = Value()
+    val.set_vecVal(vec)
+    return val
+
+
 def register_function(name, func):
     functions[name] = func
 
 
 register_function('hash', murmurhash2)
+register_function('vector', vector)
 
 
 parser = yacc.yacc(write_tables=False)
@@ -605,6 +624,10 @@ if __name__ == '__main__':
     expected['''/\\//'''] = re.compile(r'/')
     expected['''hash("hello")'''] = 2762169579135187400
     expected['''hash("World")'''] = -295471233978816215
+    # Test vector function
+    vec1 = Value()
+    vec1.set_vecVal(Vector(values=[0.1, 0.2, 0.3]))
+    expected['vector(0.1,0.2,0.3)'] = vec1
     expected['[]'] = Value(lVal=NList([]))
     expected['[{}]'] = Value(lVal=NList([Value(mVal=NMap({}))]))
     expected['[1,2,3]'] = Value(lVal=NList([

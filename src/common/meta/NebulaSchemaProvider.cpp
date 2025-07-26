@@ -29,7 +29,6 @@ size_t NebulaSchemaProvider::size() const noexcept {
     auto& lastField = fields_.back();
     return lastField.offset() + lastField.size();
   }
-
   return 0;
 }
 
@@ -119,6 +118,106 @@ void NebulaSchemaProvider::addField(const std::string& name,
   fieldNameIndex_.emplace(name, static_cast<int64_t>(fields_.size() - 1));
 }
 
+size_t NebulaSchemaProvider::getVectorNumFields() const noexcept {
+  return vector_fields_.size();
+}
+
+size_t NebulaSchemaProvider::getVectorNumNullableFields() const noexcept {
+  return numVectorNullableFields_;
+}
+int64_t NebulaSchemaProvider::getVectorFieldIndex(const std::string& name) const {
+  auto it = vectorFieldNameIndex_.find(name);
+  if (it == vectorFieldNameIndex_.end()) {
+    // Not found
+    return -1;
+  } else {
+    return it->second;
+  }
+}
+
+size_t NebulaSchemaProvider::vectorSize() const noexcept {
+  if (vector_fields_.size() > 0) {
+    auto& lastField = vector_fields_.back();
+    return lastField.offset() + lastField.size();
+  }
+  return 0;
+}
+
+const char* NebulaSchemaProvider::getVectorFieldName(int64_t index) const {
+  if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(vector_fields_.size()))) {
+    LOG(ERROR) << "Index[" << index << "] is out of range[0-" << vector_fields_.size() << "]";
+    return nullptr;
+  }
+
+  return vector_fields_[index].name();
+}
+
+PropertyType NebulaSchemaProvider::getVectorFieldType(int64_t index) const {
+  if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(vector_fields_.size()))) {
+    LOG(ERROR) << "Index[" << index << "] is out of range[0-" << vector_fields_.size() << "]";
+    return PropertyType::UNKNOWN;
+  }
+
+  return vector_fields_[index].type();
+}
+
+PropertyType NebulaSchemaProvider::getVectorFieldType(const std::string& name) const {
+  auto it = vectorFieldNameIndex_.find(name);
+  if (UNLIKELY(vectorFieldNameIndex_.end() == it)) {
+    LOG(ERROR) << "Unknown field \"" << name << "\"";
+    return PropertyType::UNKNOWN;
+  }
+
+  return PropertyType::VECTOR;
+}
+
+const NebulaSchemaProvider::SchemaField* NebulaSchemaProvider::vectorField(int64_t index) const {
+  if (index < 0) {
+    VLOG(2) << "Invalid index " << index;
+    return nullptr;
+  }
+  if (index >= static_cast<int64_t>(vector_fields_.size())) {
+    VLOG(2) << "Index " << index << " is out of range";
+    return nullptr;
+  }
+
+  return &vector_fields_[index];
+}
+
+const NebulaSchemaProvider::SchemaField* NebulaSchemaProvider::vectorField(
+    const std::string& name) const {
+  auto it = vectorFieldNameIndex_.find(name);
+  if (it == vectorFieldNameIndex_.end()) {
+    VLOG(2) << "Unknown field \"" << name << "\"";
+    return nullptr;
+  }
+
+  return &vector_fields_[it->second];
+}
+
+void NebulaSchemaProvider::addVectorField(const std::string& name,
+                                          PropertyType type,
+                                          size_t fixedStrLen,
+                                          bool nullable,
+                                          std::string defaultValue,
+                                          cpp2::GeoShape geoShape) {
+  size_t size = fieldSize(type, fixedStrLen);
+
+  size_t offset = 0;
+  if (vector_fields_.size() > 0) {
+    auto& lastField = vector_fields_.back();
+    offset = lastField.offset() + lastField.size();
+  }
+
+  size_t nullFlagPos = 0;
+  if (nullable) {
+    nullFlagPos = numVectorNullableFields_++;
+  }
+
+  vector_fields_.emplace_back(
+      name, type, nullable, defaultValue != "", defaultValue, size, offset, nullFlagPos, geoShape);
+  vectorFieldNameIndex_.emplace(name, static_cast<int64_t>(vector_fields_.size() - 1));
+}
 /*static*/
 std::size_t NebulaSchemaProvider::fieldSize(PropertyType type, std::size_t fixedStrLimit) {
   switch (type) {
@@ -176,7 +275,7 @@ std::size_t NebulaSchemaProvider::fieldSize(PropertyType type, std::size_t fixed
     case PropertyType::SET_FLOAT:
       return 8;
     case PropertyType::VECTOR: {
-      return 8;
+      return 8;  // vector offset + vector length
     }
     case PropertyType::UNKNOWN:
       break;

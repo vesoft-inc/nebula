@@ -117,6 +117,29 @@ TEST_F(ParserTest, TestSchemaCreation) {
   }
 }
 
+TEST_F(ParserTest, TestVectorSchemaCreation) {
+  // All type
+  {
+    std::string query = "CREATE TAG person(id int, vec vector(3))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+
+  {
+    std::string query =
+        "CREATE TAG person(id INT16 DEFAULT 10, vec vector(3) NOT NULL DEFAULT vector "
+        "(0.1,0.2,0.3));";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "CREATE TAG person(id INT16 DEFAULT 10, vec vector(1) NOT NULL DEFAULT vector (0.1));";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
 TEST_F(ParserTest, Go) {
   {
     std::string query = "GO FROM \"1\" OVER friend";

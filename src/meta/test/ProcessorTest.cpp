@@ -527,6 +527,190 @@ TEST(ProcessorTest, SpaceTest) {
   }
 }
 
+TEST(ProcessorTest, CreateVectorTagTest) {
+  fs::TempDir rootPath("/tmp/CreateVectorTagTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "first_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "second_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(2, resp.get_id().get_space_id());
+  }
+  cpp2::Schema schema;
+  std::vector<cpp2::ColumnDef> cols;
+  cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
+  cols.emplace_back(TestUtils::columnDef(1, PropertyType::FLOAT));
+  cols.emplace_back(TestUtils::columnDef(2, PropertyType::STRING));
+  cols.emplace_back(TestUtils::columnDef(3, PropertyType::VECTOR, Value(), false, 2));
+  cols.emplace_back(TestUtils::columnDef(4, PropertyType::VECTOR, Value(), false, 3));
+  schema.columns_ref() = std::move(cols);
+  {
+    // Space not exist
+    cpp2::CreateTagReq req;
+    req.space_id_ref() = 0;
+    req.tag_name_ref() = "default_tag";
+    req.schema_ref() = schema;
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, resp.get_code());
+  }
+  {
+    // Succeeded
+    cpp2::CreateTagReq req;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "default_tag";
+    req.schema_ref() = schema;
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(3, resp.get_id().get_tag_id());
+  }
+  {
+    // Tag have existed
+    cpp2::CreateTagReq req;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "default_tag";
+    req.schema_ref() = schema;
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_EXISTED, resp.get_code());
+  }
+  {
+    // Create same name tag in diff spaces
+    cpp2::CreateTagReq req;
+    req.space_id_ref() = 2;
+    req.tag_name_ref() = "default_tag";
+    req.schema_ref() = schema;
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(3, resp.get_id().get_tag_id());
+  }
+  {
+    // Create same name edge in same spaces
+    cpp2::CreateEdgeReq req;
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "default_tag";
+    req.schema_ref() = schema;
+    auto* processor = CreateEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_SCHEMA_NAME_EXISTS, resp.get_code());
+  }
+  {
+    // Set schema ttl property
+    cpp2::SchemaProp schemaProp;
+    schemaProp.ttl_duration_ref() = 100;
+    schemaProp.ttl_col_ref() = "col_0";
+    schema.schema_prop_ref() = std::move(schemaProp);
+
+    // Tag with TTL
+    cpp2::CreateTagReq req;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_ttl";
+    req.schema_ref() = schema;
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(4, resp.get_id().get_tag_id());
+  }
+  // Wrong default value
+  {
+    cpp2::Schema schemaWithDefault;
+    std::vector<cpp2::ColumnDef> vecColsWithDefault;
+    cpp2::ColumnDef columnWithDefault;
+    columnWithDefault.name_ref() = folly::stringPrintf("col_value_mismatch");
+    columnWithDefault.type.type_ref() = PropertyType::VECTOR;
+    columnWithDefault.type.type_length() = 2;
+    const auto& vecValue = *ConstantExpression::make(metaPool, nebula::Vector({1.0, 2.0, 3.0}));
+    columnWithDefault.default_value_ref() = Expression::encode(vecValue);
+    vecColsWithDefault.push_back(std::move(columnWithDefault));
+    schemaWithDefault.columns_ref() = std::move(vecColsWithDefault);
+
+    cpp2::CreateTagReq req;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_value_mismatche";
+    req.schema_ref() = std::move(schemaWithDefault);
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    cpp2::CreateTagReq req;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "all_tag_type";
+    auto allSchema = TestUtils::mockSchemaWithAllType();
+    req.schema_ref() = std::move(allSchema);
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+
+    cpp2::GetTagReq getReq;
+    getReq.space_id_ref() = 1;
+    getReq.tag_name_ref() = "all_tag_type";
+    getReq.version_ref() = 0;
+    auto* getProcessor = GetTagProcessor::instance(kv.get());
+    auto getFut = getProcessor->getFuture();
+    getProcessor->process(getReq);
+    auto getResp = std::move(getFut).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, getResp.get_code());
+    TestUtils::checkSchemaWithAllType(getResp.get_schema());
+  }
+}
+
 TEST(ProcessorTest, CreateTagTest) {
   fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());

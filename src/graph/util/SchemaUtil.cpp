@@ -63,12 +63,21 @@ std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProv
     if (hasDef) {
       exprStr = *col.default_value_ref();
     }
-    schemaPtr->addField(col.get_name(),
-                        col.get_type().get_type(),
-                        col.type.type_length_ref().value_or(0),
-                        col.nullable_ref().value_or(false),
-                        exprStr,
-                        col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+    if (col.get_type().get_type() == nebula::cpp2::PropertyType::VECTOR) {
+      schemaPtr->addVectorField(col.get_name(),
+                                col.get_type().get_type(),
+                                col.type.type_length_ref().value_or(0),
+                                col.nullable_ref().value_or(false),
+                                exprStr,
+                                col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+    } else {
+      schemaPtr->addField(col.get_name(),
+                          col.get_type().get_type(),
+                          col.type.type_length_ref().value_or(0),
+                          col.nullable_ref().value_or(false),
+                          exprStr,
+                          col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+    }
   }
   return schemaPtr;
 }
@@ -232,6 +241,7 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
     createStr.resize(createStr.size() - 2);
     createStr += "\n";
   }
+
   createStr += ")";
   auto prop = schema.get_schema_prop();
   createStr += " ttl_duration = ";
@@ -266,6 +276,8 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
       return type;
     }
     return folly::sformat("{}({})", type, apache::thrift::util::enumNameSafe(geoShape));
+  } else if (col.get_type() == nebula::cpp2::PropertyType::VECTOR) {
+    return folly::stringPrintf("%s(%d)", type.c_str(), *col.get_type_length());
   }
   return type;
 }

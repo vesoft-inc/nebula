@@ -70,7 +70,7 @@ enum GeoShape {
 
 struct ColumnTypeDef {
     1: required common.PropertyType    type,
-    // type_length is valid for fixed_string type
+    // type_length is valid for fixed_string type and vector type for dimension
     2: optional i16                    type_length = 0,
     // geo_shape is valid for geography type
     3: optional GeoShape               geo_shape,
@@ -90,7 +90,7 @@ struct SchemaProp {
     3: optional binary   comment,
 }
 
-struct Schema {
+struct Schema {  
     1: list<ColumnDef> columns,
     2: SchemaProp schema_prop,
 }
