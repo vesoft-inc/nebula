@@ -90,140 +90,255 @@ WriteResult writeSet(const Set& container, Value::Type valueType, std::string& b
   return WriteResult::SUCCEEDED;
 }
 
-RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema)
-    : schema_(schema), numNullBytes_(0), approxStrLen_(0), finished_(false), outOfSpaceStr_(false) {
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema,
+                         bool isVectorColumns,
+                         size_t index)
+    : isVectorColumns_(isVectorColumns),
+      vector_field_index_(index),
+      schema_(schema),
+      numNullBytes_(0),
+      approxStrLen_(0),
+      finished_(false),
+      outOfSpaceStr_(false) {
   CHECK(!!schema_);
+  if (!isVectorColumns_) {
+    // Reserve space for the header, the data, and the string values
+    buf_.reserve(schema_->size() + schema_->getNumFields() / 8 + 8 + 1024);
 
-  // Reserve space for the header, the data, and the string values
-  buf_.reserve(schema_->size() + schema_->getNumFields() / 8 + 8 + 1024);
+    char header = 0;
 
-  char header = 0;
-
-  // Header and schema version
-  //
-  // The maximum number of bytes for the header and the schema version is 8
-  //
-  // The first byte is the header (os signature), it has the fourth-bit (from
-  // the right side) set to one (0x08), and the right three bits indicate
-  // the number of bytes used for the schema version.
-  //
-  // If all three bits are zero, the schema version is zero. If the number
-  // of schema version bytes is one, the maximum schema version that can be
-  // represented is 255 (0xFF). If the number of schema version is two, the
-  // maximum schema version could be 65535 (0xFFFF), and so on.
-  //
-  // The maximum schema version we support is 0x00FFFFFFFFFFFFFF (7 bytes)
-  int64_t ver = schema_->getVersion();
-  if (ver > 0) {
-    if (ver <= 0x00FF) {
-      header = 0x09;  // 0x08 | 0x01, one byte for the schema version
-      headerLen_ = 2;
-    } else if (ver < 0x00FFFF) {
-      header = 0x0A;  // 0x08 | 0x02, two bytes for the schema version
-      headerLen_ = 3;
-    } else if (ver < 0x00FFFFFF) {
-      header = 0x0B;  // 0x08 | 0x03, three bytes for the schema version
-      headerLen_ = 4;
-    } else if (ver < 0x00FFFFFFFF) {
-      header = 0x0C;  // 0x08 | 0x04, four bytes for the schema version
-      headerLen_ = 5;
-    } else if (ver < 0x00FFFFFFFFFF) {
-      header = 0x0D;  // 0x08 | 0x05, five bytes for the schema version
-      headerLen_ = 6;
-    } else if (ver < 0x00FFFFFFFFFFFF) {
-      header = 0x0E;  // 0x08 | 0x06, six bytes for the schema version
-      headerLen_ = 7;
-    } else if (ver < 0x00FFFFFFFFFFFFFF) {
-      header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
-      headerLen_ = 8;
+    // Header and schema version
+    //
+    // The maximum number of bytes for the header and the schema version is 8
+    //
+    // The first byte is the header (os signature), it has the fourth-bit (from
+    // the right side) set to one (0x08), and the right three bits indicate
+    // the number of bytes used for the schema version.
+    //
+    // If all three bits are zero, the schema version is zero. If the number
+    // of schema version bytes is one, the maximum schema version that can be
+    // represented is 255 (0xFF). If the number of schema version is two, the
+    // maximum schema version could be 65535 (0xFFFF), and so on.
+    //
+    // The maximum schema version we support is 0x00FFFFFFFFFFFFFF (7 bytes)
+    int64_t ver = schema_->getVersion();
+    if (ver > 0) {
+      if (ver <= 0x00FF) {
+        header = 0x09;  // 0x08 | 0x01, one byte for the schema version
+        headerLen_ = 2;
+      } else if (ver < 0x00FFFF) {
+        header = 0x0A;  // 0x08 | 0x02, two bytes for the schema version
+        headerLen_ = 3;
+      } else if (ver < 0x00FFFFFF) {
+        header = 0x0B;  // 0x08 | 0x03, three bytes for the schema version
+        headerLen_ = 4;
+      } else if (ver < 0x00FFFFFFFF) {
+        header = 0x0C;  // 0x08 | 0x04, four bytes for the schema version
+        headerLen_ = 5;
+      } else if (ver < 0x00FFFFFFFFFF) {
+        header = 0x0D;  // 0x08 | 0x05, five bytes for the schema version
+        headerLen_ = 6;
+      } else if (ver < 0x00FFFFFFFFFFFF) {
+        header = 0x0E;  // 0x08 | 0x06, six bytes for the schema version
+        headerLen_ = 7;
+      } else if (ver < 0x00FFFFFFFFFFFFFF) {
+        header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
+        headerLen_ = 8;
+      } else {
+        LOG(FATAL) << "Schema version too big";
+        header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
+        headerLen_ = 8;
+      }
+      buf_.append(&header, 1);
+      buf_.append(reinterpret_cast<char*>(&ver), buf_[0] & 0x07);
     } else {
-      LOG(FATAL) << "Schema version too big";
-      header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
-      headerLen_ = 8;
+      header = 0x08;
+      headerLen_ = 1;
+      buf_.append(&header, 1);
     }
-    buf_.append(&header, 1);
-    buf_.append(reinterpret_cast<char*>(&ver), buf_[0] & 0x07);
+
+    // Null flags
+    size_t numNullables = schema_->getNumNullableFields();
+    if (numNullables > 0) {
+      numNullBytes_ = ((numNullables - 1) >> 3) + 1;
+    }
+
+    // Reserve the space for the data, including the Null bits
+    // All variant length string will be appended to the end
+    buf_.resize(headerLen_ + numNullBytes_ + schema_->size(), '\0');
+
+    isSet_.resize(schema_->getNumFields(), false);
   } else {
-    header = 0x08;
-    headerLen_ = 1;
-    buf_.append(&header, 1);
+    // Reserve space for the header, the data, and the string values
+    buf_.reserve(schema_->vectorSize() + 1 / 8 + 8 + 1024);
+
+    char header = 0;
+
+    // Header and schema version
+    //
+    // The maximum number of bytes for the header and the schema version is 8
+    //
+    // The first byte is the header (os signature), it has the fourth-bit (from
+    // the right side) set to one (0x08), and the right three bits indicate
+    // the number of bytes used for the schema version.
+    //
+    // If all three bits are zero, the schema version is zero. If the number
+    // of schema version bytes is one, the maximum schema version that can be
+    // represented is 255 (0xFF). If the number of schema version is two, the
+    // maximum schema version could be 65535 (0xFFFF), and so on.
+    //
+    // The maximum schema version we support is 0x00FFFFFFFFFFFFFF (7 bytes)
+    int64_t ver = schema_->getVersion();
+    if (ver > 0) {
+      if (ver <= 0x00FF) {
+        header = 0x09;  // 0x08 | 0x01, one byte for the schema version
+        headerLen_ = 2;
+      } else if (ver < 0x00FFFF) {
+        header = 0x0A;  // 0x08 | 0x02, two bytes for the schema version
+        headerLen_ = 3;
+      } else if (ver < 0x00FFFFFF) {
+        header = 0x0B;  // 0x08 | 0x03, three bytes for the schema version
+        headerLen_ = 4;
+      } else if (ver < 0x00FFFFFFFF) {
+        header = 0x0C;  // 0x08 | 0x04, four bytes for the schema version
+        headerLen_ = 5;
+      } else if (ver < 0x00FFFFFFFFFF) {
+        header = 0x0D;  // 0x08 | 0x05, five bytes for the schema version
+        headerLen_ = 6;
+      } else if (ver < 0x00FFFFFFFFFFFF) {
+        header = 0x0E;  // 0x08 | 0x06, six bytes for the schema version
+        headerLen_ = 7;
+      } else if (ver < 0x00FFFFFFFFFFFFFF) {
+        header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
+        headerLen_ = 8;
+      } else {
+        LOG(FATAL) << "Schema version too big";
+        header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
+        headerLen_ = 8;
+      }
+      buf_.append(&header, 1);
+      buf_.append(reinterpret_cast<char*>(&ver), buf_[0] & 0x07);
+    } else {
+      header = 0x08;
+      headerLen_ = 1;
+      buf_.append(&header, 1);
+    }
+
+    // Null flags
+    size_t numNullables = schema_->vectorField(vector_field_index_)->nullable();
+    LOG(ERROR) << "LZY Vector field index: " << vector_field_index_
+               << ", numNullables: " << numNullables;
+    if (numNullables > 0) {
+      numNullBytes_ = ((numNullables - 1) >> 3) + 1;
+    }
+
+    // Just one vector property: offset + length
+    buf_.resize(headerLen_ + numNullBytes_ + 8, '\0');
+
+    isSet_.resize(1, false);
   }
-
-  // Null flags
-  size_t numNullables = schema_->getNumNullableFields();
-  if (numNullables > 0) {
-    numNullBytes_ = ((numNullables - 1) >> 3) + 1;
-  }
-
-  // Reserve the space for the data, including the Null bits
-  // All variant length string will be appended to the end
-  buf_.resize(headerLen_ + numNullBytes_ + schema_->size(), '\0');
-
-  isSet_.resize(schema_->getNumFields(), false);
 }
 
-RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema, std::string&& encoded)
-    : schema_(schema), finished_(false), outOfSpaceStr_(false) {
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema,
+                         std::string&& encoded,
+                         bool isVectorColumns,
+                         size_t index)
+    : isVectorColumns_(isVectorColumns),
+      vector_field_index_(index),
+      schema_(schema),
+      finished_(false),
+      outOfSpaceStr_(false) {
   auto len = encoded.size();
   buf_ = std::move(encoded).substr(0, len - sizeof(int64_t));
-  processV2EncodedStr();
+  if (isVectorColumns_) {
+    processV2EncodedStrVector();
+  } else {
+    processV2EncodedStr();
+  }
 }
 
-RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema, const std::string& encoded)
-    : schema_(schema),
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema,
+                         const std::string& encoded,
+                         bool isVectorColumns,
+                         size_t index)
+    : isVectorColumns_(isVectorColumns),
+      vector_field_index_(index),
+      schema_(schema),
       buf_(encoded.substr(0, encoded.size() - sizeof(int64_t))),
       finished_(false),
       outOfSpaceStr_(false) {
-  processV2EncodedStr();
+  if (isVectorColumns_) {
+    processV2EncodedStrVector();
+  } else {
+    processV2EncodedStr();
+  }
 }
 
-RowWriterV2::RowWriterV2(RowReaderWrapper& reader) : RowWriterV2(reader.getSchema()) {
-  for (size_t i = 0; i < reader.numFields(); i++) {
-    Value v = reader.getValueByIndex(i);
+RowWriterV2::RowWriterV2(RowReaderWrapper& reader, bool isVectorColumn, size_t index)
+    : RowWriterV2(reader.getSchema(), isVectorColumn, index) {
+  if (!isVectorColumns_) {
+    for (size_t i = 0; i < reader.numFields(); i++) {
+      Value v = reader.getValueByIndex(i);
+      switch (v.type()) {
+        case Value::Type::NULLVALUE:
+          setNull(i);
+          break;
+        case Value::Type::BOOL:
+          set(i, v.getBool());
+          break;
+        case Value::Type::INT:
+          set(i, v.getInt());
+          break;
+        case Value::Type::FLOAT:
+          set(i, v.getFloat());
+          break;
+        case Value::Type::STRING:
+          approxStrLen_ += v.getStr().size();
+          set(i, v.moveStr());
+          break;
+        case Value::Type::DATE:
+          set(i, v.moveDate());
+          break;
+        case Value::Type::TIME:
+          set(i, v.moveTime());
+          break;
+        case Value::Type::DATETIME:
+          set(i, v.moveDateTime());
+          break;
+        case Value::Type::GEOGRAPHY:
+          set(i, v.moveGeography());
+          break;
+        case Value::Type::DURATION:
+          set(i, v.moveDuration());
+          break;
+        case Value::Type::LIST:
+          set(i, v.moveList());
+          break;
+        case Value::Type::SET:
+          set(i, v.moveSet());
+          break;
+        default:
+          LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
+          isSet_[i] = false;
+          continue;
+      }
+      isSet_[i] = true;
+    }
+  } else {
+    // For vector columns, we only have one vector property
+    Value v = reader.getVectorValueByIndex(vector_field_index_);
     switch (v.type()) {
       case Value::Type::NULLVALUE:
-        setNull(i);
+        setNullVec(vector_field_index_);
         break;
-      case Value::Type::BOOL:
-        set(i, v.getBool());
-        break;
-      case Value::Type::INT:
-        set(i, v.getInt());
-        break;
-      case Value::Type::FLOAT:
-        set(i, v.getFloat());
-        break;
-      case Value::Type::STRING:
-        approxStrLen_ += v.getStr().size();
-        set(i, v.moveStr());
-        break;
-      case Value::Type::DATE:
-        set(i, v.moveDate());
-        break;
-      case Value::Type::TIME:
-        set(i, v.moveTime());
-        break;
-      case Value::Type::DATETIME:
-        set(i, v.moveDateTime());
-        break;
-      case Value::Type::GEOGRAPHY:
-        set(i, v.moveGeography());
-        break;
-      case Value::Type::DURATION:
-        set(i, v.moveDuration());
-        break;
-      case Value::Type::LIST:
-        set(i, v.moveList());
-        break;
-      case Value::Type::SET:
-        set(i, v.moveSet());
+      case Value::Type::VECTOR:
+        setVec(vector_field_index_, v.moveVector());
         break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
-        isSet_[i] = false;
-        continue;
+        isSet_[0] = false;
     }
-    isSet_[i] = true;
+    isSet_[0] = true;
   }
 }
 
@@ -252,6 +367,33 @@ void RowWriterV2::processV2EncodedStr() {
   isSet_.resize(schema_->getNumFields(), true);
 }
 
+void RowWriterV2::processV2EncodedStrVector() {
+  CHECK_EQ(0x08, buf_[0] & 0x18);
+  int32_t verBytes = buf_[0] & 0x07;
+  SchemaVer ver = 0;
+  if (verBytes > 0) {
+    memcpy(reinterpret_cast<void*>(&ver), &buf_[1], verBytes);
+  }
+  CHECK_EQ(ver, schema_->getVersion())
+      << "The data is encoded by schema version " << ver
+      << ", while the provided schema version is " << schema_->getVersion();
+
+  headerLen_ = verBytes + 1;
+
+  // Null flags
+  size_t numNullables = schema_->vectorField(vector_field_index_)->nullable();
+  LOG(ERROR) << "LZY Vector field index: " << vector_field_index_
+             << ", numNullables: " << numNullables;
+  if (numNullables > 0) {
+    numNullBytes_ = ((numNullables - 1) >> 3) + 1;
+  } else {
+    numNullBytes_ = 0;
+  }
+
+  approxStrLen_ = buf_.size() - headerLen_ - numNullBytes_ - 8 - sizeof(int64_t);
+  isSet_.resize(1, true);
+}
+
 void RowWriterV2::setNullBit(ssize_t pos) {
   static const uint8_t orBits[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
@@ -271,6 +413,22 @@ bool RowWriterV2::checkNullBit(ssize_t pos) const {
 
   size_t offset = headerLen_ + (pos >> 3);
   int8_t flag = buf_[offset] & bits[pos & 0x0000000000000007L];
+  return flag != 0;
+}
+
+void RowWriterV2::setVecNullBit() {
+  size_t offset = headerLen_;
+  buf_[offset] = buf_[offset] | 0x80;
+}
+
+void RowWriterV2::clearVecNullBit() {
+  size_t offset = headerLen_;
+  buf_[offset] = buf_[offset] & 0x7F;
+}
+
+bool RowWriterV2::checkVecNullBit() const {
+  size_t offset = headerLen_;
+  int8_t flag = buf_[offset] & 0x80;
   return flag != 0;
 }
 
@@ -320,6 +478,27 @@ WriteResult RowWriterV2::setValue(const std::string& name, const Value& val) {
   return setValue(index, val);
 }
 
+WriteResult RowWriterV2::setValueVec(const std::string& name, const Value& val) {
+  CHECK(!finished_) << "You have called finish()";
+  int64_t index = schema_->getVectorFieldIndex(name);
+  return setValueVec(index, val);
+}
+WriteResult RowWriterV2::setValueVec(ssize_t index, const Value& val) {
+  CHECK(!finished_) << "You have called finish()";
+  if (index < 0 || static_cast<size_t>(index) >= schema_->getVectorNumFields()) {
+    return WriteResult::UNKNOWN_FIELD;
+  }
+  CHECK_EQ(index, vector_field_index_)
+      << "The vector field index is not match, expected: " << vector_field_index_
+      << ", but got: " << index;
+  switch (val.type()) {
+    case Value::Type::VECTOR:
+      return writeVec(val.getVector());
+    default:
+      return WriteResult::TYPE_MISMATCH;
+  }
+}
+
 WriteResult RowWriterV2::setNull(ssize_t index) {
   CHECK(!finished_) << "You have called finish()";
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
@@ -341,6 +520,31 @@ WriteResult RowWriterV2::setNull(const std::string& name) {
   CHECK(!finished_) << "You have called finish()";
   int64_t index = schema_->getFieldIndex(name);
   return setNull(index);
+}
+
+WriteResult RowWriterV2::setNullVec(ssize_t index) {
+  CHECK(!finished_) << "You have called finish()";
+  if (index < 0 || static_cast<size_t>(index) >= schema_->getVectorNumFields()) {
+    return WriteResult::UNKNOWN_FIELD;
+  }
+  CHECK_EQ(index, vector_field_index_)
+      << "The vector field index is not match, expected: " << vector_field_index_
+      << ", but got: " << index;
+  // Make sure the field is nullable
+  auto field = schema_->vectorField(index);
+  if (!field->nullable()) {
+    return WriteResult::NOT_NULLABLE;
+  }
+
+  setVecNullBit();
+  isSet_[0] = true;
+  return WriteResult::SUCCEEDED;
+}
+
+WriteResult RowWriterV2::setNullVec(const std::string& name) {
+  CHECK(!finished_) << "You have called finish()";
+  int64_t index = schema_->getVectorFieldIndex(name);
+  return setNullVec(index);
 }
 
 WriteResult RowWriterV2::write(ssize_t index, bool v) {
@@ -976,6 +1180,35 @@ WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   return WriteResult::SUCCEEDED;
 }
 
+WriteResult RowWriterV2::writeVec(const Vector& vector) {
+  // auto field = schema_->vectorField(index);
+  auto offset = headerLen_ + numNullBytes_;
+  if (isSet_[0]) {
+    // The string value has already been set, we need to turn it
+    // into out-of-space strings then
+    outOfSpaceStr_ = true;
+  }
+  int32_t vecOffset;
+  int32_t vecLen;
+  if (outOfSpaceStr_) {
+    strList_.emplace_back(reinterpret_cast<const char*>(vector.data().data()),
+                          sizeof(float) * vector.dim());
+    vecOffset = 0;
+    // Length field is the index to the out-of-space string list
+    vecLen = strList_.size() - 1;
+  } else {
+    // Append to the end
+    vecOffset = buf_.size();
+    vecLen = sizeof(float) * vector.dim();
+    buf_.append(reinterpret_cast<const char*>(vector.data().data()), vecLen);
+  }
+  memcpy(&buf_[offset], reinterpret_cast<void*>(&vecOffset), sizeof(int32_t));
+  memcpy(&buf_[offset + sizeof(int32_t)], reinterpret_cast<void*>(&vecLen), sizeof(int32_t));
+  approxStrLen_ += vecLen;
+  isSet_[0] = true;
+  return WriteResult::SUCCEEDED;
+}
+
 WriteResult RowWriterV2::checkUnsetFields() {
   DefaultValueContext expCtx;
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
@@ -1049,6 +1282,49 @@ WriteResult RowWriterV2::checkUnsetFields() {
   return WriteResult::SUCCEEDED;
 }
 
+WriteResult RowWriterV2::checkUnsetVectorFields() {
+  DefaultValueContext expCtx;
+
+  if (!isSet_[0]) {
+    auto field = schema_->vectorField(vector_field_index_);
+    if (!field->nullable() && !field->hasDefault()) {
+      // The field neither can be NULL, nor has a default value
+      return WriteResult::FIELD_UNSET;
+    }
+
+    WriteResult r = WriteResult::SUCCEEDED;
+    if (field->hasDefault()) {
+      ObjectPool pool;
+      auto& exprStr = field->defaultValue();
+      auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
+      auto defVal = Expression::eval(expr, expCtx);
+      switch (defVal.type()) {
+        case Value::Type::NULLVALUE:
+          setVecNullBit();
+          break;
+        case Value::Type::VECTOR: {
+          r = writeVec(defVal.getVector());
+          break;
+        }
+        default: {
+          LOG(FATAL) << "Unsupported default value type for vector field: " << defVal.typeName()
+                     << ", default value: " << defVal
+                     << ", default value expr: " << field->defaultValue();
+          return WriteResult::TYPE_MISMATCH;
+        }
+      }
+    } else {
+      // Set NULL
+      setVecNullBit();
+    }
+
+    if (r != WriteResult::SUCCEEDED) {
+      return r;
+    }
+  }
+
+  return WriteResult::SUCCEEDED;
+}
 std::string RowWriterV2::processOutOfSpace() {
   std::string temp;
   // Reserve enough space to avoid memory re-allocation
@@ -1059,7 +1335,8 @@ std::string RowWriterV2::processOutOfSpace() {
   // Now let's process all strings
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
     auto field = schema_->field(i);
-    if (field->type() != PropertyType::STRING && field->type() != PropertyType::GEOGRAPHY) {
+    if (field->type() != PropertyType::STRING && field->type() != PropertyType::GEOGRAPHY &&
+        field->type() != PropertyType::VECTOR) {
       continue;
     }
 
@@ -1093,6 +1370,49 @@ std::string RowWriterV2::processOutOfSpace() {
   return temp;
 }
 
+std::string RowWriterV2::processOutOfSpaceVector() {
+  std::string temp;
+  // Reserve enough space to avoid memory re-allocation
+  temp.reserve(headerLen_ + numNullBytes_ + 8 + approxStrLen_ + sizeof(int64_t));
+  // Copy the data except the strings
+  temp.append(buf_.data(), headerLen_ + numNullBytes_ + 8);
+
+  // Now let's process all strings
+  auto field = schema_->vectorField(vector_field_index_);
+  if (field->type() != PropertyType::VECTOR) {
+    return temp;
+  }
+
+  size_t offset = headerLen_ + numNullBytes_;
+  int32_t oldOffset;
+  int32_t newOffset = temp.size();
+  int32_t strLen;
+
+  if (field->nullable() && checkVecNullBit()) {
+    // Null string
+    newOffset = strLen = 0;
+  } else {
+    // load the old offset and string length
+    memcpy(reinterpret_cast<void*>(&oldOffset), &buf_[offset], sizeof(int32_t));
+    memcpy(reinterpret_cast<void*>(&strLen), &buf_[offset + sizeof(int32_t)], sizeof(int32_t));
+
+    if (oldOffset > 0) {
+      temp.append(&buf_[oldOffset], strLen);
+    } else {
+      // Out of space string
+      CHECK_LT(strLen, strList_.size());
+      temp.append(strList_[strLen]);
+      strLen = strList_[strLen].size();
+    }
+  }
+
+  // Set the new offset and length
+  memcpy(&temp[offset], reinterpret_cast<void*>(&newOffset), sizeof(int32_t));
+  memcpy(&temp[offset + sizeof(int32_t)], reinterpret_cast<void*>(&strLen), sizeof(int32_t));
+
+  return temp;
+}
+
 WriteResult RowWriterV2::finish() {
   CHECK(!finished_) << "You have called finish()";
 
@@ -1106,6 +1426,29 @@ WriteResult RowWriterV2::finish() {
   // Next to process out-of-space strings
   if (outOfSpaceStr_) {
     buf_ = processOutOfSpace();
+  }
+
+  // The timestamp will be saved to the tail of buf_
+  auto ts = time::WallClock::fastNowInMicroSec();
+  buf_.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
+
+  finished_ = true;
+  return WriteResult::SUCCEEDED;
+}
+
+WriteResult RowWriterV2::finishVector() {
+  CHECK(!finished_) << "You have called finish()";
+
+  // First to check whether all fields are set. If not, to check whether
+  // it can be NULL or there is a default value for the field
+  WriteResult res = checkUnsetVectorFields();
+  if (res != WriteResult::SUCCEEDED) {
+    return res;
+  }
+
+  // Next to process out-of-space strings
+  if (outOfSpaceStr_) {
+    buf_ = processOutOfSpaceVector();
   }
 
   // The timestamp will be saved to the tail of buf_

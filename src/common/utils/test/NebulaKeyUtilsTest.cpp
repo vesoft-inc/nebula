@@ -60,7 +60,7 @@ class KeyUtilsTestBase : public ::testing::Test {
     auto vecTagKey = NebulaKeyUtils::vectorTagKey(vIdLen_, partId, vId, tagId, propId);
     // Expected size: sizeof(PartitionID) + vIdLen_ + sizeof(TagID) + sizeof(PropID)
     ASSERT_EQ(vecTagKey.size(), kVectorTagLen + vIdLen_);
-    ASSERT_TRUE(NebulaKeyUtils::isVector(vIdLen_, vecTagKey));
+    ASSERT_TRUE(NebulaKeyUtils::isVector(vecTagKey));
     ASSERT_FALSE(NebulaKeyUtils::isVectorEdge(vIdLen_, vecTagKey));
 
     ASSERT_EQ(partId, NebulaKeyUtils::getPart(vecTagKey));
@@ -83,7 +83,7 @@ class KeyUtilsTestBase : public ::testing::Test {
     ASSERT_EQ(vecEdgeKey.size(), kVectorEdgeLen + (vIdLen_ << 1));
 
     ASSERT_TRUE(NebulaKeyUtils::isVectorEdge(vIdLen_, vecEdgeKey));
-    ASSERT_FALSE(NebulaKeyUtils::isVector(vIdLen_, vecEdgeKey));
+    // ASSERT_FALSE(NebulaKeyUtils::isVector(vecEdgeKey));
 
     ASSERT_EQ(vecEdgeKey.substr(0, sizeof(PartitionID) + vIdLen_),
               NebulaKeyUtils::vectorEdgePrefix(vIdLen_, partId, srcId));

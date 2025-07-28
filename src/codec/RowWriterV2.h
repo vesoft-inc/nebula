@@ -85,13 +85,21 @@ enum class WriteResult {
 ********************************************************************************/
 class RowWriterV2 {
  public:
-  explicit RowWriterV2(const meta::NebulaSchemaProvider* schema);
+  explicit RowWriterV2(const meta::NebulaSchemaProvider* schema,
+                       bool isVectorColumns = false,
+                       size_t index = 0);
   // This constructor only takes a V2 encoded string
-  RowWriterV2(const meta::NebulaSchemaProvider* schema, std::string&& encoded);
+  RowWriterV2(const meta::NebulaSchemaProvider* schema,
+              std::string&& encoded,
+              bool isVectorColumns = false,
+              size_t index = 0);
   // This constructor only takes a V2 encoded string
-  RowWriterV2(const meta::NebulaSchemaProvider* schema, const std::string& encoded);
+  RowWriterV2(const meta::NebulaSchemaProvider* schema,
+              const std::string& encoded,
+              bool isVectorColumns = false,
+              size_t index = 0);
   // This constructor can handle constructed from RowReaderWrapper, which is V2 reader
-  explicit RowWriterV2(RowReaderWrapper& reader);
+  explicit RowWriterV2(RowReaderWrapper& reader, bool isVectorColumns = false, size_t index = 0);
 
   ~RowWriterV2() = default;
 
@@ -139,6 +147,7 @@ class RowWriterV2 {
    * @return WriteResult Whether encode succeed
    */
   WriteResult finish();
+  WriteResult finishVector();
 
   // Data write
   /**
@@ -156,6 +165,16 @@ class RowWriterV2 {
       return WriteResult::UNKNOWN_FIELD;
     }
     return write(index, std::forward<T>(v));
+  }
+
+  template <typename T>
+  WriteResult setVec(size_t index, T&& v) {
+    CHECK(!finished_) << "You have called finish()";
+    if (index >= schema_->getVectorNumFields()) {
+      return WriteResult::UNKNOWN_FIELD;
+    }
+    vector_field_index_ = static_cast<size_t>(index);
+    return writeVec(std::forward<T>(v));
   }
 
   // Data write
@@ -178,6 +197,17 @@ class RowWriterV2 {
     }
   }
 
+  template <typename T>
+  WriteResult setVec(const std::string& name, T&& v) {
+    CHECK(!finished_) << "You have called finish()";
+    int64_t index = schema_->getVectorFieldIndex(name);
+    if (index >= 0) {
+      vector_field_index_ = static_cast<size_t>(index);
+      return writeVec(std::forward<T>(v));
+    } else {
+      return WriteResult::UNKNOWN_FIELD;
+    }
+  }
   /**
    * @brief Set the value by index
    *
@@ -186,7 +216,7 @@ class RowWriterV2 {
    * @return WriteResult
    */
   WriteResult setValue(ssize_t index, const Value& val);
-
+  WriteResult setValueVec(ssize_t index, const Value& val);
   /**
    * @brief Set the value by index
    *
@@ -195,7 +225,7 @@ class RowWriterV2 {
    * @return WriteResult
    */
   WriteResult setValue(const std::string& name, const Value& val);
-
+  WriteResult setValueVec(const std::string& name, const Value& val);
   /**
    * @brief Set null by index
    *
@@ -203,6 +233,7 @@ class RowWriterV2 {
    * @return WriteResult
    */
   WriteResult setNull(ssize_t index);
+  WriteResult setNullVec(ssize_t index);
 
   /**
    * @brief Set null by property name
@@ -211,8 +242,11 @@ class RowWriterV2 {
    * @return WriteResult
    */
   WriteResult setNull(const std::string& name);
+  WriteResult setNullVec(const std::string& name);
 
  private:
+  bool isVectorColumns_;
+  size_t vector_field_index_{0};
   const meta::NebulaSchemaProvider* schema_;
   std::string buf_;
   std::vector<bool> isSet_;
@@ -232,15 +266,23 @@ class RowWriterV2 {
   std::vector<std::string> strList_;
 
   WriteResult checkUnsetFields();
+  WriteResult checkUnsetVectorFields();
   std::string processOutOfSpace();
-
+  std::string processOutOfSpaceVector();
   void processV2EncodedStr();
+  void processV2EncodedStrVector();
 
   void setNullBit(ssize_t pos);
   void clearNullBit(ssize_t pos);
   // Return true if the flag at the given position is NULL;
   // otherwise, return false
   bool checkNullBit(ssize_t pos) const;
+
+  void setVecNullBit();
+  void clearVecNullBit();
+  // Return true if the flag at the given position is NULL;
+  // otherwise, return false
+  bool checkVecNullBit() const;
 
   WriteResult write(ssize_t index, bool v);
   WriteResult write(ssize_t index, float v);
@@ -271,6 +313,8 @@ class RowWriterV2 {
   // Supports storing unordered sets of strings, integers, and floats,
   // including SET_STRING, SET_INT, and SET_FLOAT
   WriteResult write(ssize_t index, const Set& set);
+
+  WriteResult writeVec(const Vector& vector);
 };
 
 }  // namespace nebula

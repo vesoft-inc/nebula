@@ -44,6 +44,113 @@ const Geography geogPolygon = Polygon(
                                                                  Coordinate(-100.1, 41.4)}});
 const Duration du = Duration(1, 2, 3);
 
+const Vector vec({1.0, 2.0, 3.0});
+const Vector updatevec({4.0, 5.0, 6.0});
+const Vector longvec({1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+const Vector updateLongvec({9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0});
+
+TEST(RowWriterV2, VectorTest) {
+  meta::NebulaSchemaProvider schema(12 /*Schema version*/);
+  schema.addVectorField("Col01", PropertyType::VECTOR, 3);
+
+  RowWriterV2 writer1(&schema, true);
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setVec(0, vec));
+  ASSERT_EQ(WriteResult::SUCCEEDED, writer1.finishVector());
+
+  RowWriterV2 writer2(&schema, true);
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer2.setValueVec("Col01", vec));
+  ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finishVector());
+
+  std::string encoded1 = std::move(writer1).moveEncodedStr();
+  std::string encoded2 = writer2.getEncodedStr();
+
+  LOG(INFO) << "encoded1, size=" << encoded1.size() << "content=" << folly::hexlify(encoded1);
+  LOG(INFO) << "encoded2, size=" << encoded2.size() << "content=" << folly::hexlify(encoded2);
+
+  auto reader1 = RowReaderWrapper::getRowReader(&schema, encoded1);
+  auto reader2 = RowReaderWrapper::getRowReader(&schema, encoded2);
+
+  Value v1 = reader1->getVectorValueByIndex(0);
+  Value v2 = reader2->getVectorValueByName("Col01");
+  LOG(INFO) << "v1=" << v1.toString() << ", v2=" << v2.toString();
+  EXPECT_EQ(v1, v2);
+}
+
+TEST(RowWriterV2, VectorWithDefaultValue) {
+  ObjectPool objPool;
+  auto pool = &objPool;
+  meta::NebulaSchemaProvider schema(12 /*Schema version*/);
+  schema.addVectorField("Col01",
+                        PropertyType::VECTOR,
+                        3,
+                        false,
+                        ConstantExpression::make(pool, Vector({1.0, 2.0, 3.0}))->encode(),
+                        meta::cpp2::GeoShape::ANY);
+
+  RowWriterV2 writer(&schema, true);
+  ASSERT_EQ(WriteResult::SUCCEEDED, writer.finishVector());
+
+  std::string encoded = std::move(writer).moveEncodedStr();
+  auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
+
+  // Col01
+  Value v1 = reader->getVectorValueByName("Col01");
+  Value v2 = reader->getVectorValueByIndex(0);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(Vector({1.0, 2.0, 3.0}), v1.getVector());
+  EXPECT_EQ(v1, v2);
+}
+
+TEST(RowWriterV2, DoubleSetVector) {
+  meta::NebulaSchemaProvider schema(3 /*Schema version*/);
+
+  schema.addVectorField("Col01", PropertyType::VECTOR, 3);
+
+  RowWriterV2 writer(&schema, true);
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.setVec("Col01", vec));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer.setVec("Col01", longvec));
+  ASSERT_EQ(WriteResult::SUCCEEDED, writer.finishVector());
+
+  std::string encoded = std::move(writer).moveEncodedStr();
+  auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
+
+  // Col01
+  Value v1 = reader->getVectorValueByName("Col01");
+  Value v2 = reader->getVectorValueByIndex(0);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(longvec, v1.getVector());
+  EXPECT_EQ(v1, v2);
+}
+
+TEST(RowWriterV2, UpdateVector) {
+  meta::NebulaSchemaProvider schema(3 /*Schema version*/);
+
+  schema.addVectorField("Col01", PropertyType::VECTOR, 0, false, "", meta::cpp2::GeoShape::ANY);
+
+  RowWriterV2 writer1(&schema, true);
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setVec("Col01", vec));
+  ASSERT_EQ(WriteResult::SUCCEEDED, writer1.finishVector());
+
+  RowWriterV2 update1(&schema, true);
+  RowWriterV2 update2(&schema, true);
+  EXPECT_EQ(WriteResult::SUCCEEDED, update1.setVec("Col01", updatevec));
+  EXPECT_EQ(WriteResult::SUCCEEDED, update2.setVec("Col01", updatevec));
+  ASSERT_EQ(WriteResult::SUCCEEDED, update1.finishVector());
+  ASSERT_EQ(WriteResult::SUCCEEDED, update2.finishVector());
+
+  std::string encoded1 = std::move(update1).moveEncodedStr();
+  std::string encoded2 = std::move(update2).moveEncodedStr();
+
+  auto reader1 = RowReaderWrapper::getRowReader(&schema, encoded1);
+  auto reader2 = RowReaderWrapper::getRowReader(&schema, encoded2);
+
+  Value v1 = reader1->getVectorValueByName("Col01");
+  Value v2 = reader2->getVectorValueByIndex(0);
+  EXPECT_EQ(Value::Type::VECTOR, v1.type());
+  EXPECT_EQ(v1.getVector(), updatevec);
+  EXPECT_EQ(v1, v2);
+}
+
 TEST(RowWriterV2, NoDefaultValue) {
   meta::NebulaSchemaProvider schema(12 /*Schema version*/);
   schema.addField("Col01", PropertyType::BOOL);

@@ -53,14 +53,16 @@ RowReaderWrapper RowReaderWrapper::getEdgePropReader(meta::SchemaManager* schema
 
 // static
 RowReaderWrapper RowReaderWrapper::getRowReader(const meta::NebulaSchemaProvider* schema,
-                                                folly::StringPiece row) {
+                                                folly::StringPiece row,
+                                                bool isVector,
+                                                size_t vectorIndex) {
   SchemaVer schemaVer;
   int32_t readerVer;
   RowReaderWrapper::getVersions(row, schemaVer, readerVer);
   if (schemaVer != schema->getVersion()) {
     return RowReaderWrapper();
   }
-  return RowReaderWrapper(schema, row, readerVer);
+  return RowReaderWrapper(schema, row, readerVer, isVector, vectorIndex);
 }
 
 // static
@@ -86,12 +88,25 @@ RowReaderWrapper::RowReaderWrapper(const meta::NebulaSchemaProvider* schema,
   currReader_ = &readerV2_;
 }
 
-bool RowReaderWrapper::reset(meta::NebulaSchemaProvider const* schema,
-                             folly::StringPiece row,
-                             int32_t readerVer) {
+RowReaderWrapper::RowReaderWrapper(const meta::NebulaSchemaProvider* schema,
+                                   const folly::StringPiece& row,
+                                   int32_t& readerVer,
+                                   bool isVector,
+                                   size_t vectorIndex) {
   CHECK_EQ(readerVer, 2);
   CHECK_NOTNULL(schema);
-  readerV2_.resetImpl(schema, row);
+  readerV2_.resetImpl(schema, row, isVector, vectorIndex);
+  currReader_ = &readerV2_;
+}
+
+bool RowReaderWrapper::reset(meta::NebulaSchemaProvider const* schema,
+                             folly::StringPiece row,
+                             int32_t readerVer,
+                             bool hasVectorCol,
+                             int32_t vectorIndex) {
+  CHECK_EQ(readerVer, 2);
+  CHECK_NOTNULL(schema);
+  readerV2_.resetImpl(schema, row, hasVectorCol, vectorIndex);
   currReader_ = &readerV2_;
   return true;
 }
@@ -112,7 +127,9 @@ bool RowReaderWrapper::reset(meta::NebulaSchemaProvider const* schema, folly::St
 
 bool RowReaderWrapper::reset(
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-    folly::StringPiece row) {
+    folly::StringPiece row,
+    bool hasVectorCol,
+    int32_t vectorIndex) {
   currReader_ = nullptr;
   SchemaVer schemaVer;
   int32_t readerVer;
@@ -124,7 +141,7 @@ bool RowReaderWrapper::reset(
   if (schemaVer != schemas[schemaVer]->getVersion()) {
     return false;
   }
-  return reset(schemas[schemaVer].get(), row, readerVer);
+  return reset(schemas[schemaVer].get(), row, readerVer, hasVectorCol, vectorIndex);
 }
 
 // static

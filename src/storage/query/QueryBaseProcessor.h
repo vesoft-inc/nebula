@@ -95,6 +95,14 @@ struct PropContext {
     statType_.emplace_back(statInfo->second);
   }
 
+  bool isVector() const {
+    return field_ && field_->type() == nebula::cpp2::PropertyType::VECTOR;
+  }
+
+  std::string name() const {
+    return name_;
+  }
+
   // prop name
   std::string name_;
   // field info, e.g. nullable, default value

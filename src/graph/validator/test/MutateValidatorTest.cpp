@@ -11,6 +11,14 @@ namespace graph {
 using PK = nebula::graph::PlanNode::Kind;
 class MutateValidatorTest : public ValidatorTestBase {};
 
+TEST_F(MutateValidatorTest, InsertVertexWithVectorTest) {
+  // vid use function call
+  {
+    auto cmd = "INSERT VERTEX person(name, vec) VALUES lower(\"TOM\"):(\"a\", (0.1,0.2,0.3));";
+    ASSERT_TRUE(checkResult(cmd, {PK::kInsertVertices, PK::kStart}));
+  }
+}
+
 TEST_F(MutateValidatorTest, InsertVertexTest) {
   // wrong schema
   {

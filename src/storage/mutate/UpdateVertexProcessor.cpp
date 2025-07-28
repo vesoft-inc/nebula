@@ -62,7 +62,7 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     onFinished();
     return;
   }
-
+  LOG(ERROR) << "LZY UpdateVertexProcessor build tagContext finished";
   CHECK_NOTNULL(env_->indexMan_);
   auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
   if (!iRet.ok()) {

@@ -130,20 +130,58 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
           propNames = iter->second;
         }
 
+        // Separate property names into regular and vector properties
+        std::vector<std::string> regularPropNames;
+        std::vector<std::string> vectorPropNames;
+        separatePropertyNames(propNames, schema, regularPropNames, vectorPropNames);
+
+        // Separate property values based on separated property names
+        std::vector<Value> regularProps;
+        std::vector<Value> vectorProps;
+        separatePropertyValues(props, regularProps, vectorProps);
+
         WriteResult wRet;
-        auto retEnc = encodeRowVal(schema, propNames, props, wRet);
+        // Use regularPropNames and regularProps for encoding regular properties
+        auto retEnc = encodeRowVal(schema, regularPropNames, regularProps, wRet);
         if (!retEnc.ok()) {
           LOG(ERROR) << retEnc.status();
           code = writeResultTo(wRet, false);
           break;
         }
         data.emplace_back(std::move(key), std::move(retEnc.value()));
+
+        if (!vectorProps.empty()) {
+          LOG(ERROR) << "Vector properties are not supported in doProcess without index";
+          bool vectorPropNamesEmpty = vectorPropNames.empty();
+          for (size_t i = 0; i < vectorProps.size(); ++i) {
+            int64_t vectorFieldIndex = vectorPropNamesEmpty
+                                           ? static_cast<int64_t>(i)
+                                           : schema->getVectorFieldIndex(vectorPropNames[i]);
+            auto vectorKey = NebulaKeyUtils::vectorTagKey(
+                spaceVidLen_, partId, vid, tagId, static_cast<int32_t>(vectorFieldIndex));
+            auto vectorValue = encodeVectorRowVal(
+                schema, vectorProps[i], static_cast<size_t>(vectorFieldIndex), wRet);
+
+            if (!vectorValue.ok()) {
+              LOG(ERROR) << "Failed to encode vector property: " << vectorValue.status();
+              code = writeResultTo(wRet, false);
+              break;
+            }
+
+            LOG(ERROR) << "LZY Added vector property for tag " << tagId << " at index "
+                       << vectorFieldIndex << ", key: " << folly::hexlify(vectorKey)
+                       << ", value size: " << vectorValue.value().size();
+
+            data.emplace_back(std::move(vectorKey), std::move(vectorValue.value()));
+          }
+        }
       }
     }
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
       stats::StatsManager::addValue(kNumVerticesInserted, data.size());
+      LOG(ERROR) << "No indexes found for space " << spaceId_;
       doPut(spaceId_, partId, std::move(data));
     }
   }
@@ -199,8 +237,19 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
           propNames = iter->second;
         }
 
+        // Separate property names into regular and vector properties
+        std::vector<std::string> regularPropNames;
+        std::vector<std::string> vectorPropNames;
+        separatePropertyNames(propNames, schema, regularPropNames, vectorPropNames);
+
+        // Separate property values based on separated property names
+        std::vector<Value> regularProps;
+        std::vector<Value> vectorProps;
+        separatePropertyValues(props, regularProps, vectorProps);
+
         WriteResult writeResult;
-        auto encode = encodeRowVal(schema, propNames, props, writeResult);
+        // Use regularPropNames and regularProps for encoding regular properties
+        auto encode = encodeRowVal(schema, regularPropNames, regularProps, writeResult);
         if (!encode.ok()) {
           LOG(ERROR) << encode.status();
           code = writeResultTo(writeResult, false);
@@ -228,6 +277,8 @@ kvstore::MergeableAtomicOpResult AddVerticesProcessor::addVerticesWithIndex(
     PartitionID partId,
     const std::vector<kvstore::KV>& data,
     const std::vector<std::string>& vertices) {
+  LOG(ERROR) << "LZY AddVerticesProcessor::addVerticesWithIndex, partId: " << partId
+             << ", data size: " << data.size() << ", vertices size: " << vertices.size();
   kvstore::MergeableAtomicOpResult ret;
   ret.code = nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED;
   IndexCountWrapper wrapper(env_);

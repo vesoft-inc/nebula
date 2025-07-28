@@ -432,7 +432,11 @@ TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
     for (const auto& colIt : tagIt.get_schema().get_columns()) {
-      addSchemaField(schema.get(), colIt);
+      if (colIt.get_type().get_type() == nebula::cpp2::PropertyType::VECTOR) {
+        addSchemaVectorField(schema.get(), colIt);
+      } else {
+        addSchemaField(schema.get(), colIt);
+      }
     }
     // handle schema property
     schema->setProp(tagIt.get_schema().get_schema_prop());
@@ -456,9 +460,13 @@ EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
     for (const auto& col : edgeIt.get_schema().get_columns()) {
-      MetaClient::addSchemaField(schema.get(), col);
+      if (col.get_type().get_type() == nebula::cpp2::PropertyType::VECTOR) {
+        MetaClient::addSchemaVectorField(schema.get(), col);
+      } else {
+        MetaClient::addSchemaField(schema.get(), col);
+      }
     }
-    // handle shcem property
+    // handle schema property
     schema->setProp(edgeIt.get_schema().get_schema_prop());
     auto& schemas = edgeSchemas[edgeIt.get_edge_type()];
     // Because of the byte order of schema version in meta is not same as numerical order, we have
@@ -486,6 +494,21 @@ void MetaClient::addSchemaField(NebulaSchemaProvider* schema, const cpp2::Column
   }
 
   schema->addField(col.get_name(), colType.get_type(), len, nullable, encoded, geoShape);
+}
+
+void MetaClient::addSchemaVectorField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col) {
+  memory::MemoryCheckOffGuard g;
+  bool hasDef = col.default_value_ref().has_value();
+  auto& colType = col.get_type();
+  size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
+  cpp2::GeoShape geoShape = cpp2::GeoShape::ANY;
+  bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
+  std::string encoded;
+  if (hasDef) {
+    encoded = *col.get_default_value();
+  }
+
+  schema->addVectorField(col.get_name(), colType.get_type(), len, nullable, encoded, geoShape);
 }
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,

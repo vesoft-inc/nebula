@@ -120,7 +120,14 @@ class UpdateNode : public RelNode<T> {
         if (it == checkedProp.end()) {
           auto field = schema_->field(p);
           auto ret = checkField(field);
-          if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          if (ret == nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND ||
+              ret == nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND) {
+            field = schema_->vectorField(p);
+            ret = checkField(field);
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+              return ret;
+            }
+          } else if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
           }
           ret = getDefaultOrNullValue(field, p);
@@ -134,7 +141,14 @@ class UpdateNode : public RelNode<T> {
       // set field not need default value or nullable
       auto field = schema_->field(prop.first);
       auto ret = checkField(field);
-      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      if (ret == nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND ||
+          ret == nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND) {
+        field = schema_->vectorField(prop.first);
+        ret = checkField(field);
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return ret;
+        }
+      } else if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
       checkedProp.emplace(prop.first);
@@ -152,6 +166,19 @@ class UpdateNode : public RelNode<T> {
         }
       }
       ++fieldIter;
+    }
+
+    auto vectorFieldIter = schema_->vecbegin();
+    while (vectorFieldIter) {
+      auto propName = vectorFieldIter->name();
+      auto propIter = checkedProp.find(propName);
+      if (propIter == checkedProp.end()) {
+        auto ret = getDefaultOrNullValue(&(*vectorFieldIter), propName);
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return ret;
+        }
+      }
+      ++vectorFieldIter;
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -173,6 +200,8 @@ class UpdateNode : public RelNode<T> {
 
   std::string key_;
   RowReaderWrapper* reader_{nullptr};
+  std::vector<std::string> vectorKeys_;
+  std::vector<RowReaderWrapper*> vectorReaders_;
 
   const meta::NebulaSchemaProvider* schema_{nullptr};
 
@@ -181,6 +210,9 @@ class UpdateNode : public RelNode<T> {
    */
   std::string val_;
   std::unique_ptr<RowWriterV2> rowWriter_;
+
+  std::vector<std::string> vectorVals_;
+  std::vector<std::unique_ptr<RowWriterV2>> vectorRowWriters_;
   /**
    * @brief value of prop
    */
@@ -251,6 +283,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
     if (filterNode_->valid()) {
       this->reader_ = filterNode_->reader();
+      this->vectorReaders_ = filterNode_->vectorReaders();
     }
     // reset StorageExpressionContext reader_, because it contains old value
     this->expCtx_->reset();
@@ -259,6 +292,13 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       ret = this->insertTagProps(partId, vId);
     } else if (this->reader_) {
       this->key_ = filterNode_->key().str();
+      LOG(ERROR) << "LZY Begin to get vector keys";
+      if (!filterNode_->vectorKeys().empty()) {
+        for (auto& vkey : filterNode_->vectorKeys()) {
+          this->vectorKeys_.emplace_back(vkey.str());
+        }
+      }
+      LOG(ERROR) << "LZY Begin to collect tag prop";
       ret = this->collTagProp(vId);
     } else {
       ret = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
@@ -360,6 +400,22 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       }
       props_[propName] = std::move(retVal.value());
     }
+    for (auto index = 0UL; index < schema_->getVectorNumFields(); index++) {
+      auto vecPropName = std::string(schema_->getVectorFieldName(index));
+      VLOG(1) << "Collect prop " << vecPropName << ", type " << tagId_;
+
+      // read prop value, If the RowReader contains this field,
+      // read from the rowreader, otherwise read the default value
+      // or null value from the latest schema
+      auto retVal = QueryUtils::readVectorValue(vectorReaders_[index], vecPropName, schema_);
+      if (!retVal.ok()) {
+        VLOG(1) << "Bad value for tag: " << tagId_ << ", prop " << vecPropName;
+        return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+      }
+      LOG(ERROR) << "LZY UpdateTagNode collect vector prop: " << vecPropName
+                 << ", value: " << retVal.value().toString();
+      props_[vecPropName] = std::move(retVal.value());
+    }
 
     expCtx_->setTagProp(tagName_, kVid, vId);
     expCtx_->setTagProp(tagName_, kTag, tagId_);
@@ -373,6 +429,12 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     // reader->getData());
     rowWriter_ = std::make_unique<RowWriterV2>(schema_);
     val_ = reader_->getData();
+
+    for (auto index = 0UL; index < schema_->getVectorNumFields(); index++) {
+      vectorVals_.emplace_back(vectorReaders_[index]->getData());
+      vectorRowWriters_.emplace_back(
+          std::make_unique<RowWriterV2>(schema_, true, static_cast<int32_t>(index)));
+    }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
@@ -405,7 +467,13 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     }
 
     for (auto& e : props_) {
-      auto wRet = rowWriter_->setValue(e.first, e.second);
+      WriteResult wRet;
+      if (e.second.isVector()) {
+        auto index = schema_->getVectorFieldIndex(e.first);
+        wRet = vectorRowWriters_[index]->setValueVec(index, e.second);
+      } else {
+        wRet = rowWriter_->setValue(e.first, e.second);
+      }
       if (wRet != WriteResult::SUCCEEDED) {
         VLOG(2) << "Add field failed ";
         return std::nullopt;
@@ -419,8 +487,23 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       VLOG(2) << "Add field failed ";
       return std::nullopt;
     }
-
+    if (!vectorRowWriters_.empty()) {
+      for (auto& vectorRowWriter : vectorRowWriters_) {
+        wRet = vectorRowWriter->finishVector();
+        if (wRet != WriteResult::SUCCEEDED) {
+          VLOG(2) << "Add field failed ";
+          return std::nullopt;
+        }
+      }
+    }
+    // TODO(LZY): add vector support
     auto nVal = rowWriter_->moveEncodedStr();
+    std::vector<std::string> vectorVals;
+    for (auto& vectorRowWriter : vectorRowWriters_) {
+      vectorVals.emplace_back(vectorRowWriter->moveEncodedStr());
+    }
+    LOG(ERROR) << "LZY UpdateTagNode vectorKey size: " << vectorKeys_.size()
+               << ", vectorVals size: " << vectorVals.size();
 
     // update index if exists
     // Note: when insert_ is true, either there is no origin data or TTL expired
@@ -492,6 +575,9 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       batchHolder->put(NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId), "");
     }
     batchHolder->put(std::move(key_), std::move(nVal));
+    for (auto index = 0UL; index < schema_->getVectorNumFields(); index++) {
+      batchHolder->put(std::move(vectorKeys_[index]), std::move(vectorVals_[index]));
+    }
     return encodeBatchValue(batchHolder->getBatch());
   }
 

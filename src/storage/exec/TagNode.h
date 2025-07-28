@@ -6,6 +6,7 @@
 #ifndef STORAGE_EXEC_TAGNODE_H_
 #define STORAGE_EXEC_TAGNODE_H_
 
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "storage/exec/RelNode.h"
 #include "storage/exec/StorageIterator.h"
@@ -64,12 +65,40 @@ class TagNode final : public IterateNode<VertexID> {
             << props_->size();
     key_ = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vId, tagId_);
     ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &value_);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      return doExecute(key_, value_);
-    } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-      // regard key not found as succeed as well, upper node will handle it
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED &&
+        ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      return ret;
     }
+
+    if (context_->tagSchema_ != nullptr && context_->tagSchema_->hasVectorCol()) {
+      for (auto& prop : *props_) {
+        if (prop.isVector()) {
+          auto index = context_->tagSchema_->getVectorFieldIndex(prop.name());
+          auto vecKey = NebulaKeyUtils::vectorTagKey(
+              context_->vIdLen(), partId, vId, tagId_, static_cast<int32_t>(index));
+          std::string vecVal;
+          ret = context_->env()->kvstore_->get(context_->spaceId(), partId, vecKey, &vecVal);
+          if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+            vectorKeys_.emplace_back(std::move(vecKey));
+            vectorValues_.emplace_back(std::move(vecVal));
+            vectorIndexes_.emplace_back(index);
+          } else if (ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            vectorKeys_.clear();
+            vectorValues_.clear();
+            vectorIndexes_.clear();
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
+          } else {
+            return ret;
+          }
+        }
+      }
+    }
+    if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND && vectorValues_.empty()) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    } else if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      doExecute(key_, value_, vectorKeys_, vectorValues_, vectorIndexes_);
+    }
+
     return ret;
   }
 
@@ -80,13 +109,26 @@ class TagNode final : public IterateNode<VertexID> {
    * @param value Next value to be read
    * @return nebula::cpp2::ErrorCode
    */
+  nebula::cpp2::ErrorCode doExecute(const std::string& key,
+                                    const std::string& value,
+                                    const std::vector<std::string>& vecKeys,
+                                    const std::vector<std::string>& vecValues,
+                                    const std::vector<int32_t>& vecIndexes) {
+    key_ = key;
+    value_ = value;
+    vectorKeys_ = vecKeys;
+    vectorValues_ = vecValues;
+    vectorIndexes_ = vecIndexes;
+    resetReader();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
   nebula::cpp2::ErrorCode doExecute(const std::string& key, const std::string& value) {
     key_ = key;
     value_ = value;
     resetReader();
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-
   /**
    * @brief Collect tag's prop
    *
@@ -123,6 +165,30 @@ class TagNode final : public IterateNode<VertexID> {
     return reader_.get();
   }
 
+  std::vector<folly::StringPiece> vectorKeys() const override {
+    std::vector<folly::StringPiece> ret;
+    for (auto& key : vectorKeys_) {
+      ret.emplace_back(key);
+    }
+    return ret;
+  }
+
+  std::vector<folly::StringPiece> vectorValues() const override {
+    std::vector<folly::StringPiece> ret;
+    for (auto& value : vectorValues_) {
+      ret.emplace_back(value);
+    }
+    return ret;
+  }
+
+  std::vector<RowReaderWrapper*> vectorReaders() const override {
+    std::vector<RowReaderWrapper*> ret;
+    for (auto& reader : vectorReaders_) {
+      ret.emplace_back(reader.get());
+    }
+    return ret;
+  }
+
   const std::string& getTagName() const {
     return tagName_;
   }
@@ -136,6 +202,18 @@ class TagNode final : public IterateNode<VertexID> {
     key_.clear();
     value_.clear();
     reader_.reset();
+    for (auto& vkey : vectorKeys_) {
+      vkey.clear();
+    }
+    vectorKeys_.clear();
+    for (auto& vvalue : vectorValues_) {
+      vvalue.clear();
+    }
+    vectorValues_.clear();
+    for (auto& reader : vectorReaders_) {
+      reader.reset();
+    }
+    vectorReaders_.clear();
   }
 
  private:
@@ -147,6 +225,23 @@ class TagNode final : public IterateNode<VertexID> {
              schemas_->back().get(), reader_.get(), ttl_.value().first, ttl_.value().second))) {
       reader_.reset();
       return;
+    }
+    if (!vectorValues_.empty()) {
+      vectorReaders_.reserve(vectorValues_.size());
+      for (size_t i = 0; i < vectorValues_.size(); i++) {
+        auto index = vectorIndexes_[i];
+        RowReaderWrapper vectorReader;
+        vectorReader.reset(*schemas_, vectorValues_[i], true, index);
+        if (!vectorReader ||
+            (ttl_.has_value() && CommonUtils::checkDataExpiredForTTL(schemas_->back().get(),
+                                                                     vectorReader.get(),
+                                                                     ttl_.value().first,
+                                                                     ttl_.value().second))) {
+          LOG(ERROR) << "LZY TagNode reset vector reader, index: " << index;
+          vectorReader.reset();
+        }
+        vectorReaders_.emplace_back(std::move(vectorReader));
+      }
     }
     valid_ = true;
   }
@@ -165,6 +260,11 @@ class TagNode final : public IterateNode<VertexID> {
   std::string key_;
   std::string value_;
   RowReaderWrapper reader_;
+  // for vector property
+  std::vector<std::string> vectorKeys_;
+  std::vector<std::string> vectorValues_;
+  std::vector<int32_t> vectorIndexes_;
+  std::vector<RowReaderWrapper> vectorReaders_;
 };
 
 }  // namespace storage

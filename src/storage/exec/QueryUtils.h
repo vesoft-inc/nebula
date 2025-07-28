@@ -109,6 +109,43 @@ class QueryUtils final {
     return value;
   }
 
+  static StatusOr<nebula::Value> readVectorValue(
+      RowReaderWrapper* reader,
+      const std::string& propName,
+      const meta::NebulaSchemaProvider::SchemaField* field) {
+    auto value = reader->getVectorValueByName(propName);
+    if (value.type() == Value::Type::NULLVALUE) {
+      // read null value
+      auto nullType = value.getNull();
+
+      if (nullType == NullType::UNKNOWN_PROP) {
+        VLOG(1) << "Fail to read prop " << propName;
+        if (!field) {
+          return value;
+        }
+        if (field->hasDefault()) {
+          DefaultValueContext expCtx;
+          ObjectPool pool;
+          auto& exprStr = field->defaultValue();
+          auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
+          LOG(ERROR) << "lzy Read vector prop with default value, prop: " << propName
+                     << ", value: " << Expression::eval(expr, expCtx).toString();
+          return Expression::eval(expr, expCtx);
+        } else if (field->nullable()) {
+          return NullType::__NULL__;
+        }
+      } else if (nullType == NullType::__NULL__) {
+        // Need to check whether the field is nullable
+        if (field->nullable()) {
+          return value;
+        }
+      }
+      return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
+    }
+    LOG(ERROR) << "lzy Read vector prop, prop: " << propName << ", value: " << value.toString();
+    return value;
+  }
+
   /**
    * @brief read prop value, If the RowReader contains this field, read from the rowreader,
    * otherwise read the default value or null value from the latest schema
@@ -126,6 +163,16 @@ class QueryUtils final {
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
     }
     return readValue(reader, propName, field);
+  }
+  static StatusOr<nebula::Value> readVectorValue(RowReaderWrapper* reader,
+                                                 const std::string& propName,
+                                                 const meta::NebulaSchemaProvider* schema) {
+    auto field = schema->vectorField(propName);
+    if (!field) {
+      return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
+    }
+    LOG(ERROR) << "lzy Read vector prop, prop: " << propName;
+    return readVectorValue(reader, propName, field);
   }
 
   static StatusOr<nebula::Value> readEdgeProp(folly::StringPiece key,
@@ -196,6 +243,20 @@ class QueryUtils final {
     return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
   }
 
+  static StatusOr<nebula::Value> readVertexVectorProp(RowReaderWrapper* reader,
+                                                      const PropContext& prop) {
+    switch (prop.propInKeyType_) {
+      // prop in value
+      case PropContext::PropInKeyType::NONE: {
+        LOG(ERROR) << "LZY Read vertex vector prop, prop: " << prop.name_;
+        return readVectorValue(reader, prop.name_, prop.field_);
+      }
+      default:
+        LOG(FATAL) << "Should not read here";
+    }
+    return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
+  }
+
   static Status collectVertexProps(folly::StringPiece key,
                                    size_t vIdLen,
                                    bool isIntId,
@@ -218,6 +279,27 @@ class QueryUtils final {
         expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
       }
     }
+    return Status::OK();
+  }
+  static Status collectVertexVectorProps(RowReaderWrapper* reader,
+                                         const PropContext* prop,
+                                         nebula::List& list,
+                                         StorageExpressionContext* expCtx = nullptr,
+                                         const std::string& tagName = "") {
+    if (!(prop->returned_ || (prop->filtered_ && expCtx != nullptr))) {
+      return Status::OK();
+    }
+    LOG(ERROR) << "LZY Collect vertex vector prop, prop: " << prop->name_;
+    auto value = QueryUtils::readVertexVectorProp(reader, *prop);
+    NG_RETURN_IF_ERROR(value);
+    if (prop->returned_) {
+      VLOG(2) << "Collect prop " << prop->name_;
+      list.emplace_back(value.value());
+    }
+    if (prop->filtered_ && expCtx != nullptr) {
+      expCtx->setTagProp(tagName, prop->name_, std::move(value).value());
+    }
+
     return Status::OK();
   }
 

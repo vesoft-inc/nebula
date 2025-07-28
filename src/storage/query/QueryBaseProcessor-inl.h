@@ -499,8 +499,11 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
       auto field = tagSchema->field(propName);
       // Noexistent property will return Empty or Null if enabled
       if (field == nullptr && !allowNoexistentProp) {
-        VLOG(1) << "Can't find related prop " << propName << " on tag " << tagName;
-        return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+        field = tagSchema->vectorField(propName);
+        if (field == nullptr && !allowNoexistentProp) {
+          VLOG(1) << "Can't find related prop " << propName << " on tag " << tagName;
+          return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+        }
       }
 
       addPropContextIfNotExists(tagContext_.propContexts_,
@@ -560,8 +563,11 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
         field = edgeSchema->field(propName);
         // Noexistent property will return Empty or Null if enabled
         if (field == nullptr && !allowNoexistentProp) {
-          VLOG(1) << "Can't find related prop " << propName << " on edge " << edgeName;
-          return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+          field = edgeSchema->vectorField(propName);
+          if (field == nullptr && !allowNoexistentProp) {
+            VLOG(1) << "Can't find related prop " << propName << " on tag " << edgeName;
+            return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+          }
         }
       }
       /*

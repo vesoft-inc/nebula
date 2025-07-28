@@ -72,6 +72,10 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
               // For teams tagId is 2
               val = reader->getValueByIndex(0);
               EXPECT_EQ((*newTag.props_ref())[0], val);
+            } else if (tagId == 4) {
+              // For vector tagId is 4
+              val = reader->getValueByIndex(0);
+              EXPECT_EQ((*newTag.props_ref())[0], val);
             } else {
               // Impossible to get here
               ASSERT_TRUE(false);
@@ -86,6 +90,10 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
               }
             } else if (tagId == 2) {
               // For teams tagId is 2
+              val = reader->getValueByIndex(0);
+              EXPECT_EQ((*newTag.props_ref())[0], val);
+            } else if (tagId == 4) {
+              // For vector tagId is 4
               val = reader->getValueByIndex(0);
               EXPECT_EQ((*newTag.props_ref())[0], val);
             } else {
@@ -124,10 +132,31 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
               val = reader->getValueByIndex(0);
               EXPECT_EQ((*newTag.props_ref())[0], val);
             }
+
+            if (tagId == 4) {
+              // For vector tagId is 4
+              val = reader->getValueByIndex(0);
+              EXPECT_EQ((*newTag.props_ref())[0], val);
+            }
           }
           num++;
           count++;
           iter->next();
+        }
+
+        // for vector property
+        if (tagId == 4) {
+          auto vectorPrefix =
+              NebulaKeyUtils::vectorTagPrefix(spaceVidLen, partId, vid.getStr(), tagId);
+          std::unique_ptr<kvstore::KVIterator> vectorIter;
+          EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
+                    env->kvstore_->prefix(spaceId, partId, vectorPrefix, &vectorIter));
+          while (vectorIter && vectorIter->valid()) {
+            auto vectorReader = RowReaderWrapper::getRowReader(schema.get(), vectorIter->val());
+            Value val = vectorReader->getVectorValueByIndex(0);
+            EXPECT_EQ((*newTag.props_ref())[1], val);
+            vectorIter->next();
+          }
         }
       }
     }
@@ -246,6 +275,92 @@ void checkAddEdgesData(cpp2::AddEdgesRequest req,
         num++;
         totalCount++;
         iter->next();
+      }
+    }
+  }
+  EXPECT_EQ(expectNum, totalCount);
+}
+
+void checkAddVectorEdgesData(cpp2::AddEdgesRequest req,
+                             StorageEnv* env,
+                             int expectNum,
+                             /* 0 not specify prop_names, 1 specify prop_names, 2 mix */
+                             int mode = 0) {
+  EXPECT_TRUE(mode == 0 || mode == 1 || mode == 2);
+  auto spaceId = req.get_space_id();
+  auto ret = env->schemaMan_->getSpaceVidLen(spaceId);
+  EXPECT_TRUE(ret.ok());
+  auto spaceVidLen = ret.value();
+
+  int totalCount = 0;
+  for (auto& part : *req.parts_ref()) {
+    auto partId = part.first;
+    auto newEdgeVec = part.second;
+    for (auto& newEdge : newEdgeVec) {
+      auto edgekey = newEdge.get_key();
+      auto newEdgeProp = newEdge.get_props();
+
+      auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen,
+                                               partId,
+                                               edgekey.get_src().getStr(),
+                                               edgekey.get_edge_type(),
+                                               edgekey.get_ranking(),
+                                               edgekey.get_dst().getStr());
+      std::unique_ptr<kvstore::KVIterator> iter;
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
+                env->kvstore_->prefix(spaceId, partId, prefix, &iter));
+
+      auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edgekey.get_edge_type()));
+      EXPECT_TRUE(schema != NULL);
+
+      Value val;
+      int num = 0;
+      while (iter && iter->valid()) {
+        auto reader = RowReaderWrapper::getRowReader(schema.get(), iter->val());
+        if (mode == 0) {
+          for (auto i = 0; i < 2; i++) {
+            val = reader->getValueByIndex(i);
+            EXPECT_EQ(newEdgeProp[i], val);
+          }
+
+        } else if (mode == 1) {
+          // For the specified attribute order, the default value and nullable
+          // columns always use the default value or null value
+          for (auto i = 0; i < 2; i++) {
+            val = reader->getValueByIndex(i);
+            EXPECT_EQ(newEdgeProp[2 - i], val);
+          }
+        } else {  // mode is 2
+          for (auto i = 0; i < 2; i++) {
+            val = reader->getValueByIndex(i);
+            EXPECT_EQ(newEdgeProp[i], val);
+          }
+        }
+        num++;
+        totalCount++;
+        iter->next();
+      }
+      LOG(ERROR) << "LZY totalCount: " << totalCount << ", newEdgeProp size: " << newEdgeProp.size()
+                 << ", edge type: " << edgekey.get_edge_type();
+
+      auto vecPrefix = NebulaKeyUtils::vectorEdgePrefix(spaceVidLen,
+                                                        partId,
+                                                        edgekey.get_src().getStr(),
+                                                        edgekey.get_edge_type(),
+                                                        edgekey.get_ranking(),
+                                                        edgekey.get_dst().getStr());
+      std::unique_ptr<kvstore::KVIterator> vecIter;
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
+                env->kvstore_->prefix(spaceId, partId, vecPrefix, &vecIter));
+      while (vecIter && vecIter->valid()) {
+        auto vectorReader = RowReaderWrapper::getRowReader(schema.get(), vecIter->val(), true, 0);
+        val = vectorReader->getVectorValueByIndex(0);
+        if (mode == 0 || mode == 2) {
+          EXPECT_EQ(newEdgeProp[2], val);
+        } else if (mode == 1) {
+          EXPECT_EQ(newEdgeProp[0], val);
+        }
+        vecIter->next();
       }
     }
   }

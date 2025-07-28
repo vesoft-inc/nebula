@@ -5,9 +5,12 @@
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
 
+#include "common/meta/NebulaSchemaProvider.h"
+#include "common/thrift/ThriftTypes.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "kvstore/Common.h"
 #include "storage/StorageFlags.h"
 #include "storage/stats/StorageStats.h"
 
@@ -70,10 +73,25 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
           VLOG(3) << "Error! ret = " << static_cast<int32_t>(code) << ", spaceID " << spaceId_;
           break;
         }
+        std::shared_ptr<const meta::NebulaSchemaProvider> schema = nullptr;
+        TagID tagId = -1;
         while (iter->valid()) {
           auto key = iter->key();
+          if (schema == nullptr) {
+            tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
+            schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
+          }
           keys.emplace_back(key.str());
           iter->next();
+        }
+        if (schema != nullptr) {
+          auto vectorFieldsNum = schema->getVectorNumFields();
+          if (vectorFieldsNum > 0) {
+            for (size_t i = 0; i < vectorFieldsNum; i++) {
+              keys.emplace_back(NebulaKeyUtils::vectorTagKey(
+                  spaceVidLen_, partId, vid.getStr(), tagId, static_cast<int32_t>(i)));
+            }
+          }
         }
       }
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

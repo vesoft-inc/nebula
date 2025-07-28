@@ -228,10 +228,10 @@ class NebulaKeyUtils final {
     return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVertex;
   }
 
-  static bool isVector(size_t vIdLen, const folly::StringPiece& rawKey) {
-    if (rawKey.size() != kVectorTagLen + vIdLen) {
-      return false;
-    }
+  static bool isVector(const folly::StringPiece& rawKey) {
+    // if (rawKey.size() != kVectorTagLen + vIdLen) {
+    //   return false;
+    // }
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
     auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithVector;
     return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVector_;

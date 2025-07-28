@@ -5,6 +5,8 @@
 
 #include "mock/MockData.h"
 
+#include <string>
+
 #include "common/expression/ConstantExpression.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "interface/gen-cpp2/meta_types.h"
@@ -295,6 +297,33 @@ std::vector<Teammate> MockData::teammates_ = {
     {"Stephen Curry", "Klay Thompson", "Warriors", 2011, 2019},
 };
 
+std::vector<VectorElement> MockData::vectors_ = {
+    {1, {0.1, 0.2, 0.3}},
+    {2, {0.2, 0.4, 0.6}},
+    {3, {0.3, 0.6, 0.9}},
+    {4, {0.4, 0.8, 1.2}},
+    {5, {0.5, 1.0, 1.5}},
+    {6, {0.6, 1.2, 1.8}},
+    {7, {0.7, 1.4, 2.1}},
+    {8, {0.8, 1.6, 2.4}},
+    {9, {0.9, 1.8, 2.7}},
+    {10, {1.0, 2.0, 3.0}},
+    {11, {1.1, 2.2, 3.3}},
+    {12, {1.2, 2.4, 3.6}},
+};
+
+std::vector<VecEdge> MockData::vecEdges_ = {
+    {1, 2, {0.1, 0.2, 0.3}},
+    {1, 3, {0.2, 0.4, 0.6}},
+    {2, 4, {0.3, 0.6, 0.9}},
+    {2, 5, {0.4, 0.8, 1.2}},
+    {3, 6, {0.5, 1.0, 1.5}},
+    {4, 7, {0.6, 1.2, 1.8}},
+    {5, 8, {0.7, 1.4, 2.1}},
+    {6, 9, {0.8, 1.6, 2.4}},
+    {7, 10, {0.9, 1.8, 2.7}},
+};
+
 std::unordered_map<std::string, std::vector<Serve>> MockData::playerServes_ = playerServes();
 std::unordered_map<std::string, std::vector<Serve>> MockData::teamServes_ = teamServes();
 
@@ -412,6 +441,29 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeammateEdgeSchema(Sch
   schema->addField("teamName", PropertyType::STRING);
   schema->addField("startYear", PropertyType::INT64);
   schema->addField("endYear", PropertyType::INT64);
+  return schema;
+}
+
+std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockVectorTagSchema(SchemaVer ver,
+                                                                          bool hasProp) {
+  std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
+  if (!hasProp) {
+    return schema;
+  }
+  schema->addField("id", PropertyType::INT32);
+  schema->addVectorField("vec", PropertyType::VECTOR, 3);
+  return schema;
+}
+
+std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockVectorEdgeSchema(SchemaVer ver,
+                                                                           bool hasProp) {
+  std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
+  if (!hasProp) {
+    return schema;
+  }
+  schema->addField("id1", PropertyType::INT32);
+  schema->addField("id2", PropertyType::INT32);
+  schema->addVectorField("vec", PropertyType::VECTOR, 3);
   return schema;
 }
 
@@ -710,6 +762,22 @@ std::vector<VertexData> MockData::mockVertices(bool upper) {
   return ret;
 }
 
+// Mock Vector data
+std::vector<VertexData> MockData::mockVectorVertices() {
+  std::vector<VertexData> ret;
+  for (auto& vec : vectors_) {
+    VertexData data;
+    data.vId_ = std::to_string(vec.id_);
+    data.tId_ = 4;
+    std::vector<Value> props;
+    props.emplace_back(vec.id_);
+    props.emplace_back(nebula::Vector(vec.values_));
+    data.props_ = std::move(props);
+    ret.emplace_back(std::move(data));
+  }
+  return ret;
+}
+
 std::vector<std::pair<PartitionID, std::string>> MockData::mockPlayerIndexKeys(bool upper) {
   std::vector<std::pair<PartitionID, std::string>> keys;
   for (auto& player : players_) {
@@ -817,6 +885,37 @@ std::vector<EdgeData> MockData::mockEdges(bool upper, bool hasInEdges) {
         props.emplace_back(serve.champions_);
       }
     }
+    positiveEdge.props_ = std::move(props);
+    auto reverseData = getReverseEdge(positiveEdge);
+    ret.emplace_back(std::move(positiveEdge));
+    if (hasInEdges) {
+      ret.emplace_back(std::move(reverseData));
+    }
+  }
+  return ret;
+}
+
+std::vector<EdgeData> MockData::mockVectorEdges(bool hasInEdges) {
+  std::vector<EdgeData> ret;
+  // Use serve data, positive edgeType is 101, reverse edgeType is -101
+  for (auto& vecEdge : vecEdges_) {
+    EdgeData positiveEdge;
+    positiveEdge.type_ = 103;
+    positiveEdge.rank_ = 0;
+    positiveEdge.dstId_ = std::to_string(vecEdge.id2_);
+
+    std::vector<Value> props;
+
+    positiveEdge.srcId_ = std::to_string(vecEdge.id1_);
+    props.emplace_back(vecEdge.id1_);
+    props.emplace_back(vecEdge.id2_);
+    props.emplace_back(nebula::Vector(vecEdge.values_));
+
+    // Use insert time as ttl col
+    if (FLAGS_mock_ttl_col) {
+      props.emplace_back(std::time(NULL));
+    }
+
     positiveEdge.props_ = std::move(props);
     auto reverseData = getReverseEdge(positiveEdge);
     ret.emplace_back(std::move(positiveEdge));
@@ -944,6 +1043,32 @@ std::unordered_map<VertexID, std::vector<EdgeData>> MockData::mockmMultiRankServ
   return ret;
 }
 
+nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVectorVerticesReq(int32_t parts) {
+  nebula::storage::cpp2::AddVerticesRequest req;
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = true;
+
+  auto retRecs = mockVectorVertices();
+
+  for (auto& rec : retRecs) {
+    nebula::storage::cpp2::NewVertex newVertex;
+    nebula::storage::cpp2::NewTag newTag;
+    auto partId = std::stoul(rec.vId_) % parts + 1;
+    LOG(INFO) << "partId: " << partId << ", vId: " << rec.vId_;
+
+    newTag.tag_id_ref() = rec.tId_;
+    newTag.props_ref() = std::move(rec.props_);
+
+    std::vector<nebula::storage::cpp2::NewTag> newTags;
+    newTags.push_back(std::move(newTag));
+
+    newVertex.id_ref() = rec.vId_;
+    newVertex.tags_ref() = std::move(newTags);
+    (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
+  }
+  return req;
+}
+
 nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVerticesReq(bool upper, int32_t parts) {
   nebula::storage::cpp2::AddVerticesRequest req;
   req.space_id_ref() = 1;
@@ -1006,6 +1131,30 @@ nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesReq(bool upper,
   return req;
 }
 
+nebula::storage::cpp2::AddEdgesRequest MockData::mockAddVectorEdgesReq(int32_t parts,
+                                                                       bool hasInEdges) {
+  nebula::storage::cpp2::AddEdgesRequest req;
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = true;
+  auto retRecs = mockVectorEdges(hasInEdges);
+  for (auto& rec : retRecs) {
+    nebula::storage::cpp2::NewEdge newEdge;
+    nebula::storage::cpp2::EdgeKey edgeKey;
+    auto partId = std::hash<std::string>()(rec.srcId_) % parts + 1;
+
+    edgeKey.src_ref() = rec.srcId_;
+    edgeKey.edge_type_ref() = rec.type_;
+    edgeKey.ranking_ref() = rec.rank_;
+    edgeKey.dst_ref() = rec.dstId_;
+
+    newEdge.key_ref() = std::move(edgeKey);
+    newEdge.props_ref() = std::move(rec.props_);
+
+    (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
+  }
+  return req;
+}
+
 nebula::storage::cpp2::DeleteEdgesRequest MockData::mockDeleteEdgesReq(int32_t parts) {
   nebula::storage::cpp2::DeleteEdgesRequest req;
   req.space_id_ref() = 1;
@@ -1022,6 +1171,25 @@ nebula::storage::cpp2::DeleteEdgesRequest MockData::mockDeleteEdgesReq(int32_t p
     (*req.parts_ref())[partId].emplace_back(std::move(edgeKey));
   }
   return req;
+}
+
+std::vector<VertexData> MockData::mockVectorVerticesSpecifiedOrder() {
+  std::vector<VertexData> ret;
+  // Multiple vertices, vertex has two tags, players and teams
+  // players tagId is 1, teams tagId is 2
+  for (auto& vec : vectors_) {
+    VertexData data;
+    data.vId_ = std::to_string(vec.id_);
+    data.tId_ = 4;
+
+    std::vector<Value> props;
+    props.emplace_back(vec.id_);
+    props.emplace_back(nebula::Vector(vec.values_));
+    data.props_ = std::move(props);
+
+    ret.push_back(std::move(data));
+  }
+  return ret;
 }
 
 std::vector<VertexData> MockData::mockVerticesSpecifiedOrder() {
@@ -1093,6 +1261,30 @@ std::vector<EdgeData> MockData::mockEdgesSpecifiedOrder() {
   return ret;
 }
 
+std::vector<EdgeData> MockData::mockVectorEdgesSpecifiedOrder() {
+  std::vector<EdgeData> ret;
+  // Use serve data, positive edgeType is 101, reverse edgeType is -101
+  for (auto& vecEdge : vecEdges_) {
+    EdgeData positiveEdge;
+    positiveEdge.type_ = 103;
+    positiveEdge.rank_ = 0;
+    positiveEdge.dstId_ = std::to_string(vecEdge.id2_);
+
+    std::vector<Value> props;
+
+    positiveEdge.srcId_ = std::to_string(vecEdge.id1_);
+    props.emplace_back(nebula::Vector(vecEdge.values_));
+    props.emplace_back(vecEdge.id2_);
+    props.emplace_back(vecEdge.id1_);
+
+    positiveEdge.props_ = std::move(props);
+    auto reverseEdge = getReverseEdge(positiveEdge);
+    ret.emplace_back(std::move(positiveEdge));
+    ret.emplace_back(std::move(reverseEdge));
+  }
+  return ret;
+}
+
 nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVerticesSpecifiedOrderReq(
     int32_t parts) {
   nebula::storage::cpp2::AddVerticesRequest req;
@@ -1134,6 +1326,36 @@ nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVerticesSpecifiedOrde
   return req;
 }
 
+nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVectorVerticesSpecifiedOrderReq(
+    int32_t parts) {
+  nebula::storage::cpp2::AddVerticesRequest req;
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = false;
+  auto retRecs = mockVectorVerticesSpecifiedOrder();
+
+  for (auto& rec : retRecs) {
+    auto partId = std::hash<std::string>()(rec.vId_) % parts + 1;
+
+    if (rec.tId_ == 4) {
+      std::vector<std::string> colNames{"vec", "id"};
+    }
+
+    nebula::storage::cpp2::NewVertex newVertex;
+    nebula::storage::cpp2::NewTag newTag;
+
+    newTag.tag_id_ref() = rec.tId_;
+    newTag.props_ref() = std::move(rec.props_);
+
+    std::vector<nebula::storage::cpp2::NewTag> newTags;
+    newTags.push_back(std::move(newTag));
+
+    newVertex.id_ref() = rec.vId_;
+    newVertex.tags_ref() = std::move(newTags);
+    (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
+  }
+  return req;
+}
+
 nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesSpecifiedOrderReq(int32_t parts) {
   nebula::storage::cpp2::AddEdgesRequest req;
   // Use space id is 1 when mock
@@ -1163,6 +1385,32 @@ nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesSpecifiedOrderReq(i
                                       "startYear",
                                       "teamName",
                                       "playerName"};
+    req.prop_names_ref() = std::move(colNames);
+  }
+  return req;
+}
+
+nebula::storage::cpp2::AddEdgesRequest MockData::mockAddVectorEdgesSpecifiedOrderReq(
+    int32_t parts) {
+  nebula::storage::cpp2::AddEdgesRequest req;
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = true;
+  auto retRecs = mockVectorEdgesSpecifiedOrder();
+  for (auto& rec : retRecs) {
+    nebula::storage::cpp2::NewEdge newEdge;
+    nebula::storage::cpp2::EdgeKey edgeKey;
+    auto partId = std::hash<std::string>()(rec.srcId_) % parts + 1;
+
+    edgeKey.src_ref() = rec.srcId_;
+    edgeKey.edge_type_ref() = rec.type_;
+    edgeKey.ranking_ref() = rec.rank_;
+    edgeKey.dst_ref() = rec.dstId_;
+
+    newEdge.key_ref() = std::move(edgeKey);
+    newEdge.props_ref() = std::move(rec.props_);
+
+    (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
+    std::vector<std::string> colNames{"vec", "id2", "id1"};
     req.prop_names_ref() = std::move(colNames);
   }
   return req;

@@ -816,6 +816,7 @@ class MetaClient : public BaseMetaClient {
   };
 
   void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col);
+  void addSchemaVectorField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col);
 
   TagSchemas buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec);
   EdgeSchemas buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec);

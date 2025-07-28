@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/utils/DefaultValueContext.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/Part.h"
 #include "storage/StorageFlags.h"
 #include "storage/mutate/AddEdgesProcessor.h"

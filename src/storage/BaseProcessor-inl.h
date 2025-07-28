@@ -6,6 +6,7 @@
 #ifndef STORAGE_BASEPROCESSOR_INL_H
 #define STORAGE_BASEPROCESSOR_INL_H
 
+#include "kvstore/Common.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {
@@ -47,6 +48,8 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
     std::lock_guard<std::mutex> lg(this->lock_);
     handleErrorCode(code, spaceId, partId);
     this->callingNum_--;
+    LOG(ERROR) << "CallingNum: " << this->callingNum_ << ", SpaceId: " << spaceId
+               << ", PartId: " << partId << ", Code: " << static_cast<int32_t>(code);
     if (this->callingNum_ == 0) {
       finished = true;
     }
@@ -111,6 +114,7 @@ template <typename RESP>
 void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<kvstore::KV>&& data) {
+  LOG(ERROR) << "doPut, spaceId: " << spaceId;
   this->env_->kvstore_->asyncMultiPut(
       spaceId, partId, std::move(data), [spaceId, partId, this](nebula::cpp2::ErrorCode code) {
         handleAsync(spaceId, partId, code);
@@ -171,6 +175,27 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchema
 }
 
 template <typename RESP>
+StatusOr<std::string> BaseProcessor<RESP>::encodeVectorRowVal(
+    const meta::NebulaSchemaProvider* schema, const Value& props, size_t index, WriteResult& wRet) {
+  RowWriterV2 rowWrite(schema, true, index);
+  // If req.prop_names is not empty, use the property name in req.prop_names
+  // Otherwise, use property name in schema
+  LOG(ERROR) << "LZY encodeVectorRowVal() prop name: " << schema->getVectorFieldName(index)
+             << ", prop value: " << props.toString();
+  wRet = rowWrite.setValueVec(index, props);
+  if (wRet != WriteResult::SUCCEEDED) {
+    return Status::Error("Add field failed");
+  }
+
+  wRet = rowWrite.finishVector();
+  if (wRet != WriteResult::SUCCEEDED) {
+    return Status::Error("Add field failed");
+  }
+
+  return std::move(rowWrite).moveEncodedStr();
+}
+
+template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::checkStatType(
     const meta::NebulaSchemaProvider::SchemaField& field, cpp2::StatType statType) {
   // todo(doodle): how to deal with nullable fields? For now, null add anything
@@ -195,6 +220,58 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::checkStatType(
     }
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::separatePropertyNames(const std::vector<std::string>& propNames,
+                                                const meta::NebulaSchemaProvider* schema,
+                                                std::vector<std::string>& regularPropNames,
+                                                std::vector<std::string>& vectorPropNames) {
+  if (propNames.empty()) {
+    return;
+  }
+  regularPropNames.clear();
+  vectorPropNames.clear();
+
+  for (const auto& propName : propNames) {
+    // Check if it's a vector property
+    int64_t vectorIndex = schema->getVectorFieldIndex(propName);
+    if (vectorIndex >= 0) {
+      // It's a vector property
+      vectorPropNames.emplace_back(propName);
+    } else {
+      // Check if it's a regular property
+      int64_t regularIndex = schema->getFieldIndex(propName);
+      if (regularIndex >= 0) {
+        // It's a regular property
+        regularPropNames.emplace_back(propName);
+      } else {
+        // Property not found in schema, treat as regular property
+        LOG(ERROR) << "Property name '" << propName
+                   << "' not found in schema, treating as regular property";
+        regularPropNames.emplace_back(propName);
+      }
+    }
+  }
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::separatePropertyValues(const std::vector<Value>& props,
+                                                 std::vector<Value>& regularProps,
+                                                 std::vector<Value>& vectorProps) {
+  if (props.empty()) {
+    return;
+  }
+  regularProps.clear();
+  vectorProps.clear();
+
+  for (const auto& prop : props) {
+    if (prop.isVector()) {
+      vectorProps.emplace_back(prop);
+    } else {
+      regularProps.emplace_back(prop);
+    }
+  }
 }
 
 }  // namespace storage

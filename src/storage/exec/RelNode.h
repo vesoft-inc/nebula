@@ -6,6 +6,9 @@
 #ifndef STORAGE_EXEC_RELNODE_H_
 #define STORAGE_EXEC_RELNODE_H_
 
+#include <folly/Range.h>
+
+#include "codec/RowReaderV2.h"
 #include "common/base/Base.h"
 #include "common/context/ExpressionContext.h"
 #include "common/time/Duration.h"
@@ -23,6 +26,11 @@ using NullHandler = std::function<nebula::cpp2::ErrorCode(const std::vector<Prop
 
 using PropHandler = std::function<nebula::cpp2::ErrorCode(
     folly::StringPiece, RowReaderWrapper*, const std::vector<PropContext>* props)>;
+
+using VecNullHandler = std::function<nebula::cpp2::ErrorCode(const PropContext*)>;
+
+using VecPropHandler =
+    std::function<nebula::cpp2::ErrorCode(RowReaderWrapper*, const PropContext* props)>;
 
 template <typename T>
 class StoragePlan;
@@ -153,6 +161,18 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
   // return the edge row reader which could pass filter
   RowReaderWrapper* reader() const override {
     return upstream_->reader();
+  }
+
+  virtual std::vector<folly::StringPiece> vectorKeys() const {
+    return upstream_->vectorKeys();
+  }
+
+  virtual std::vector<folly::StringPiece> vectorValues() const {
+    return upstream_->vectorValues();
+  }
+
+  virtual std::vector<RowReaderWrapper*> vectorReaders() const {
+    return upstream_->vectorReaders();
   }
 
  protected:

@@ -94,6 +94,26 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     }
   }
 
+  nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
+                              PartitionID partId,
+                              const std::string& key,
+                              std::string* value,
+                              const std::string&,
+                              bool canReadFromFollower = false,
+                              const void* snapshot = nullptr) override {
+    UNUSED(canReadFromFollower);
+    UNUSED(partId);
+    UNUSED(snapshot);
+    CHECK_EQ(spaceId, spaceId_);
+    auto iter = kv_.lower_bound(key);
+    if (iter != kv_.end() && iter->first == key) {
+      *value = iter->second;
+      return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+    } else {
+      return ::nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
+    }
+  }
+
   // Read multiple keys, if error occurs a cpp2::ErrorCode is returned,
   // If key[i] does not exist, the i-th value in return value would be
   // Status::KeyNotFound
@@ -202,6 +222,16 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     }
   }
 
+  void asyncMultiPut(GraphSpaceID,
+                     PartitionID,
+                     std::vector<::nebula::kvstore::KV>&& keyValues,
+                     ::nebula::kvstore::KVCallback,
+                     const std::string&) override {
+    for (size_t i = 0; i < keyValues.size(); i++) {
+      kv_.emplace(std::move(keyValues[i]));
+    }
+  }
+
   // Asynchronous version of remove methods
   void asyncRemove(GraphSpaceID,
                    PartitionID,
@@ -214,6 +244,16 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
                         PartitionID,
                         std::vector<std::string>&& keys,
                         ::nebula::kvstore::KVCallback) override {
+    for (size_t i = 0; i < keys.size(); i++) {
+      kv_.erase(keys[i]);
+    }
+  }
+
+  void asyncMultiRemove(GraphSpaceID,
+                        PartitionID,
+                        std::vector<std::string>&& keys,
+                        ::nebula::kvstore::KVCallback,
+                        const std::string&) override {
     for (size_t i = 0; i < keys.size(); i++) {
       kv_.erase(keys[i]);
     }

@@ -19,6 +19,8 @@ class AdHocIndexManager final : public nebula::meta::IndexManager {
   AdHocIndexManager() = default;
   ~AdHocIndexManager() = default;
 
+  void addEmptyIndex(GraphSpaceID space);
+
   void addTagIndex(GraphSpaceID space,
                    TagID tagID,
                    IndexID indexID,

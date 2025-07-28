@@ -42,7 +42,20 @@ class UpdateResNode : public RelNode<T> {
                 StorageExpressionContext* expCtx,
                 nebula::DataSet* result)
       : context_(context),
-        updateNode_(updateNode),
+        updateNodes_({updateNode}),
+        returnPropsExp_(returnPropsExp),
+        expCtx_(expCtx),
+        result_(result) {
+    RelNode<T>::name_ = "UpdateResNode";
+  }
+
+  UpdateResNode(RuntimeContext* context,
+                std::vector<RelNode<T>*>& updateNode,
+                std::vector<Expression*> returnPropsExp,
+                StorageExpressionContext* expCtx,
+                nebula::DataSet* result)
+      : context_(context),
+        updateNodes_(updateNode),
         returnPropsExp_(returnPropsExp),
         expCtx_(expCtx),
         result_(result) {
@@ -50,9 +63,13 @@ class UpdateResNode : public RelNode<T> {
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& vId) override {
-    auto ret = RelNode<T>::doExecute(partId, vId);
-    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED && ret != nebula::cpp2::ErrorCode::E_FILTER_OUT) {
-      return ret;
+    nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    for (auto& updateNode : updateNodes_) {
+      ret = updateNode->doExecute(partId, vId);
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED &&
+          ret != nebula::cpp2::ErrorCode::E_FILTER_OUT) {
+        return ret;
+      }
     }
 
     insert_ = context_->insert_;
@@ -78,7 +95,8 @@ class UpdateResNode : public RelNode<T> {
 
  private:
   RuntimeContext* context_;
-  RelNode<T>* updateNode_;
+  // RelNode<T>* updateNode_;
+  std::vector<RelNode<T>*> updateNodes_;
   std::vector<Expression*> returnPropsExp_;
   StorageExpressionContext* expCtx_;
 

@@ -122,6 +122,11 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
           break;
         }
       }
+      if (edgeSchema_.empty()) {
+        LOG(ERROR) << "Space " << spaceId_ << ", Edge " << *edgeKey.edge_type_ref() << " invalid";
+        edgeSchema_ = env_->schemaMan_->getAllLatestVerEdgeSchema(spaceId_).value();
+      }
+
       auto schemaIter = edgeSchema_.find(std::abs(*edgeKey.edge_type_ref()));
       if (schemaIter == edgeSchema_.end()) {
         LOG(ERROR) << "Space " << spaceId_ << ", Edge " << *edgeKey.edge_type_ref() << " invalid";
@@ -131,16 +136,57 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
       auto schema = schemaIter->second.get();
 
       auto props = newEdge.get_props();
+
+      // Separate property names into regular and vector properties
+      std::vector<std::string> regularPropNames;
+      std::vector<std::string> vectorPropNames;
+      separatePropertyNames(propNames, schema, regularPropNames, vectorPropNames);
+
+      // Separate property values based on separated property names
+      std::vector<Value> regularProps;
+      std::vector<Value> vectorProps;
+      separatePropertyValues(props, regularProps, vectorProps);
+
       WriteResult wRet;
-      auto retEnc = encodeRowVal(schema, propNames, props, wRet);
+      auto retEnc = encodeRowVal(schema, regularPropNames, regularProps, wRet);
       if (!retEnc.ok()) {
         LOG(ERROR) << retEnc.status();
         code = writeResultTo(wRet, true);
         break;
-      } else {
-        data.emplace_back(std::move(key), std::move(retEnc.value()));
+      }
+      data.emplace_back(std::move(key), std::move(retEnc.value()));
+
+      if (!vectorProps.empty()) {
+        bool vectorPropNamesEmpty = vectorPropNames.empty();
+        for (size_t i = 0; i < vectorProps.size(); ++i) {
+          int64_t vectorFieldIndex = vectorPropNamesEmpty
+                                         ? static_cast<int64_t>(i)
+                                         : schema->getVectorFieldIndex(vectorPropNames[i]);
+          auto vectorKey = NebulaKeyUtils::vectorEdgeKey(spaceVidLen_,
+                                                         partId,
+                                                         edgeKey.src_ref()->getStr(),
+                                                         *edgeKey.edge_type_ref(),
+                                                         *edgeKey.ranking_ref(),
+                                                         edgeKey.dst_ref()->getStr(),
+                                                         static_cast<int32_t>(vectorFieldIndex));
+          auto vectorValue = encodeVectorRowVal(
+              schema, vectorProps[i], static_cast<size_t>(vectorFieldIndex), wRet);
+
+          if (!vectorValue.ok()) {
+            LOG(ERROR) << "Failed to encode vector property: " << vectorValue.status();
+            code = writeResultTo(wRet, false);
+            break;
+          }
+
+          LOG(ERROR) << "LZY Added vector property for edge " << edgeKey.get_edge_type()
+                     << " at index " << vectorFieldIndex << ", key: " << folly::hexlify(vectorKey)
+                     << ", value size: " << vectorValue.value().size();
+
+          data.emplace_back(std::move(vectorKey), std::move(vectorValue.value()));
+        }
       }
     }
+
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
@@ -154,6 +200,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
             spaceId_, partId, std::move(batch), [partId, this](auto rc) {
               handleAsync(spaceId_, partId, rc);
             });
+        // TODO(LZY): Chain of addedgeprocessor need
       } else {
         doPut(spaceId_, partId, std::move(data));
       }
@@ -162,6 +209,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
 }
 
 void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
+  LOG(ERROR) << "LZY AddEdgesProcessor::doProcessWithIndex, spaceId: " << spaceId_;
   const auto& partEdges = req.get_parts();
   const auto& propNames = req.get_prop_names();
   for (const auto& part : partEdges) {

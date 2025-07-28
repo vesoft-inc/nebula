@@ -19,6 +19,82 @@
 namespace nebula {
 namespace storage {
 
+TEST(AddEdgesTest, SimpleVectorTest) {
+  fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+
+  auto* processor = AddEdgesProcessor::instance(env, nullptr);
+
+  LOG(INFO) << "Build AddEdgesRequest...";
+  cpp2::AddEdgesRequest req = mock::MockData::mockAddVectorEdgesReq();
+
+  LOG(INFO) << "Test AddEdgesProcessor...";
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+  EXPECT_EQ(0, resp.result.failed_parts.size());
+
+  LOG(INFO) << "Check data in kv store...";
+  // The number of data in serve is 334
+  checkAddVectorEdgesData(req, env, 18, 0);
+}
+
+TEST(AddEdgesTest, VectorSpecifyPropertyNameTest) {
+  fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+
+  auto* processor = AddEdgesProcessor::instance(env, nullptr);
+
+  LOG(INFO) << "Build AddEdgesRequest...";
+  cpp2::AddEdgesRequest req = mock::MockData::mockAddVectorEdgesSpecifiedOrderReq();
+
+  LOG(INFO) << "Test AddEdgesProcessor...";
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+  EXPECT_EQ(0, resp.result.failed_parts.size());
+
+  LOG(INFO) << "Check data in kv store...";
+  // The number of data in serve is 334
+  checkAddVectorEdgesData(req, env, 18, 1);
+}
+
+TEST(AddEdgesTest, VectorMultiVersionTest) {
+  fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+
+  LOG(INFO) << "Build AddEdgesRequest...";
+  cpp2::AddEdgesRequest req = mock::MockData::mockAddVectorEdgesReq();
+  cpp2::AddEdgesRequest specifiedOrderReq = mock::MockData::mockAddVectorEdgesSpecifiedOrderReq();
+
+  {
+    LOG(INFO) << "AddEdgesProcessor...";
+    auto* processor = AddEdgesProcessor::instance(env, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+  }
+  {
+    LOG(INFO) << "AddEdgesProcessor...";
+    auto* processor = AddEdgesProcessor::instance(env, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(specifiedOrderReq);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+  }
+
+  LOG(INFO) << "Check data in kv store...";
+  // The number of data in serve is 668
+  checkAddVectorEdgesData(req, env, 18, 2);
+}
+
 TEST(AddEdgesTest, SimpleTest) {
   fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
   mock::MockCluster cluster;

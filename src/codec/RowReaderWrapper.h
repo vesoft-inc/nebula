@@ -87,7 +87,9 @@ class RowReaderWrapper {
    * @return RowReaderWrapper
    */
   static RowReaderWrapper getRowReader(meta::NebulaSchemaProvider const* schema,
-                                       folly::StringPiece row);
+                                       folly::StringPiece row,
+                                       bool isVector = false,
+                                       size_t vectorIndex = 0);
 
   /**
    * @brief Generate a row reader wrapper of data, the schemas are stored in vector.
@@ -112,7 +114,11 @@ class RowReaderWrapper {
   RowReaderWrapper(const meta::NebulaSchemaProvider* schema,
                    const folly::StringPiece& row,
                    int32_t& readerVer);
-
+  RowReaderWrapper(const meta::NebulaSchemaProvider* schema,
+                   const folly::StringPiece& row,
+                   int32_t& readerVer,
+                   bool isVector,
+                   size_t vectorIndex);
   /**
    * @brief Reset current row reader wrapper to of given schema, data and reader version
    *
@@ -121,7 +127,11 @@ class RowReaderWrapper {
    * @param readVer
    * @return Whether reset succeed
    */
-  bool reset(meta::NebulaSchemaProvider const* schema, folly::StringPiece row, int32_t readVer);
+  bool reset(meta::NebulaSchemaProvider const* schema,
+             folly::StringPiece row,
+             int32_t readVer,
+             bool hasVectorCol = false,
+             int32_t vectorIndex = 0);
 
   /**
    * @brief Reset current row reader wrapper to of given schema and data
@@ -141,7 +151,9 @@ class RowReaderWrapper {
    * @return Whether reset succeed
    */
   bool reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-             folly::StringPiece row);
+             folly::StringPiece row,
+             bool hasVectorCol = false,
+             int32_t vectorIndex = 0);
 
   Value getValueByName(const std::string& prop) const {
     DCHECK(!!currReader_);
@@ -151,6 +163,16 @@ class RowReaderWrapper {
   Value getValueByIndex(const int64_t index) const {
     DCHECK(!!currReader_);
     return currReader_->getValueByIndex(index);
+  }
+
+  Value getVectorValueByName(const std::string& prop) const {
+    DCHECK(!!currReader_);
+    return currReader_->getVectorValueByName(prop);
+  }
+
+  Value getVectorValueByIndex(const int64_t index) const {
+    DCHECK(!!currReader_);
+    return currReader_->getVectorValueByIndex(index);
   }
 
   int64_t getTimestamp() const noexcept {
@@ -172,6 +194,11 @@ class RowReaderWrapper {
   size_t numFields() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->numFields();
+  }
+
+  size_t vectorNumFields() const noexcept {
+    DCHECK(!!currReader_);
+    return currReader_->vectorNumFields();
   }
 
   const meta::NebulaSchemaProvider* getSchema() const {
@@ -247,6 +274,10 @@ class RowReaderWrapper {
    */
   void reset() noexcept {
     currReader_ = nullptr;
+  }
+
+  bool isNullptr() const {
+    return currReader_ == nullptr;
   }
 
  private:

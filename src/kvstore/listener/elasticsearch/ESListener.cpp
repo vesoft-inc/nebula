@@ -299,6 +299,9 @@ void ESListener::processLogs() {
               batch.rangeRemove(op.second.first.toString(), op.second.second.toString());
               break;
             }
+            default:
+              LOG(FATAL) << idStr_ << "Unknown batch log type: " << static_cast<int32_t>(op.first);
+              break;
           }
         }
         break;

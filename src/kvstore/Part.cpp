@@ -11,6 +11,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "common/utils/Utils.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RocksEngineConfig.h"
 #include "kvstore/stats/KVStats.h"
@@ -237,7 +238,13 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       case OP_PUT: {
         auto pieces = decodeMultiValues(log);
         DCHECK_EQ(2, pieces.size());
-        auto code = batch->put(pieces[0], pieces[1]);
+        nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+        if (NebulaKeyUtils::isVector(pieces[0].str())) {
+          // If the key is a vector, we should use the vector column family
+          code = batch->put(NebulaKeyUtils::kVectorColumnFamilyName, pieces[0], pieces[1]);
+        } else {
+          code = batch->put(pieces[0], pieces[1]);
+        }
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           VLOG(3) << idStr_ << "Failed to call WriteBatch::put()";
           return {code, kNoCommitLogId, kNoCommitLogTerm};
@@ -251,7 +258,14 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         for (size_t i = 0; i < kvs.size(); i += 2) {
           VLOG(4) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
                   << ", val = " << folly::hexlify(kvs[i + 1]);
-          auto code = batch->put(kvs[i], kvs[i + 1]);
+          nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+          if (NebulaKeyUtils::isVector(kvs[i].str())) {
+            code = batch->put(NebulaKeyUtils::kVectorColumnFamilyName, kvs[i], kvs[i + 1]);
+            LOG(ERROR) << "OP_MULTI_PUT: " << folly::hexlify(kvs[i])
+                       << ", value: " << folly::hexlify(kvs[i + 1]);
+          } else {
+            code = batch->put(kvs[i], kvs[i + 1]);
+          }
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(3) << idStr_ << "Failed to call WriteBatch::put()";
             return {code, kNoCommitLogId, kNoCommitLogTerm};
@@ -261,7 +275,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       }
       case OP_REMOVE: {
         auto key = decodeSingleValue(log);
-        auto code = batch->remove(key);
+        nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+        if (NebulaKeyUtils::isVector(key.str())) {
+          code = batch->remove(NebulaKeyUtils::kVectorColumnFamilyName, key);
+        } else {
+          code = batch->remove(key);
+        }
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           VLOG(3) << idStr_ << "Failed to call WriteBatch::remove()";
           return {code, kNoCommitLogId, kNoCommitLogTerm};
@@ -271,7 +290,13 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       case OP_MULTI_REMOVE: {
         auto keys = decodeMultiValues(log);
         for (auto k : keys) {
-          auto code = batch->remove(k);
+          nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+          if (NebulaKeyUtils::isVector(k.str())) {
+            code = batch->remove(NebulaKeyUtils::kVectorColumnFamilyName, k);
+            LOG(ERROR) << "OP_MULTI_REMOVE VECTOR key: " << folly::hexlify(k);
+          } else {
+            code = batch->remove(k);
+          }
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(3) << idStr_ << "Failed to call WriteBatch::remove()";
             return {code, kNoCommitLogId, kNoCommitLogTerm};
@@ -296,9 +321,22 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
                   << ", val = " << folly::hexlify(op.second.second);
           auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
           if (op.first == BatchLogType::OP_BATCH_PUT) {
-            code = batch->put(op.second.first, op.second.second);
+            if (NebulaKeyUtils::isVector(op.second.first.str())) {
+              code = batch->put(
+                  NebulaKeyUtils::kVectorColumnFamilyName, op.second.first, op.second.second);
+              LOG(ERROR) << "OP_BATCH_PUT VECTOR key: " << folly::hexlify(op.second.first)
+                         << ", value: " << folly::hexlify(op.second.second);
+            } else {
+              code = batch->put(op.second.first, op.second.second);
+            }
+
           } else if (op.first == BatchLogType::OP_BATCH_REMOVE) {
-            code = batch->remove(op.second.first);
+            if (NebulaKeyUtils::isVector(op.second.first.str())) {
+              code = batch->remove(NebulaKeyUtils::kVectorColumnFamilyName, op.second.first);
+              LOG(ERROR) << "OP_BATCH_REMOVE VECTOR key: " << folly::hexlify(op.second.first);
+            } else {
+              code = batch->remove(op.second.first);
+            }
           } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
             code = batch->removeRange(op.second.first, op.second.second);
           }

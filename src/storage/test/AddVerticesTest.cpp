@@ -19,6 +19,94 @@
 namespace nebula {
 namespace storage {
 
+TEST(AddVerticesTest, SimpleVectorTest) {
+  fs::TempDir rootPath("/tmp/AddVectorVerticesTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+
+  auto* processor = AddVerticesProcessor::instance(env, nullptr);
+
+  LOG(INFO) << "Build AddVectorVerticesRequest...";
+  cpp2::AddVerticesRequest req = mock::MockData::mockAddVectorVerticesReq();
+
+  LOG(INFO) << "Test AddVectorVerticesProcessor...";
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+  EXPECT_EQ(0, resp.result.failed_parts.size());
+
+  LOG(INFO) << "Check vector data in kv store...";
+  // The number of vertices is 12
+  checkAddVerticesData(req, env, 12, 0);
+}
+
+TEST(AddVerticesTest, SpecifyPropertyNameVectorTest) {
+  fs::TempDir rootPath("/tmp/AddVectorVerticesTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+
+  LOG(INFO) << "Build AddVerticesRequest...";
+  cpp2::AddVerticesRequest req = mock::MockData::mockAddVectorVerticesReq();
+  cpp2::AddVerticesRequest specifiedOrderReq =
+      mock::MockData::mockAddVectorVerticesSpecifiedOrderReq();
+
+  {
+    LOG(INFO) << "AddVerticesProcessor...";
+    auto* processor = AddVerticesProcessor::instance(env, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+  }
+  {
+    LOG(INFO) << "AddVerticesProcessor...";
+    auto* processor = AddVerticesProcessor::instance(env, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(specifiedOrderReq);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+  }
+
+  LOG(INFO) << "Check data in kv store...";
+  // The number of vertices  is 12
+  checkAddVerticesData(req, env, 12, 2);
+}
+
+TEST(AddVerticesTest, MultiVersionVectorTest) {
+  fs::TempDir rootPath("/tmp/AddVerticesVectorTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+
+  LOG(INFO) << "Build AddVerticesRequest...";
+  cpp2::AddVerticesRequest req = mock::MockData::mockAddVectorVerticesReq();
+  cpp2::AddVerticesRequest specifiedOrderReq =
+      mock::MockData::mockAddVectorVerticesSpecifiedOrderReq();
+
+  {
+    LOG(INFO) << "AddVectorVerticesProcessor...";
+    auto* processor = AddVerticesProcessor::instance(env, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+  }
+  {
+    LOG(INFO) << "AddVectorVerticesProcessor...";
+    auto* processor = AddVerticesProcessor::instance(env, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(specifiedOrderReq);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+  }
+
+  LOG(INFO) << "Check data in kv store...";
+  // The number of vertices is 12
+  checkAddVerticesData(req, env, 12, 2);
+}
+
 TEST(AddVerticesTest, SimpleTest) {
   fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
   mock::MockCluster cluster;
@@ -91,7 +179,7 @@ TEST(AddVerticesTest, MultiVersionTest) {
   }
 
   LOG(INFO) << "Check data in kv store...";
-  // The number of vertices  is 162
+  // The number of vertices  is 81
   checkAddVerticesData(req, env, 81, 2);
 }
 

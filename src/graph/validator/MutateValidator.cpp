@@ -77,13 +77,24 @@ Status InsertVerticesValidator::check() {
         names.emplace_back(propName);
       }
       propSize_ += numFields;
+      if (schema->hasVectorCol()) {
+        size_t numVecFields = schema->getVectorNumFields();
+        for (size_t i = 0; i < numVecFields; ++i) {
+          const char *vecPropName = schema->getVectorFieldName(i);
+          names.emplace_back(vecPropName);
+        }
+        propSize_ += numVecFields;
+      }
     } else {
       auto props = item->properties();
       // Check prop name is in schema
       for (auto *it : props) {
         if (schema->getFieldIndex(*it) < 0) {
-          LOG(ERROR) << "Unknown column `" << *it << "' in schema";
-          return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+          // check vector property
+          if (schema->getVectorFieldIndex(*it) < 0) {
+            LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+            return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+          }
         }
         propSize_++;
         names.emplace_back(*it);
@@ -97,6 +108,7 @@ Status InsertVerticesValidator::check() {
 
 // Check validity of vertices data.
 // Check vid type, check properties value, fill to NewVertex structure.
+// The inserted value must follow the order of first other property, then vector property.
 Status InsertVerticesValidator::prepareVertices() {
   vertices_.reserve(rows_.size());
   for (auto i = 0u; i < rows_.size(); i++) {
@@ -195,12 +207,22 @@ Status InsertEdgesValidator::check() {
       const char *propName = schema_->getFieldName(i);
       propNames_.emplace_back(propName);
     }
+    if (schema_->hasVectorCol()) {
+      size_t numVecFields = schema_->getVectorNumFields();
+      for (size_t i = 0; i < numVecFields; ++i) {
+        const char *vecPropName = schema_->getVectorFieldName(i);
+        propNames_.emplace_back(vecPropName);
+      }
+    }
   } else {
     // Check prop name is in schema
     for (auto *it : props) {
       if (schema_->getFieldIndex(*it) < 0) {
-        LOG(ERROR) << "Unknown column `" << *it << "' in schema";
-        return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+        // check vector property
+        if (schema_->getVectorFieldIndex(*it) < 0) {
+          LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+          return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+        }
       }
       propNames_.emplace_back(*it);
     }
@@ -215,12 +237,16 @@ Status InsertEdgesValidator::prepareEdges() {
   edges_.reserve(size);
 
   size_t fieldNum = schema_->getNumFields();
+  size_t vecFieldNum = schema_->getVectorNumFields();
   for (size_t j = 0; j < fieldNum; ++j) {
     entirePropNames_.emplace_back(schema_->field(j)->name());
   }
+  for (size_t j = 0; j < vecFieldNum; ++j) {
+    entirePropNames_.emplace_back(schema_->getVectorFieldName(j));
+  }
   for (auto i = 0u; i < rows_.size(); i++) {
     auto *row = rows_[i];
-    if (propNames_.size() != row->values().size()) {
+    if (propNames_.size() + vectorPropNames_.size() != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
     if (!ExpressionUtils::isEvaluableExpr(row->srcid(), qctx_)) {
@@ -255,11 +281,40 @@ Status InsertEdgesValidator::prepareEdges() {
     auto valsRet = SchemaUtil::toValueVec(qctx_, row->values());
     NG_RETURN_IF_ERROR(valsRet);
     auto props = std::move(valsRet).value();
-
     std::vector<Value> entirePropValues;
     for (size_t j = 0; j < fieldNum; ++j) {
       auto *field = schema_->field(j);
       auto propName = entirePropNames_[j];
+      auto iter = std::find(propNames_.begin(), propNames_.end(), propName);
+      if (iter == propNames_.end()) {
+        if (field->hasDefault()) {
+          auto &defaultValue = field->defaultValue();
+          DCHECK(!defaultValue.empty());
+          ObjectPool pool;
+          auto expr = Expression::decode(
+              &pool, folly::StringPiece(defaultValue.data(), defaultValue.size()));
+          auto v = expr->eval(QueryExpressionContext()(nullptr));
+          entirePropValues.emplace_back(v);
+        } else {
+          if (!field->nullable()) {
+            return Status::SemanticError(
+                "The property `%s' is not nullable and has no default value.", field->name());
+          }
+          entirePropValues.emplace_back(Value(NullType::__NULL__));
+        }
+      } else {
+        auto v = props[std::distance(propNames_.begin(), iter)];
+        if (!field->nullable() && v.isNull()) {
+          return Status::SemanticError("The non-nullable property `%s' could not be NULL.",
+                                       field->name());
+        }
+        entirePropValues.emplace_back(v);
+      }
+    }
+
+    for (size_t j = 0; j < vecFieldNum; ++j) {
+      auto *field = schema_->vectorField(j);
+      auto propName = entirePropNames_[j + fieldNum];
       auto iter = std::find(propNames_.begin(), propNames_.end(), propName);
       if (iter == propNames_.end()) {
         if (field->hasDefault()) {
@@ -731,6 +786,8 @@ Status UpdateValidator::getUpdateProps() {
     std::string encodeStr;
     auto copyValueExpr = valueExpr->clone();
     NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr, symName, encodeStr));
+    LOG(ERROR) << "lzy Update prop fieldName: " << fieldName
+               << ", encodeStr: " << folly::hexlify(encodeStr);
     updatedProp.value_ref() = std::move(encodeStr);
     updatedProp.name_ref() = fieldName;
     updatedProps_.emplace_back(std::move(updatedProp));

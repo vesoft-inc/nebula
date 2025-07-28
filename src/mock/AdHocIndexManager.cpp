@@ -8,6 +8,14 @@
 namespace nebula {
 namespace mock {
 
+void AdHocIndexManager::addEmptyIndex(GraphSpaceID space) {
+  folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
+  std::vector<std::shared_ptr<IndexItem>> tagItems{};
+  std::vector<std::shared_ptr<IndexItem>> edgeItems{};
+  tagIndexes_.emplace(space, std::move(tagItems));
+  edgeIndexes_.emplace(space, std::move(edgeItems));
+}
+
 void AdHocIndexManager::addTagIndex(GraphSpaceID space,
                                     TagID tagID,
                                     IndexID indexID,

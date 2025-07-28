@@ -73,6 +73,22 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                             *edgeKey.ranking_ref(),
                                             edgeKey.dst_ref()->getStr());
         keys.emplace_back(edge.data(), edge.size());
+        auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
+        if (schema != nullptr) {
+          auto vectorFieldsNum = schema->getVectorNumFields();
+          if (vectorFieldsNum > 0) {
+            for (size_t i = 0; i < vectorFieldsNum; i++) {
+              auto vectorKey = NebulaKeyUtils::vectorEdgeKey(spaceVidLen_,
+                                                             partId,
+                                                             edgeKey.src_ref()->getStr(),
+                                                             *edgeKey.edge_type_ref(),
+                                                             *edgeKey.ranking_ref(),
+                                                             edgeKey.dst_ref()->getStr(),
+                                                             static_cast<int32_t>(i));
+              keys.emplace_back(vectorKey.data(), vectorKey.size());
+            }
+          }
+        }
       }
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleAsync(spaceId_, partId, code);

@@ -46,7 +46,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
                                           qctx()->rctx()->session()->id(),
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
-
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
@@ -123,6 +122,7 @@ Status AppendVerticesExecutor::handleResp(
 
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
+      LOG(ERROR) << "lzy RESP PROPS: " << (*resp.props_ref()).toString();
       auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
       for (; iter.valid(); iter.next()) {
         if (vFilter != nullptr) {

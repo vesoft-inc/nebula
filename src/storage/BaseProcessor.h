@@ -17,6 +17,7 @@
 #include "common/stats/StatsManager.h"
 #include "common/time/Duration.h"
 #include "common/utils/IndexKeyUtils.h"
+#include "kvstore/Common.h"
 #include "storage/CommonUtils.h"
 
 namespace nebula {
@@ -137,6 +138,22 @@ class BaseProcessor {
                                      const std::vector<std::string>& propNames,
                                      const std::vector<Value>& props,
                                      WriteResult& wRet);
+
+  StatusOr<std::string> encodeVectorRowVal(const meta::NebulaSchemaProvider* schema,
+                                           const Value& props,
+                                           size_t index,
+                                           WriteResult& wRet);
+  // Separate property names into regular properties and vector properties
+  void separatePropertyNames(const std::vector<std::string>& propNames,
+                             const meta::NebulaSchemaProvider* schema,
+                             std::vector<std::string>& regularPropNames,
+                             std::vector<std::string>& vectorPropNames);
+
+  // Separate property values based on separated property names
+  void separatePropertyValues(const std::vector<Value>& props,
+
+                              std::vector<Value>& regularProps,
+                              std::vector<Value>& vectorProps);
 
   virtual void profileDetail(const std::string& name, int32_t latency) {
     if (!profileDetail_.count(name)) {
