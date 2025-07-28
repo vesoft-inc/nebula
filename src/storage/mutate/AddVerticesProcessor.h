@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/ConcurrentLRUCache.h"
+#include "common/datatypes/Value.h"
 #include "kvstore/LogEncoder.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CommonUtils.h"
@@ -56,6 +57,11 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   bool ifNotExists_{false};
   bool ignoreExistedIndex_{false};
   meta::TagSchema tagSchema_;
+
+  std::vector<std::string> regularPropNames_;
+  std::vector<std::string> vectorPropNames_;
+  std::vector<Value> regularProps_;
+  std::vector<Value> vectorProps_;
 };
 
 }  // namespace storage

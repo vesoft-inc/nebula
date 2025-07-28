@@ -521,6 +521,15 @@ std::vector<nebula::meta::cpp2::ColumnDef> MockData::mockTeamTagIndexColumns() {
   return cols;
 }
 
+std::vector<nebula::meta::cpp2::ColumnDef> MockData::mockVectorTagIndexColumns() {
+  std::vector<nebula::meta::cpp2::ColumnDef> cols;
+  meta::cpp2::ColumnDef col;
+  col.name = "id";
+  col.type.type_ref() = PropertyType::INT32;
+  cols.emplace_back(std::move(col));
+  return cols;
+}
+
 std::vector<nebula::meta::cpp2::ColumnDef> MockData::mockSimpleTagIndexColumns() {
   std::vector<nebula::meta::cpp2::ColumnDef> cols;
   meta::cpp2::ColumnDef col;

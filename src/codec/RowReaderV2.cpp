@@ -330,7 +330,6 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
 
 Value RowReaderV2::getVectorValueByName(const std::string& prop) const {
   int64_t index = schema_->getVectorFieldIndex(prop);
-  LOG(ERROR) << "LZY getVectorValueByName() prop: " << prop << ", index: " << index;
   return getVectorValueByIndex(index);
 }
 
@@ -361,7 +360,7 @@ Value RowReaderV2::getVectorValueByIndex(const int64_t index) const {
     case PropertyType::UNKNOWN:
       break;
     default: {
-      LOG(ERROR) << "Unsupported vector property type: " << static_cast<int>(field->type());
+      LOG(FATAL) << "Unsupported vector property type: " << static_cast<int>(field->type());
     }
   }
   LOG(FATAL) << "Should not reach here, illegal property type: " << static_cast<int>(field->type());

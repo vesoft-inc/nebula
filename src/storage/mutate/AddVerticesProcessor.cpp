@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
+#include "common/base/Status.h"
 #include "common/memory/MemoryTracker.h"
 #include "common/stats/StatsManager.h"
 #include "common/utils/IndexKeyUtils.h"
@@ -83,6 +84,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
     auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
     std::unordered_set<std::string> visited;
     visited.reserve(vertices.size());
+
     for (auto& vertex : vertices) {
       auto vid = vertex.get_id().getStr();
       const auto& newTags = vertex.get_tags();
@@ -107,6 +109,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
           break;
         }
         auto schema = schemaIter->second.get();
+        bool existVectorProps = schema->hasVectorCol();
 
         auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
         if (ifNotExists_) {
@@ -123,26 +126,25 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
             break;
           }
         }
-        auto props = newTag.get_props();
+        const auto& props = newTag.get_props();
         auto iter = propNamesMap.find(tagId);
         std::vector<std::string> propNames;
         if (iter != propNamesMap.end()) {
           propNames = iter->second;
         }
-
-        // Separate property names into regular and vector properties
-        std::vector<std::string> regularPropNames;
-        std::vector<std::string> vectorPropNames;
-        separatePropertyNames(propNames, schema, regularPropNames, vectorPropNames);
-
-        // Separate property values based on separated property names
-        std::vector<Value> regularProps;
-        std::vector<Value> vectorProps;
-        separatePropertyValues(props, regularProps, vectorProps);
-
         WriteResult wRet;
-        // Use regularPropNames and regularProps for encoding regular properties
-        auto retEnc = encodeRowVal(schema, regularPropNames, regularProps, wRet);
+        StatusOr<std::string> retEnc;
+        if (existVectorProps) {
+          regularPropNames_.clear();
+          vectorPropNames_.clear();
+          regularProps_.clear();
+          vectorProps_.clear();
+          separatePropertyNames(propNames, schema, regularPropNames_, vectorPropNames_);
+          separatePropertyValues(props, regularProps_, vectorProps_);
+          retEnc = encodeRowVal(schema, regularPropNames_, regularProps_, wRet);
+        } else {
+          retEnc = encodeRowVal(schema, propNames, props, wRet);
+        }
         if (!retEnc.ok()) {
           LOG(ERROR) << retEnc.status();
           code = writeResultTo(wRet, false);
@@ -150,28 +152,22 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         }
         data.emplace_back(std::move(key), std::move(retEnc.value()));
 
-        if (!vectorProps.empty()) {
-          LOG(ERROR) << "Vector properties are not supported in doProcess without index";
-          bool vectorPropNamesEmpty = vectorPropNames.empty();
-          for (size_t i = 0; i < vectorProps.size(); ++i) {
+        if (existVectorProps) {
+          bool vectorPropNamesEmpty = vectorPropNames_.empty();
+          for (size_t i = 0; i < vectorProps_.size(); ++i) {
             int64_t vectorFieldIndex = vectorPropNamesEmpty
                                            ? static_cast<int64_t>(i)
-                                           : schema->getVectorFieldIndex(vectorPropNames[i]);
+                                           : schema->getVectorFieldIndex(vectorPropNames_[i]);
             auto vectorKey = NebulaKeyUtils::vectorTagKey(
                 spaceVidLen_, partId, vid, tagId, static_cast<int32_t>(vectorFieldIndex));
             auto vectorValue = encodeVectorRowVal(
-                schema, vectorProps[i], static_cast<size_t>(vectorFieldIndex), wRet);
+                schema, vectorProps_[i], static_cast<size_t>(vectorFieldIndex), wRet);
 
             if (!vectorValue.ok()) {
               LOG(ERROR) << "Failed to encode vector property: " << vectorValue.status();
               code = writeResultTo(wRet, false);
               break;
             }
-
-            LOG(ERROR) << "LZY Added vector property for tag " << tagId << " at index "
-                       << vectorFieldIndex << ", key: " << folly::hexlify(vectorKey)
-                       << ", value size: " << vectorValue.value().size();
-
             data.emplace_back(std::move(vectorKey), std::move(vectorValue.value()));
           }
         }
@@ -181,7 +177,6 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
       handleAsync(spaceId_, partId, code);
     } else {
       stats::StatsManager::addValue(kNumVerticesInserted, data.size());
-      LOG(ERROR) << "No indexes found for space " << spaceId_;
       doPut(spaceId_, partId, std::move(data));
     }
   }
@@ -202,6 +197,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
 
     auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
     deleteDupVid(const_cast<std::vector<cpp2::NewVertex>&>(vertices));
+
     for (const auto& vertex : vertices) {
       auto vid = vertex.get_id().getStr();
       const auto& newTags = vertex.get_tags();
@@ -227,35 +223,53 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
           break;
         }
         auto schema = schemaIter->second.get();
+        bool existVectorProps = schema->hasVectorCol();
 
         auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
-        // collect values
         const auto& props = newTag.get_props();
         auto iter = propNamesMap.find(tagId);
         std::vector<std::string> propNames;
         if (iter != propNamesMap.end()) {
           propNames = iter->second;
         }
-
-        // Separate property names into regular and vector properties
-        std::vector<std::string> regularPropNames;
-        std::vector<std::string> vectorPropNames;
-        separatePropertyNames(propNames, schema, regularPropNames, vectorPropNames);
-
-        // Separate property values based on separated property names
-        std::vector<Value> regularProps;
-        std::vector<Value> vectorProps;
-        separatePropertyValues(props, regularProps, vectorProps);
-
-        WriteResult writeResult;
-        // Use regularPropNames and regularProps for encoding regular properties
-        auto encode = encodeRowVal(schema, regularPropNames, regularProps, writeResult);
-        if (!encode.ok()) {
-          LOG(ERROR) << encode.status();
-          code = writeResultTo(writeResult, false);
+        WriteResult wRet;
+        StatusOr<std::string> retEnc;
+        if (existVectorProps) {
+          regularPropNames_.clear();
+          vectorPropNames_.clear();
+          regularProps_.clear();
+          vectorProps_.clear();
+          separatePropertyNames(propNames, schema, regularPropNames_, vectorPropNames_);
+          separatePropertyValues(props, regularProps_, vectorProps_);
+          retEnc = encodeRowVal(schema, regularPropNames_, regularProps_, wRet);
+        } else {
+          retEnc = encodeRowVal(schema, propNames, props, wRet);
+        }
+        if (!retEnc.ok()) {
+          LOG(ERROR) << retEnc.status();
+          code = writeResultTo(wRet, false);
           break;
         }
-        tags.emplace_back(std::string(key), std::string(encode.value()));
+        tags.emplace_back(std::move(key), std::move(retEnc.value()));
+        if (existVectorProps) {
+          bool vectorPropNamesEmpty = vectorPropNames_.empty();
+          for (size_t i = 0; i < vectorProps_.size(); ++i) {
+            int64_t vectorFieldIndex = vectorPropNamesEmpty
+                                           ? static_cast<int64_t>(i)
+                                           : schema->getVectorFieldIndex(vectorPropNames_[i]);
+            auto vectorKey = NebulaKeyUtils::vectorTagKey(
+                spaceVidLen_, partId, vid, tagId, static_cast<int32_t>(vectorFieldIndex));
+            auto vectorValue = encodeVectorRowVal(
+                schema, vectorProps_[i], static_cast<size_t>(vectorFieldIndex), wRet);
+
+            if (!vectorValue.ok()) {
+              LOG(ERROR) << "Failed to encode vector property: " << vectorValue.status();
+              code = writeResultTo(wRet, false);
+              break;
+            }
+            tags.emplace_back(std::move(vectorKey), std::move(vectorValue.value()));
+          }
+        }
       }
     }
 
@@ -277,8 +291,6 @@ kvstore::MergeableAtomicOpResult AddVerticesProcessor::addVerticesWithIndex(
     PartitionID partId,
     const std::vector<kvstore::KV>& data,
     const std::vector<std::string>& vertices) {
-  LOG(ERROR) << "LZY AddVerticesProcessor::addVerticesWithIndex, partId: " << partId
-             << ", data size: " << data.size() << ", vertices size: " << vertices.size();
   kvstore::MergeableAtomicOpResult ret;
   ret.code = nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED;
   IndexCountWrapper wrapper(env_);
@@ -287,86 +299,89 @@ kvstore::MergeableAtomicOpResult AddVerticesProcessor::addVerticesWithIndex(
     batchHolder->put(std::string(vertice), "");
   }
   for (auto& [key, value] : data) {
-    auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, key);
-    auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
-    RowReaderWrapper oldReader;
-    RowReaderWrapper newReader =
-        RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, value);
-    auto schemaIter = tagSchema_.find(tagId);
-    if (schemaIter == tagSchema_.end()) {
-      ret.code = nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
-      DLOG(INFO) << "===>>> failed";
-      return ret;
-    }
-    auto schema = schemaIter->second.get();
-    std::string oldVal;
-    if (!ignoreExistedIndex_) {
-      // read the old key value and initialize row reader if exists
-      auto result = findOldValue(partId, vId.str(), tagId);
-      if (nebula::ok(result)) {
-        if (ifNotExists_ && !nebula::value(result).empty()) {
-          continue;
-        } else if (!nebula::value(result).empty()) {
-          oldVal = std::move(nebula::value(result));
-          oldReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, oldVal);
-          ret.readSet.emplace_back(key);
-        }
-      } else {
-        // read old value failed
+    if (!NebulaKeyUtils::isVector(key)) {
+      auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, key);
+      auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
+      RowReaderWrapper oldReader;
+      RowReaderWrapper newReader =
+          RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, value);
+      auto schemaIter = tagSchema_.find(tagId);
+      if (schemaIter == tagSchema_.end()) {
+        ret.code = nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
         DLOG(INFO) << "===>>> failed";
         return ret;
       }
-    }
-    for (const auto& index : indexes_) {
-      if (tagId == index->get_schema_id().get_tag_id()) {
-        // step 1, Delete old version index if exists.
-        if (oldReader != nullptr) {
-          auto oldIndexKeys = indexKeys(partId, vId.str(), oldReader.get(), index, schema);
-          if (!oldIndexKeys.empty()) {
-            // Check the index is building for the specified partition or
-            // not.
-            auto indexState = env_->getIndexState(spaceId_, partId);
-            if (env_->checkRebuilding(indexState)) {
-              auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
-              for (auto& idxKey : oldIndexKeys) {
-                ret.writeSet.emplace_back(std::string(delOpKey));
-                batchHolder->put(std::string(delOpKey), std::move(idxKey));
-              }
-            } else if (env_->checkIndexLocked(indexState)) {
-              LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-              ret.code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-              return ret;
-            } else {
-              for (auto& idxKey : oldIndexKeys) {
-                ret.writeSet.emplace_back(std::string(idxKey));
-                batchHolder->remove(std::move(idxKey));
+      auto schema = schemaIter->second.get();
+      std::string oldVal;
+      if (!ignoreExistedIndex_) {
+        // read the old key value and initialize row reader if exists
+        auto result = findOldValue(partId, vId.str(), tagId);
+        if (nebula::ok(result)) {
+          if (ifNotExists_ && !nebula::value(result).empty()) {
+            continue;
+          } else if (!nebula::value(result).empty()) {
+            oldVal = std::move(nebula::value(result));
+            oldReader =
+                RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, oldVal);
+            ret.readSet.emplace_back(key);
+          }
+        } else {
+          // read old value failed
+          DLOG(INFO) << "===>>> failed";
+          return ret;
+        }
+      }
+      for (const auto& index : indexes_) {
+        if (tagId == index->get_schema_id().get_tag_id()) {
+          // step 1, Delete old version index if exists.
+          if (oldReader != nullptr) {
+            auto oldIndexKeys = indexKeys(partId, vId.str(), oldReader.get(), index, schema);
+            if (!oldIndexKeys.empty()) {
+              // Check the index is building for the specified partition or
+              // not.
+              auto indexState = env_->getIndexState(spaceId_, partId);
+              if (env_->checkRebuilding(indexState)) {
+                auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                for (auto& idxKey : oldIndexKeys) {
+                  ret.writeSet.emplace_back(std::string(delOpKey));
+                  batchHolder->put(std::string(delOpKey), std::move(idxKey));
+                }
+              } else if (env_->checkIndexLocked(indexState)) {
+                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                ret.code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
+                return ret;
+              } else {
+                for (auto& idxKey : oldIndexKeys) {
+                  ret.writeSet.emplace_back(std::string(idxKey));
+                  batchHolder->remove(std::move(idxKey));
+                }
               }
             }
           }
-        }
 
-        // step 2, Insert new vertex index
-        if (newReader != nullptr) {
-          auto newIndexKeys = indexKeys(partId, vId.str(), newReader.get(), index, schema);
-          if (!newIndexKeys.empty()) {
-            // check if index has ttl field, write it to index value if exists
-            auto field = CommonUtils::ttlValue(schema, newReader.get());
-            auto indexVal = field.ok() ? IndexKeyUtils::indexVal(std::move(field).value()) : "";
-            auto indexState = env_->getIndexState(spaceId_, partId);
-            if (env_->checkRebuilding(indexState)) {
-              for (auto& idxKey : newIndexKeys) {
-                auto opKey = OperationKeyUtils::modifyOperationKey(partId, idxKey);
-                ret.writeSet.emplace_back(std::string(opKey));
-                batchHolder->put(std::move(opKey), std::string(indexVal));
-              }
-            } else if (env_->checkIndexLocked(indexState)) {
-              LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-              ret.code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-              return ret;
-            } else {
-              for (auto& idxKey : newIndexKeys) {
-                ret.writeSet.emplace_back(std::string(idxKey));
-                batchHolder->put(std::move(idxKey), std::string(indexVal));
+          // step 2, Insert new vertex index
+          if (newReader != nullptr) {
+            auto newIndexKeys = indexKeys(partId, vId.str(), newReader.get(), index, schema);
+            if (!newIndexKeys.empty()) {
+              // check if index has ttl field, write it to index value if exists
+              auto field = CommonUtils::ttlValue(schema, newReader.get());
+              auto indexVal = field.ok() ? IndexKeyUtils::indexVal(std::move(field).value()) : "";
+              auto indexState = env_->getIndexState(spaceId_, partId);
+              if (env_->checkRebuilding(indexState)) {
+                for (auto& idxKey : newIndexKeys) {
+                  auto opKey = OperationKeyUtils::modifyOperationKey(partId, idxKey);
+                  ret.writeSet.emplace_back(std::string(opKey));
+                  batchHolder->put(std::move(opKey), std::string(indexVal));
+                }
+              } else if (env_->checkIndexLocked(indexState)) {
+                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                ret.code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
+                return ret;
+              } else {
+                for (auto& idxKey : newIndexKeys) {
+                  ret.writeSet.emplace_back(std::string(idxKey));
+                  batchHolder->put(std::move(idxKey), std::string(indexVal));
+                }
               }
             }
           }

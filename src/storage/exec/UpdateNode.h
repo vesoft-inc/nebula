@@ -292,13 +292,11 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       ret = this->insertTagProps(partId, vId);
     } else if (this->reader_) {
       this->key_ = filterNode_->key().str();
-      LOG(ERROR) << "LZY Begin to get vector keys";
       if (!filterNode_->vectorKeys().empty()) {
         for (auto& vkey : filterNode_->vectorKeys()) {
           this->vectorKeys_.emplace_back(vkey.str());
         }
       }
-      LOG(ERROR) << "LZY Begin to collect tag prop";
       ret = this->collTagProp(vId);
     } else {
       ret = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
@@ -412,8 +410,6 @@ class UpdateTagNode : public UpdateNode<VertexID> {
         VLOG(1) << "Bad value for tag: " << tagId_ << ", prop " << vecPropName;
         return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
       }
-      LOG(ERROR) << "LZY UpdateTagNode collect vector prop: " << vecPropName
-                 << ", value: " << retVal.value().toString();
       props_[vecPropName] = std::move(retVal.value());
     }
 
@@ -502,8 +498,6 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     for (auto& vectorRowWriter : vectorRowWriters_) {
       vectorVals.emplace_back(vectorRowWriter->moveEncodedStr());
     }
-    LOG(ERROR) << "LZY UpdateTagNode vectorKey size: " << vectorKeys_.size()
-               << ", vectorVals size: " << vectorVals.size();
 
     // update index if exists
     // Note: when insert_ is true, either there is no origin data or TTL expired

@@ -237,7 +237,6 @@ class TagNode final : public IterateNode<VertexID> {
                                                                      vectorReader.get(),
                                                                      ttl_.value().first,
                                                                      ttl_.value().second))) {
-          LOG(ERROR) << "LZY TagNode reset vector reader, index: " << index;
           vectorReader.reset();
         }
         vectorReaders_.emplace_back(std::move(vectorReader));

@@ -6,6 +6,7 @@
 #ifndef COMMON_UTILS_NEBULAKEYUTILS_H_
 #define COMMON_UTILS_NEBULAKEYUTILS_H_
 
+#include "common/thrift/ThriftTypes.h"
 #include "common/utils/Types.h"
 
 namespace nebula {
@@ -210,6 +211,14 @@ class NebulaKeyUtils final {
     return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
   }
 
+  static PropID getTagPropId(size_t vIdLen, const folly::StringPiece& rawKey) {
+    if (rawKey.size() != kVectorTagLen + vIdLen) {
+      dumpBadKey(rawKey, kVectorTagLen + vIdLen, vIdLen);
+    }
+    auto offset = sizeof(PartitionID) + vIdLen + sizeof(TagID);
+    return readInt<PropID>(rawKey.data() + offset, sizeof(PropID));
+  }
+
   static bool isEdge(size_t vIdLen, const folly::StringPiece& rawKey, char suffix = kEdgeVersion) {
     if (rawKey.size() != kEdgeLen + (vIdLen << 1)) {
       return false;
@@ -229,9 +238,6 @@ class NebulaKeyUtils final {
   }
 
   static bool isVector(const folly::StringPiece& rawKey) {
-    // if (rawKey.size() != kVectorTagLen + vIdLen) {
-    //   return false;
-    // }
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
     auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithVector;
     return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVector_;
@@ -371,7 +377,7 @@ class NebulaKeyUtils final {
     auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType);
     return NebulaKeyUtils::decodeRank(rawKey.data() + offset);
   }
-  static PropID getPropID(size_t vIdLen, const folly::StringPiece& rawKey) {
+  static PropID getEdgePropID(size_t vIdLen, const folly::StringPiece& rawKey) {
     if (rawKey.size() < kVectorEdgeLen + (vIdLen << 1)) {
       dumpBadKey(rawKey, kVectorEdgeLen + (vIdLen << 1), vIdLen);
     }

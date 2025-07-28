@@ -105,6 +105,8 @@ class MockData {
 
   static std::vector<nebula::meta::cpp2::ColumnDef> mockTeamTagIndexColumns();
 
+  static std::vector<nebula::meta::cpp2::ColumnDef> mockVectorTagIndexColumns();
+
   static std::vector<nebula::meta::cpp2::ColumnDef> mockSimpleTagIndexColumns();
 
   static std::vector<nebula::meta::cpp2::ColumnDef> mockServeEdgeIndexColumns();

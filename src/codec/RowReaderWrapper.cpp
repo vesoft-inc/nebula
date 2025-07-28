@@ -27,6 +27,26 @@ RowReaderWrapper RowReaderWrapper::getTagPropReader(meta::SchemaManager* schemaM
   }
 }
 
+RowReaderWrapper RowReaderWrapper::getTagPropReader(meta::SchemaManager* schemaMan,
+                                                    GraphSpaceID space,
+                                                    TagID tag,
+                                                    PropID vectorIndex,
+                                                    folly::StringPiece row) {
+  SchemaVer schemaVer;
+  int32_t readerVer;
+  RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+  if (schemaVer >= 0) {
+    auto schema = schemaMan->getTagSchema(space, tag, schemaVer);
+    if (schema == nullptr) {
+      return RowReaderWrapper();
+    }
+    return RowReaderWrapper(schema.get(), row, readerVer, true, static_cast<int32_t>(vectorIndex));
+  } else {
+    LOG(WARNING) << "Invalid schema version in the row data!";
+    return RowReaderWrapper();
+  }
+}
+
 // static
 RowReaderWrapper RowReaderWrapper::getEdgePropReader(meta::SchemaManager* schemaMan,
                                                      GraphSpaceID space,

@@ -127,6 +127,10 @@ class KVEngine {
   virtual nebula::cpp2::ErrorCode get(const std::string& key,
                                       std::string* value,
                                       const void* snapshot = nullptr) = 0;
+  virtual nebula::cpp2::ErrorCode get(const std::string& cfName,
+                                      const std::string& key,
+                                      std::string* value,
+                                      const void* snapshot = nullptr) = 0;
 
   /**
    * @brief Read a list of keys
@@ -343,6 +347,12 @@ class KVEngine {
    * succeed, else return ErrorCode
    */
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> backupTable(
+      const std::string& path,
+      const std::string& tablePrefix,
+      std::function<bool(const folly::StringPiece& key)> filter) = 0;
+
+  virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> backupTable(
+      const std::string& cfName,
       const std::string& path,
       const std::string& tablePrefix,
       std::function<bool(const folly::StringPiece& key)> filter) = 0;

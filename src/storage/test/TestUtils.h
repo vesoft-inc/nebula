@@ -35,6 +35,7 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
     auto newVertexVec = part.second;
 
     auto count = 0;
+    auto vectorCount = 0;
     for (auto& newVertex : newVertexVec) {
       auto vid = newVertex.get_id();
       auto newTagVec = *newVertex.tags_ref();
@@ -155,8 +156,10 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
             auto vectorReader = RowReaderWrapper::getRowReader(schema.get(), vectorIter->val());
             Value val = vectorReader->getVectorValueByIndex(0);
             EXPECT_EQ((*newTag.props_ref())[1], val);
+            vectorCount++;
             vectorIter->next();
           }
+          EXPECT_EQ(count, vectorCount);
         }
       }
     }
@@ -340,8 +343,6 @@ void checkAddVectorEdgesData(cpp2::AddEdgesRequest req,
         totalCount++;
         iter->next();
       }
-      LOG(ERROR) << "LZY totalCount: " << totalCount << ", newEdgeProp size: " << newEdgeProp.size()
-                 << ", edge type: " << edgekey.get_edge_type();
 
       auto vecPrefix = NebulaKeyUtils::vectorEdgePrefix(spaceVidLen,
                                                         partId,
@@ -352,6 +353,7 @@ void checkAddVectorEdgesData(cpp2::AddEdgesRequest req,
       std::unique_ptr<kvstore::KVIterator> vecIter;
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
                 env->kvstore_->prefix(spaceId, partId, vecPrefix, &vecIter));
+      int vectorNum = 0;
       while (vecIter && vecIter->valid()) {
         auto vectorReader = RowReaderWrapper::getRowReader(schema.get(), vecIter->val(), true, 0);
         val = vectorReader->getVectorValueByIndex(0);
@@ -360,7 +362,11 @@ void checkAddVectorEdgesData(cpp2::AddEdgesRequest req,
         } else if (mode == 1) {
           EXPECT_EQ(newEdgeProp[0], val);
         }
+        vectorNum++;
         vecIter->next();
+      }
+      if (vectorNum > 0) {
+        EXPECT_EQ(num, vectorNum);
       }
     }
   }

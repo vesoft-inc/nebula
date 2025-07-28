@@ -143,7 +143,6 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(
           return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
       }
-      LOG(ERROR) << "lzy Column not found: " << col.get_name() << ", isEdge: " << isEdge;
       if (isEdge) {
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
       }

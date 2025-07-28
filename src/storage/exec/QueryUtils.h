@@ -128,8 +128,6 @@ class QueryUtils final {
           ObjectPool pool;
           auto& exprStr = field->defaultValue();
           auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
-          LOG(ERROR) << "lzy Read vector prop with default value, prop: " << propName
-                     << ", value: " << Expression::eval(expr, expCtx).toString();
           return Expression::eval(expr, expCtx);
         } else if (field->nullable()) {
           return NullType::__NULL__;
@@ -142,7 +140,6 @@ class QueryUtils final {
       }
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
     }
-    LOG(ERROR) << "lzy Read vector prop, prop: " << propName << ", value: " << value.toString();
     return value;
   }
 
@@ -171,7 +168,6 @@ class QueryUtils final {
     if (!field) {
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
     }
-    LOG(ERROR) << "lzy Read vector prop, prop: " << propName;
     return readVectorValue(reader, propName, field);
   }
 
@@ -223,6 +219,9 @@ class QueryUtils final {
     switch (prop.propInKeyType_) {
       // prop in value
       case PropContext::PropInKeyType::NONE: {
+        if (NebulaKeyUtils::isVector(key)) {
+          return readVectorValue(reader, prop.name_, prop.field_);
+        }
         return readValue(reader, prop.name_, prop.field_);
       }
       case PropContext::PropInKeyType::VID: {
@@ -236,20 +235,6 @@ class QueryUtils final {
       case PropContext::PropInKeyType::TAG: {
         auto tag = NebulaKeyUtils::getTagId(vIdLen, key);
         return tag;
-      }
-      default:
-        LOG(FATAL) << "Should not read here";
-    }
-    return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
-  }
-
-  static StatusOr<nebula::Value> readVertexVectorProp(RowReaderWrapper* reader,
-                                                      const PropContext& prop) {
-    switch (prop.propInKeyType_) {
-      // prop in value
-      case PropContext::PropInKeyType::NONE: {
-        LOG(ERROR) << "LZY Read vertex vector prop, prop: " << prop.name_;
-        return readVectorValue(reader, prop.name_, prop.field_);
       }
       default:
         LOG(FATAL) << "Should not read here";
@@ -279,27 +264,6 @@ class QueryUtils final {
         expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
       }
     }
-    return Status::OK();
-  }
-  static Status collectVertexVectorProps(RowReaderWrapper* reader,
-                                         const PropContext* prop,
-                                         nebula::List& list,
-                                         StorageExpressionContext* expCtx = nullptr,
-                                         const std::string& tagName = "") {
-    if (!(prop->returned_ || (prop->filtered_ && expCtx != nullptr))) {
-      return Status::OK();
-    }
-    LOG(ERROR) << "LZY Collect vertex vector prop, prop: " << prop->name_;
-    auto value = QueryUtils::readVertexVectorProp(reader, *prop);
-    NG_RETURN_IF_ERROR(value);
-    if (prop->returned_) {
-      VLOG(2) << "Collect prop " << prop->name_;
-      list.emplace_back(value.value());
-    }
-    if (prop->filtered_ && expCtx != nullptr) {
-      expCtx->setTagProp(tagName, prop->name_, std::move(value).value());
-    }
-
     return Status::OK();
   }
 

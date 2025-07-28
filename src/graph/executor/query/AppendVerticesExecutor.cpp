@@ -122,7 +122,6 @@ Status AppendVerticesExecutor::handleResp(
 
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
-      LOG(ERROR) << "lzy RESP PROPS: " << (*resp.props_ref()).toString();
       auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
       for (; iter.valid(); iter.next()) {
         if (vFilter != nullptr) {

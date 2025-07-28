@@ -41,18 +41,19 @@ class RocksEngineMultiCFTest
 TEST_P(RocksEngineMultiCFTest, SimpleTest) {
   fs::TempDir rootPath("/tmp/rocksdb_engine_multicf_SimpleTest.XXXXXX");
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->put(NebulaKeyUtils::kVectorColumnFamilyName, "key", "val"));
+  int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+  std::string key;
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+  key.append("key");
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->put(key, "val"));
   std::string val;
   if (flush_) {
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
               engine->flush({NebulaKeyUtils::kVectorColumnFamilyName}));
   }
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->get(NebulaKeyUtils::kVectorColumnFamilyName, "key", &val));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get(key, &val));
   EXPECT_EQ("val", val);
-  EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND,
-            engine->get(NebulaKeyUtils::kDefaultColumnFamilyName, "val", &val));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, engine->get("val", &val));
 }
 
 TEST_P(RocksEngineMultiCFTest, RangeTest) {
@@ -61,11 +62,14 @@ TEST_P(RocksEngineMultiCFTest, RangeTest) {
   std::vector<KV> data;
 
   for (int32_t i = 10; i < 20; i++) {
-    data.emplace_back("key_" + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
-                      folly::stringPrintf("val_%d", i));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string key;
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    key.append("key_");
+    key.append(reinterpret_cast<const char*>(&i), sizeof(int32_t));
+    data.emplace_back(key, folly::stringPrintf("val_%d", i));
   }
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->multiPut(NebulaKeyUtils::kVectorColumnFamilyName, std::move(data)));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
   if (flush_) {
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
               engine->flush({NebulaKeyUtils::kVectorColumnFamilyName}));
@@ -74,18 +78,22 @@ TEST_P(RocksEngineMultiCFTest, RangeTest) {
   auto checkRange = [&](int32_t start, int32_t end, int32_t expectedFrom, int32_t expectedTotal) {
     VLOG(1) << "start " << start << ", end " << end << ", expectedFrom " << expectedFrom
             << ", expectedTotal " << expectedTotal;
-    std::string s = "key_" + std::string(reinterpret_cast<const char*>(&start), sizeof(int32_t));
-    std::string e = "key_" + std::string(reinterpret_cast<const char*>(&end), sizeof(int32_t));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string key;
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    key.append("key_");
+
+    std::string s = key + std::string(reinterpret_cast<const char*>(&start), sizeof(int32_t));
+    std::string e = key + std::string(reinterpret_cast<const char*>(&end), sizeof(int32_t));
     std::unique_ptr<KVIterator> iter;
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->range(NebulaKeyUtils::kVectorColumnFamilyName, s, e, &iter));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->range(s, e, &iter));
     int num = 0;
     while (iter->valid()) {
       num++;
       // remove the prefix "key_"
-      auto key = *reinterpret_cast<const int32_t*>(iter->key().subpiece(4).data());
+      auto iter_key = *reinterpret_cast<const int32_t*>(iter->key().subpiece(8).data());
       auto val = iter->val();
-      EXPECT_EQ(expectedFrom, key);
+      EXPECT_EQ(expectedFrom, iter_key);
       EXPECT_EQ(folly::stringPrintf("val_%d", expectedFrom), val);
       expectedFrom++;
       iter->next();
@@ -107,16 +115,27 @@ TEST_P(RocksEngineMultiCFTest, PrefixTest) {
   std::vector<KV> data(40);
 
   for (int32_t i = 0; i < 10; i++) {
-    data.emplace_back(folly::stringPrintf("key_a_%d", i), folly::stringPrintf("val_%d", i));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string key;
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    key.append("key_a_");
+    data.emplace_back(key + std::to_string(i), folly::stringPrintf("val_%d", i));
   }
   for (int32_t i = 10; i < 15; i++) {
-    data.emplace_back(folly::stringPrintf("key_b_%d", i), folly::stringPrintf("val_%d", i));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string key;
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    key.append("key_b_");
+    data.emplace_back(key + std::to_string(i), folly::stringPrintf("val_%d", i));
   }
   for (int32_t i = 20; i < 40; i++) {
-    data.emplace_back(folly::stringPrintf("key_c_%d", i), folly::stringPrintf("val_%d", i));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string key;
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    key.append("key_c_");
+    data.emplace_back(key + std::to_string(i), folly::stringPrintf("val_%d", i));
   }
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->multiPut(NebulaKeyUtils::kVectorColumnFamilyName, std::move(data)));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
   if (flush_) {
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
               engine->flush({NebulaKeyUtils::kVectorColumnFamilyName}));
@@ -127,38 +146,39 @@ TEST_P(RocksEngineMultiCFTest, PrefixTest) {
             << expectedTotal;
 
     std::unique_ptr<KVIterator> iter;
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->prefix(NebulaKeyUtils::kVectorColumnFamilyName, prefix, &iter));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->prefix(prefix, &iter));
     int num = 0;
     while (iter->valid()) {
       num++;
-      auto key = iter->key();
+      auto key = iter->key().subpiece(4).data();
       auto val = iter->val();
-      EXPECT_EQ(folly::stringPrintf("%s_%d", prefix.c_str(), expectedFrom), key);
+      EXPECT_EQ(folly::stringPrintf("%s_%d", prefix.substr(4).c_str(), expectedFrom), key);
       EXPECT_EQ(folly::stringPrintf("val_%d", expectedFrom), val);
       expectedFrom++;
       iter->next();
     }
     EXPECT_EQ(expectedTotal, num);
   };
-  checkPrefix("key_a", 0, 10);
-  checkPrefix("key_b", 10, 5);
-  checkPrefix("key_c", 20, 20);
+  int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+  std::string key;
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+  checkPrefix(key + "key_a", 0, 10);
+  checkPrefix(key + "key_b", 10, 5);
+  checkPrefix(key + "key_c", 20, 20);
 }
 
 TEST_P(RocksEngineMultiCFTest, RemoveTest) {
   fs::TempDir rootPath("/tmp/rocksdb_engine_multicf_RemoveTest.XXXXXX");
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->put(NebulaKeyUtils::kVectorColumnFamilyName, "key", "val"));
+  int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+  std::string key;
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->put(key + "key", "val"));
   std::string val;
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->get(NebulaKeyUtils::kVectorColumnFamilyName, "key", &val));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get(key + "key", &val));
   EXPECT_EQ("val", val);
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->remove(NebulaKeyUtils::kVectorColumnFamilyName, "key"));
-  EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND,
-            engine->get(NebulaKeyUtils::kVectorColumnFamilyName, "key", &val));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->remove(key + "key"));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, engine->get(key + "key", &val));
 }
 
 TEST_P(RocksEngineMultiCFTest, RemoveRangeTest) {
@@ -168,39 +188,51 @@ TEST_P(RocksEngineMultiCFTest, RemoveRangeTest) {
   fs::TempDir rootPath("/tmp/rocksdb_engine_multicf_RemoveRangeTest.XXXXXX");
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
   for (int32_t i = 0; i < 100; i++) {
-    std::string key(reinterpret_cast<const char*>(&i), sizeof(int32_t));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string key;
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    key.append(reinterpret_cast<const char*>(&i), sizeof(int32_t));  // 使用二进制格式
     std::string value(folly::stringPrintf("%d_val", i));
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->put(NebulaKeyUtils::kVectorColumnFamilyName, key, value));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->put(key, value));
     std::string val;
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->get(NebulaKeyUtils::kVectorColumnFamilyName, key, &val));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get(key, &val));
     EXPECT_EQ(value, val);
   }
   {
     int32_t s = 0, e = 50;
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->removeRange(NebulaKeyUtils::kVectorColumnFamilyName,
-                                  std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
-                                  std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string keyPrefix;
+    keyPrefix.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    std::string startKey =
+        keyPrefix + std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t));
+    std::string endKey =
+        keyPrefix + std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->removeRange(startKey, endKey));
   }
   if (flush_) {
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->flush());
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
+              engine->flush({NebulaKeyUtils::kVectorColumnFamilyName}));
   }
   {
     int32_t s = 0, e = 100;
     std::unique_ptr<KVIterator> iter;
-    std::string start(reinterpret_cast<const char*>(&s), sizeof(int32_t));
-    std::string end(reinterpret_cast<const char*>(&e), sizeof(int32_t));
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->range(NebulaKeyUtils::kVectorColumnFamilyName, start, end, &iter));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string keyPrefix;
+    keyPrefix.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    std::string startKey =
+        keyPrefix + std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t));
+    std::string endKey =
+        keyPrefix + std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->range(startKey, endKey, &iter));
+
     int num = 0;
     int expectedFrom = 50;
     while (iter->valid()) {
       num++;
-      auto key = *reinterpret_cast<const int32_t*>(iter->key().data());
+      auto iter_key_data = iter->key().data() + sizeof(int32_t);
+      int32_t actual_key = *reinterpret_cast<const int32_t*>(iter_key_data);
       auto val = iter->val();
-      EXPECT_EQ(expectedFrom, key);
+      EXPECT_EQ(expectedFrom, actual_key);
       EXPECT_EQ(folly::stringPrintf("%d_val", expectedFrom), val);
       expectedFrom++;
       iter->next();
@@ -240,10 +272,12 @@ TEST_P(RocksEngineMultiCFTest, CompactTest) {
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
   std::vector<KV> data;
   for (int32_t i = 2; i < 8; i++) {
-    data.emplace_back(folly::stringPrintf("key_%d", i), folly::stringPrintf("value_%d", i));
+    int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+    std::string key;
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+    data.emplace_back(key + std::to_string(i), folly::stringPrintf("value_%d", i));
   }
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->multiPut(NebulaKeyUtils::kVectorColumnFamilyName, std::move(data)));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
             engine->compact(NebulaKeyUtils::kVectorColumnFamilyName));
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
@@ -301,65 +335,80 @@ TEST_P(RocksEngineMultiCFTest, BackupRestoreTable) {
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
 
   std::vector<KV> data;
+  int32_t item = static_cast<uint32_t>(NebulaKeyType::kVector_);
+  std::string keyPrefix;
+  keyPrefix.append(reinterpret_cast<const char*>(&item), sizeof(int32_t));
 
   for (int32_t i = 0; i < 10; i++) {
+    // 添加default CF的数据
     data.emplace_back(folly::stringPrintf("part_%d", i), folly::stringPrintf("val_%d", i));
-    data.emplace_back(folly::stringPrintf("tags_%d", i), folly::stringPrintf("val_%d", i));
+
+    // 添加vector CF的数据，每次创建新的键
+    std::string vectorKey =
+        keyPrefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t));
+    data.emplace_back(vectorKey, folly::stringPrintf("val_%d", i));
   }
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->multiPut(NebulaKeyUtils::kVectorColumnFamilyName, std::move(data)));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
 
   std::vector<std::string> sst_files;
+  std::vector<std::string> vector_sst_files;
   std::string partPrefix = "part_";
-  std::string tagsPrefix = "tags_";
-  auto parts = engine->backupTable(
-      NebulaKeyUtils::kVectorColumnFamilyName, "backup_test", partPrefix, nullptr);
+  std::string vectorPrefix = std::string(reinterpret_cast<const char*>(&item), sizeof(int32_t));
+
+  // 备份part_前缀的数据（存储在default CF中）
+  auto parts = engine->backupTable("backup_test", partPrefix, nullptr);
   EXPECT_TRUE(ok(parts));
   sst_files.emplace_back(value(parts));
-  auto tags = engine->backupTable(NebulaKeyUtils::kVectorColumnFamilyName,
-                                  "backup_test",
-                                  tagsPrefix,
-                                  [](const folly::StringPiece& key) {
-                                    auto i = key.subpiece(5, key.size());
-                                    if (folly::to<int>(i) % 2 == 0) {
-                                      return true;
-                                    }
-                                    return false;
-                                  });
-  EXPECT_TRUE(ok(tags));
-  sst_files.emplace_back(value(tags));
+
+  // 备份vector CF中的数据，过滤器选择偶数索引的数据
+  auto vectors =
+      engine->backupTable(NebulaKeyUtils::kVectorColumnFamilyName,
+                          "backup_test",
+                          vectorPrefix,
+                          [](const folly::StringPiece& iterkey) {
+                            // 提取二进制格式的整数并判断是否为偶数
+                            auto binaryData = iterkey.subpiece(4);  // 跳过NebulaKeyType前缀
+                            if (binaryData.size() >= sizeof(int32_t)) {
+                              int32_t i = *reinterpret_cast<const int32_t*>(binaryData.data());
+                              return i % 2 == 0;  // 选择偶数
+                            }
+                            return false;
+                          });
+  EXPECT_TRUE(ok(vectors));
+  vector_sst_files.emplace_back(value(vectors));
 
   fs::TempDir restoreRootPath("/tmp/rocksdb_engine_restoretable.XXXXXX");
   auto restore_engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, restoreRootPath.path());
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            restore_engine->ingest(NebulaKeyUtils::kVectorColumnFamilyName, sst_files));
+            restore_engine->ingest(NebulaKeyUtils::kDefaultColumnFamilyName, sst_files));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
+            restore_engine->ingest(NebulaKeyUtils::kVectorColumnFamilyName, vector_sst_files));
   if (flush_) {
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->flush({NebulaKeyUtils::kVectorColumnFamilyName}));
+              engine->flush({NebulaKeyUtils::kDefaultColumnFamilyName,
+                             NebulaKeyUtils::kVectorColumnFamilyName}));
   }
-
   std::unique_ptr<KVIterator> iter;
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            restore_engine->prefix(NebulaKeyUtils::kVectorColumnFamilyName, partPrefix, &iter));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, restore_engine->prefix(partPrefix, &iter));
   int index = 0;
   while (iter->valid()) {
-    auto key = iter->key();
+    auto iterkey = iter->key();
     auto val = iter->val();
-    EXPECT_EQ(folly::stringPrintf("%s%d", partPrefix.c_str(), index), key);
+    EXPECT_EQ(folly::stringPrintf("%s%d", partPrefix.c_str(), index), iterkey);
     EXPECT_EQ(folly::stringPrintf("val_%d", index), val);
     iter->next();
     index++;
   }
   EXPECT_EQ(index, 10);
 
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            restore_engine->prefix(NebulaKeyUtils::kVectorColumnFamilyName, tagsPrefix, &iter));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, restore_engine->prefix(vectorPrefix, &iter));
   index = 1;
   int num = 0;
   while (iter->valid()) {
-    auto key = iter->key();
+    auto binaryData = iter->key().subpiece(4);
+    int32_t actual_key = *reinterpret_cast<const int32_t*>(binaryData.data());
     auto val = iter->val();
-    EXPECT_EQ(folly::stringPrintf("%s%d", tagsPrefix.c_str(), index), key);
+    EXPECT_EQ(index, actual_key);
     EXPECT_EQ(folly::stringPrintf("val_%d", index), val);
     iter->next();
     index += 2;
@@ -372,43 +421,40 @@ TEST_P(RocksEngineMultiCFTest, PrefixBloomTest) {
   fs::TempDir rootPath("/tmp/rocksdb_engine_multicf_PrefixExtractorTest.XXXXXX");
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
 
-  // Put vertex/edge data into NebulaKeyUtils::kVectorColumnFamilyName
-  std::vector<KV> dataCF_data;
+  // Put vector data into NebulaKeyUtils::kVectorColumnFamilyName
+  std::vector<KV> vectorCF_data;
   std::vector<std::string> cfNames;
   for (auto tagId = 0; tagId < 10; tagId++) {
-    dataCF_data.emplace_back(NebulaKeyUtils::tagKey(kDefaultVIdLen, 1, "1", tagId),
-                             folly::stringPrintf("val_%d", tagId));
-    dataCF_data.emplace_back(NebulaKeyUtils::tagKey(kDefaultVIdLen, 1, "2", tagId),
-                             folly::stringPrintf("val_%d", tagId));
-    dataCF_data.emplace_back(NebulaKeyUtils::tagKey(kDefaultVIdLen, 2, "3", tagId),
-                             folly::stringPrintf("val_%d", tagId));
-    dataCF_data.emplace_back(NebulaKeyUtils::tagKey(kDefaultVIdLen, 2, "4", tagId),
-                             folly::stringPrintf("val_%d", tagId));
+    vectorCF_data.emplace_back(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 1, "1", tagId, 0),
+                               folly::stringPrintf("val_%d", tagId));
+    vectorCF_data.emplace_back(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 1, "2", tagId, 0),
+                               folly::stringPrintf("val_%d", tagId));
+    vectorCF_data.emplace_back(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 2, "3", tagId, 0),
+                               folly::stringPrintf("val_%d", tagId));
+    vectorCF_data.emplace_back(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 2, "4", tagId, 0),
+                               folly::stringPrintf("val_%d", tagId));
   }
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->multiPut(NebulaKeyUtils::kVectorColumnFamilyName, std::move(dataCF_data)));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(vectorCF_data)));
 
   // Put system data into NebulaKeyUtils::kDefaultColumnFamilyName
   std::vector<KV> defaultCF_data;
   defaultCF_data.emplace_back(NebulaKeyUtils::systemCommitKey(1), "123");
   defaultCF_data.emplace_back(NebulaKeyUtils::systemCommitKey(2), "123");
 
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->multiPut(NebulaKeyUtils::kDefaultColumnFamilyName, std::move(defaultCF_data)));
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(defaultCF_data)));
 
   if (flush_) {
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->flush({NebulaKeyUtils::kVectorColumnFamilyName}));
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->flush({NebulaKeyUtils::kDefaultColumnFamilyName}));
+              engine->flush({NebulaKeyUtils::kDefaultColumnFamilyName,
+                             NebulaKeyUtils::kVectorColumnFamilyName}));
   }
 
   {
     // vertexPrefix(partId, vId) should find data in NebulaKeyUtils::kVectorColumnFamilyName
     auto checkVertexPrefix = [&](PartitionID partId, const VertexID& vId) {
-      std::string prefix = NebulaKeyUtils::tagPrefix(kDefaultVIdLen, partId, vId);
+      std::string prefix = NebulaKeyUtils::vectorTagPrefix(kDefaultVIdLen, partId, vId);
       std::unique_ptr<KVIterator> iter;
-      auto code = engine->prefix(NebulaKeyUtils::kVectorColumnFamilyName, prefix, &iter);
+      auto code = engine->prefix(prefix, &iter);
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
       int32_t num = 0;
       while (iter->valid()) {
@@ -425,9 +471,9 @@ TEST_P(RocksEngineMultiCFTest, PrefixBloomTest) {
   {
     // vertexPrefix(partId) should find data in NebulaKeyUtils::kVectorColumnFamilyName
     auto checkPartPrefix = [&](PartitionID partId) {
-      std::string prefix = NebulaKeyUtils::tagPrefix(partId);
+      std::string prefix = NebulaKeyUtils::vectorTagPrefix(partId);
       std::unique_ptr<KVIterator> iter;
-      auto code = engine->prefix(NebulaKeyUtils::kVectorColumnFamilyName, prefix, &iter);
+      auto code = engine->prefix(prefix, &iter);
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
       int32_t num = 0;
       while (iter->valid()) {
@@ -443,9 +489,7 @@ TEST_P(RocksEngineMultiCFTest, PrefixBloomTest) {
     // System data is in NebulaKeyUtils::kDefaultColumnFamilyName
     auto checkSystemCommit = [&](PartitionID partId) {
       std::string value;
-      auto code = engine->get(NebulaKeyUtils::kDefaultColumnFamilyName,
-                              NebulaKeyUtils::systemCommitKey(partId),
-                              &value);
+      auto code = engine->get(NebulaKeyUtils::systemCommitKey(partId), &value);
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
       EXPECT_EQ("123", value);
     };
@@ -486,19 +530,16 @@ TEST(RebuildPrefixBloomFilter, RebuildPrefixBloomFilterForCF) {
     // Put data into the data CF
     std::vector<KV> data(10);
     for (TagID tagId = 0; tagId < 10; tagId++) {
-      data.emplace_back(NebulaKeyUtils::tagKey(kDefaultVIdLen, 1, "1", tagId), "v");
+      data.emplace_back(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 1, "1", tagId, 0), "v");
     }
-    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->multiPut(NebulaKeyUtils::kVectorColumnFamilyName, std::move(data)));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
               engine->flush({NebulaKeyUtils::kVectorColumnFamilyName}));
 
     // Check data
     std::string val;
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->get(NebulaKeyUtils::kVectorColumnFamilyName,
-                          NebulaKeyUtils::tagKey(kDefaultVIdLen, 1, "1", 0),
-                          &val));
+              engine->get(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 1, "1", 0, 0), &val));
   };
 
   // Step 1: Create DB with prefix bloom filter OFF for data_cf
@@ -523,9 +564,7 @@ TEST(RebuildPrefixBloomFilter, RebuildPrefixBloomFilterForCF) {
     // Check old data still exists
     std::string val;
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-              engine->get(NebulaKeyUtils::kVectorColumnFamilyName,
-                          NebulaKeyUtils::tagKey(kDefaultVIdLen, 1, "1", 0),
-                          &val));
+              engine->get(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 1, "1", 0, 0), &val));
   }
 
   // Step 3: Compact the specific data_cf to rebuild its SST files with the new option.
@@ -537,15 +576,11 @@ TEST(RebuildPrefixBloomFilter, RebuildPrefixBloomFilterForCF) {
   // to confirm the prefix bloom filter is now being used for lookups in data_cf.
   std::string val;
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->get(NebulaKeyUtils::kVectorColumnFamilyName,
-                        NebulaKeyUtils::tagKey(kDefaultVIdLen, 1, "1", 0),
-                        &val));
+            engine->get(NebulaKeyUtils::vectorTagKey(kDefaultVIdLen, 1, "1", 0, 0), &val));
 
   std::unique_ptr<KVIterator> iter;
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
-            engine->prefix(NebulaKeyUtils::kVectorColumnFamilyName,
-                           NebulaKeyUtils::tagPrefix(kDefaultVIdLen, 1, "1"),
-                           &iter));
+            engine->prefix(NebulaKeyUtils::vectorTagPrefix(kDefaultVIdLen, 1, "1"), &iter));
   int count = 0;
   while (iter->valid()) {
     count++;

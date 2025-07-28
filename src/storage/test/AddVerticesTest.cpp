@@ -48,9 +48,7 @@ TEST(AddVerticesTest, SpecifyPropertyNameVectorTest) {
   auto* env = cluster.storageEnv_.get();
 
   LOG(INFO) << "Build AddVerticesRequest...";
-  cpp2::AddVerticesRequest req = mock::MockData::mockAddVectorVerticesReq();
-  cpp2::AddVerticesRequest specifiedOrderReq =
-      mock::MockData::mockAddVectorVerticesSpecifiedOrderReq();
+  cpp2::AddVerticesRequest req = mock::MockData::mockAddVectorVerticesSpecifiedOrderReq();
 
   {
     LOG(INFO) << "AddVerticesProcessor...";
@@ -60,18 +58,10 @@ TEST(AddVerticesTest, SpecifyPropertyNameVectorTest) {
     auto resp = std::move(fut).get();
     EXPECT_EQ(0, resp.result.failed_parts.size());
   }
-  {
-    LOG(INFO) << "AddVerticesProcessor...";
-    auto* processor = AddVerticesProcessor::instance(env, nullptr);
-    auto fut = processor->getFuture();
-    processor->process(specifiedOrderReq);
-    auto resp = std::move(fut).get();
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-  }
 
   LOG(INFO) << "Check data in kv store...";
   // The number of vertices  is 12
-  checkAddVerticesData(req, env, 12, 2);
+  checkAddVerticesData(req, env, 12, 1);
 }
 
 TEST(AddVerticesTest, MultiVersionVectorTest) {

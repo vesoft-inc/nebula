@@ -64,6 +64,11 @@ class RowReaderWrapper {
                                            GraphSpaceID space,
                                            TagID tag,
                                            folly::StringPiece row);
+  static RowReaderWrapper getTagPropReader(meta::SchemaManager* schemaMan,
+                                           GraphSpaceID space,
+                                           TagID tag,
+                                           PropID vectorIndex,
+                                           folly::StringPiece row);
 
   /**
    * @brief Generate a row reader wrapper of edge data

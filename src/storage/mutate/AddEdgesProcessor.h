@@ -62,6 +62,11 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   /// this is a hook function to keep out-edge and in-edge consist
   using ConsistOper = std::function<void(kvstore::BatchHolder&, std::vector<kvstore::KV>*)>;
   std::optional<ConsistOper> consistOp_;
+
+  std::vector<std::string> regularPropNames_;
+  std::vector<std::string> vectorPropNames_;
+  std::vector<Value> regularProps_;
+  std::vector<Value> vectorProps_;
 };
 
 }  // namespace storage

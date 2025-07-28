@@ -370,7 +370,10 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode get(const std::string& key,
                               std::string* value,
                               const void* snapshot = nullptr) override;
-
+  nebula::cpp2::ErrorCode get(const std::string& cfName,
+                              const std::string& key,
+                              std::string* value,
+                              const void* snapshot = nullptr) override;
   /**
    * @brief Read a list of keys
    *
@@ -626,6 +629,11 @@ class RocksEngine : public KVEngine {
    * succeed, else return ErrorCode
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::string> backupTable(
+      const std::string& path,
+      const std::string& tablePrefix,
+      std::function<bool(const folly::StringPiece& key)> filter) override;
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> backupTable(
+      const std::string& cfName,
       const std::string& path,
       const std::string& tablePrefix,
       std::function<bool(const folly::StringPiece& key)> filter) override;

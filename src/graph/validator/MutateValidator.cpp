@@ -108,7 +108,6 @@ Status InsertVerticesValidator::check() {
 
 // Check validity of vertices data.
 // Check vid type, check properties value, fill to NewVertex structure.
-// The inserted value must follow the order of first other property, then vector property.
 Status InsertVerticesValidator::prepareVertices() {
   vertices_.reserve(rows_.size());
   for (auto i = 0u; i < rows_.size(); i++) {
@@ -786,8 +785,6 @@ Status UpdateValidator::getUpdateProps() {
     std::string encodeStr;
     auto copyValueExpr = valueExpr->clone();
     NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr, symName, encodeStr));
-    LOG(ERROR) << "lzy Update prop fieldName: " << fieldName
-               << ", encodeStr: " << folly::hexlify(encodeStr);
     updatedProp.value_ref() = std::move(encodeStr);
     updatedProp.name_ref() = fieldName;
     updatedProps_.emplace_back(std::move(updatedProp));

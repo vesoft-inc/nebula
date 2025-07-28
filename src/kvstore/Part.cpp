@@ -328,6 +328,8 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
                          << ", value: " << folly::hexlify(op.second.second);
             } else {
               code = batch->put(op.second.first, op.second.second);
+              LOG(ERROR) << "OP_BATCH_PUT SCALAR key: " << folly::hexlify(op.second.first)
+                         << ", value: " << folly::hexlify(op.second.second);
             }
 
           } else if (op.first == BatchLogType::OP_BATCH_REMOVE) {

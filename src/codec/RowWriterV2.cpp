@@ -226,8 +226,6 @@ RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema,
 
     // Null flags
     size_t numNullables = schema_->vectorField(vector_field_index_)->nullable();
-    LOG(ERROR) << "LZY Vector field index: " << vector_field_index_
-               << ", numNullables: " << numNullables;
     if (numNullables > 0) {
       numNullBytes_ = ((numNullables - 1) >> 3) + 1;
     }
@@ -382,8 +380,6 @@ void RowWriterV2::processV2EncodedStrVector() {
 
   // Null flags
   size_t numNullables = schema_->vectorField(vector_field_index_)->nullable();
-  LOG(ERROR) << "LZY Vector field index: " << vector_field_index_
-             << ", numNullables: " << numNullables;
   if (numNullables > 0) {
     numNullBytes_ = ((numNullables - 1) >> 3) + 1;
   } else {

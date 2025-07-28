@@ -240,7 +240,8 @@ std::string NebulaKeyUtils::vectorTagPrefix(size_t vIdLen,
                                             PartitionID partId,
                                             const VertexID& vId) {
   CHECK_GE(vIdLen, vId.size());
-  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVector_);
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVector_) |
+                     static_cast<uint32_t>(NebulaKeyType::kTag_);
   std::string key;
   key.reserve(sizeof(PartitionID) + vIdLen);
   key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))

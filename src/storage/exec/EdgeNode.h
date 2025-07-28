@@ -115,7 +115,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     return reader_.get();
   }
 
-  std::vector<folly::StringPiece> vectorKeys() const {
+  std::vector<folly::StringPiece> vectorKeys() const override {
     std::vector<folly::StringPiece> ret;
     for (auto& key : vectorKeys_) {
       ret.emplace_back(key);
@@ -123,7 +123,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     return ret;
   }
 
-  std::vector<folly::StringPiece> vectorValues() const {
+  std::vector<folly::StringPiece> vectorValues() const override {
     std::vector<folly::StringPiece> ret;
     for (auto& value : vectorValues_) {
       ret.emplace_back(value);
@@ -131,7 +131,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     return ret;
   }
 
-  std::vector<RowReaderWrapper*> vectorReaders() const {
+  std::vector<RowReaderWrapper*> vectorReaders() const override {
     std::vector<RowReaderWrapper*> ret;
     for (auto& reader : vectorReaders_) {
       ret.emplace_back(reader.get());

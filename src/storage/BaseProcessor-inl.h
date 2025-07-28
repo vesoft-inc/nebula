@@ -180,8 +180,6 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeVectorRowVal(
   RowWriterV2 rowWrite(schema, true, index);
   // If req.prop_names is not empty, use the property name in req.prop_names
   // Otherwise, use property name in schema
-  LOG(ERROR) << "LZY encodeVectorRowVal() prop name: " << schema->getVectorFieldName(index)
-             << ", prop value: " << props.toString();
   wRet = rowWrite.setValueVec(index, props);
   if (wRet != WriteResult::SUCCEEDED) {
     return Status::Error("Add field failed");

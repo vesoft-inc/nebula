@@ -134,21 +134,23 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
         break;
       }
       auto schema = schemaIter->second.get();
-
+      bool existVectorProps = schema->hasVectorCol();
       auto props = newEdge.get_props();
 
-      // Separate property names into regular and vector properties
-      std::vector<std::string> regularPropNames;
-      std::vector<std::string> vectorPropNames;
-      separatePropertyNames(propNames, schema, regularPropNames, vectorPropNames);
-
-      // Separate property values based on separated property names
-      std::vector<Value> regularProps;
-      std::vector<Value> vectorProps;
-      separatePropertyValues(props, regularProps, vectorProps);
-
       WriteResult wRet;
-      auto retEnc = encodeRowVal(schema, regularPropNames, regularProps, wRet);
+      StatusOr<std::string> retEnc;
+      if (existVectorProps) {
+        regularPropNames_.clear();
+        vectorPropNames_.clear();
+        regularProps_.clear();
+        vectorProps_.clear();
+        separatePropertyNames(propNames, schema, regularPropNames_, vectorPropNames_);
+        separatePropertyValues(props, regularProps_, vectorProps_);
+        retEnc = encodeRowVal(schema, regularPropNames_, regularProps_, wRet);
+      } else {
+        retEnc = encodeRowVal(schema, propNames, props, wRet);
+      }
+
       if (!retEnc.ok()) {
         LOG(ERROR) << retEnc.status();
         code = writeResultTo(wRet, true);
@@ -156,12 +158,12 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
       }
       data.emplace_back(std::move(key), std::move(retEnc.value()));
 
-      if (!vectorProps.empty()) {
-        bool vectorPropNamesEmpty = vectorPropNames.empty();
-        for (size_t i = 0; i < vectorProps.size(); ++i) {
+      if (existVectorProps) {
+        bool vectorPropNamesEmpty = vectorPropNames_.empty();
+        for (size_t i = 0; i < vectorProps_.size(); ++i) {
           int64_t vectorFieldIndex = vectorPropNamesEmpty
                                          ? static_cast<int64_t>(i)
-                                         : schema->getVectorFieldIndex(vectorPropNames[i]);
+                                         : schema->getVectorFieldIndex(vectorPropNames_[i]);
           auto vectorKey = NebulaKeyUtils::vectorEdgeKey(spaceVidLen_,
                                                          partId,
                                                          edgeKey.src_ref()->getStr(),
@@ -170,18 +172,13 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
                                                          edgeKey.dst_ref()->getStr(),
                                                          static_cast<int32_t>(vectorFieldIndex));
           auto vectorValue = encodeVectorRowVal(
-              schema, vectorProps[i], static_cast<size_t>(vectorFieldIndex), wRet);
+              schema, vectorProps_[i], static_cast<size_t>(vectorFieldIndex), wRet);
 
           if (!vectorValue.ok()) {
             LOG(ERROR) << "Failed to encode vector property: " << vectorValue.status();
             code = writeResultTo(wRet, false);
             break;
           }
-
-          LOG(ERROR) << "LZY Added vector property for edge " << edgeKey.get_edge_type()
-                     << " at index " << vectorFieldIndex << ", key: " << folly::hexlify(vectorKey)
-                     << ", value size: " << vectorValue.value().size();
-
           data.emplace_back(std::move(vectorKey), std::move(vectorValue.value()));
         }
       }
@@ -209,7 +206,6 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
 }
 
 void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
-  LOG(ERROR) << "LZY AddEdgesProcessor::doProcessWithIndex, spaceId: " << spaceId_;
   const auto& partEdges = req.get_parts();
   const auto& propNames = req.get_prop_names();
   for (const auto& part : partEdges) {
@@ -237,7 +233,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         break;
       }
       auto schema = schemaIter->second.get();
-
+      bool existVectorProps = schema->hasVectorCol();
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          partId,
                                          edgeKey.src_ref()->getStr(),
@@ -247,13 +243,48 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       // collect values
       WriteResult writeResult;
       const auto& props = edge.get_props();
-      auto encode = encodeRowVal(schema, propNames, props, writeResult);
+      StatusOr<std::string> encode;
+      if (existVectorProps) {
+        regularPropNames_.clear();
+        vectorPropNames_.clear();
+        regularProps_.clear();
+        vectorProps_.clear();
+        separatePropertyNames(propNames, schema, regularPropNames_, vectorPropNames_);
+        separatePropertyValues(props, regularProps_, vectorProps_);
+        encode = encodeRowVal(schema, regularPropNames_, regularProps_, writeResult);
+      } else {
+        encode = encodeRowVal(schema, propNames, props, writeResult);
+      }
       if (!encode.ok()) {
         LOG(ERROR) << encode.status();
         code = writeResultTo(writeResult, true);
         break;
       }
       kvs.emplace_back(std::move(key), std::move(encode.value()));
+      if (existVectorProps) {
+        bool vectorPropNamesEmpty = vectorPropNames_.empty();
+        for (size_t i = 0; i < vectorProps_.size(); ++i) {
+          int64_t vectorFieldIndex = vectorPropNamesEmpty
+                                         ? static_cast<int64_t>(i)
+                                         : schema->getVectorFieldIndex(vectorPropNames_[i]);
+          auto vectorKey = NebulaKeyUtils::vectorEdgeKey(spaceVidLen_,
+                                                         partId,
+                                                         edgeKey.src_ref()->getStr(),
+                                                         *edgeKey.edge_type_ref(),
+                                                         *edgeKey.ranking_ref(),
+                                                         (*edgeKey.dst_ref()).getStr(),
+                                                         static_cast<int32_t>(vectorFieldIndex));
+          auto vectorValue = encodeVectorRowVal(
+              schema, vectorProps_[i], static_cast<size_t>(vectorFieldIndex), writeResult);
+
+          if (!vectorValue.ok()) {
+            LOG(ERROR) << "Failed to encode vector property: " << vectorValue.status();
+            code = writeResultTo(writeResult, false);
+            break;
+          }
+          kvs.emplace_back(std::move(vectorKey), std::move(vectorValue.value()));
+        }
+      }
     }
 
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -278,84 +309,86 @@ kvstore::MergeableAtomicOpResult AddEdgesProcessor::addEdgesWithIndex(
   IndexCountWrapper wrapper(env_);
   std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
   for (auto& [key, value] : data) {
-    auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, key);
-    RowReaderWrapper oldReader;
-    RowReaderWrapper newReader =
-        RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, std::abs(edgeType), value);
-    auto schemaIter = edgeSchema_.find(std::abs(edgeType));
-    if (schemaIter == edgeSchema_.end()) {
-      return ret;
-    }
-    auto schema = schemaIter->second.get();
-
-    // only out-edge need to handle index
-    if (edgeType > 0) {
-      std::string oldVal;
-      if (!ignoreExistedIndex_) {
-        // read the old key value and initialize row reader if exists
-        auto result = findOldValue(partId, key);
-        if (nebula::ok(result)) {
-          if (ifNotExists_ && !nebula::value(result).empty()) {
-            continue;
-          } else if (!nebula::value(result).empty()) {
-            oldVal = std::move(nebula::value(result));
-            oldReader =
-                RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, edgeType, oldVal);
-            ret.readSet.emplace_back(key);
-          }
-        } else {
-          // read old value failed
-          return ret;
-        }
+    if (!NebulaKeyUtils::isVector(key)) {
+      auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, key);
+      RowReaderWrapper oldReader;
+      RowReaderWrapper newReader = RowReaderWrapper::getEdgePropReader(
+          env_->schemaMan_, spaceId_, std::abs(edgeType), value);
+      auto schemaIter = edgeSchema_.find(std::abs(edgeType));
+      if (schemaIter == edgeSchema_.end()) {
+        return ret;
       }
-      for (const auto& index : indexes_) {
-        if (edgeType == index->get_schema_id().get_edge_type()) {
-          // step 1, Delete old version index if exists.
-          if (oldReader != nullptr) {
-            auto oldIndexKeys = indexKeys(partId, oldReader.get(), key, index, nullptr);
-            if (!oldIndexKeys.empty()) {
-              ret.writeSet.insert(ret.writeSet.end(), oldIndexKeys.begin(), oldIndexKeys.end());
-              // Check the index is building for the specified partition or
-              // not.
-              auto indexState = env_->getIndexState(spaceId_, partId);
-              if (env_->checkRebuilding(indexState)) {
-                auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                for (auto& idxKey : oldIndexKeys) {
-                  ret.writeSet.push_back(idxKey);
-                  batchHolder->put(std::string(delOpKey), std::move(idxKey));
-                }
-              } else if (env_->checkIndexLocked(indexState)) {
-                return ret;
-              } else {
-                for (auto& idxKey : oldIndexKeys) {
-                  ret.writeSet.push_back(idxKey);
-                  batchHolder->remove(std::move(idxKey));
+      auto schema = schemaIter->second.get();
+
+      // only out-edge need to handle index
+      if (edgeType > 0) {
+        std::string oldVal;
+        if (!ignoreExistedIndex_) {
+          // read the old key value and initialize row reader if exists
+          auto result = findOldValue(partId, key);
+          if (nebula::ok(result)) {
+            if (ifNotExists_ && !nebula::value(result).empty()) {
+              continue;
+            } else if (!nebula::value(result).empty()) {
+              oldVal = std::move(nebula::value(result));
+              oldReader =
+                  RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, edgeType, oldVal);
+              ret.readSet.emplace_back(key);
+            }
+          } else {
+            // read old value failed
+            return ret;
+          }
+        }
+        for (const auto& index : indexes_) {
+          if (edgeType == index->get_schema_id().get_edge_type()) {
+            // step 1, Delete old version index if exists.
+            if (oldReader != nullptr) {
+              auto oldIndexKeys = indexKeys(partId, oldReader.get(), key, index, nullptr);
+              if (!oldIndexKeys.empty()) {
+                ret.writeSet.insert(ret.writeSet.end(), oldIndexKeys.begin(), oldIndexKeys.end());
+                // Check the index is building for the specified partition or
+                // not.
+                auto indexState = env_->getIndexState(spaceId_, partId);
+                if (env_->checkRebuilding(indexState)) {
+                  auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                  for (auto& idxKey : oldIndexKeys) {
+                    ret.writeSet.push_back(idxKey);
+                    batchHolder->put(std::string(delOpKey), std::move(idxKey));
+                  }
+                } else if (env_->checkIndexLocked(indexState)) {
+                  return ret;
+                } else {
+                  for (auto& idxKey : oldIndexKeys) {
+                    ret.writeSet.push_back(idxKey);
+                    batchHolder->remove(std::move(idxKey));
+                  }
                 }
               }
             }
-          }
 
-          // step 2, Insert new edge index
-          if (newReader != nullptr) {
-            auto newIndexKeys = indexKeys(partId, newReader.get(), key, index, nullptr);
-            if (!newIndexKeys.empty()) {
-              // check if index has ttl field, write it to index value if exists
-              auto field = CommonUtils::ttlValue(schema, newReader.get());
-              auto indexVal = field.ok() ? IndexKeyUtils::indexVal(std::move(field).value()) : "";
-              auto indexState = env_->getIndexState(spaceId_, partId);
-              if (env_->checkRebuilding(indexState)) {
-                for (auto& idxKey : newIndexKeys) {
-                  auto opKey = OperationKeyUtils::modifyOperationKey(partId, idxKey);
-                  ret.writeSet.push_back(opKey);
-                  batchHolder->put(std::move(opKey), std::string(indexVal));
-                }
-              } else if (env_->checkIndexLocked(indexState)) {
-                // return folly::Optional<std::string>();
-                return ret;
-              } else {
-                for (auto& idxKey : newIndexKeys) {
-                  ret.writeSet.push_back(idxKey);
-                  batchHolder->put(std::move(idxKey), std::string(indexVal));
+            // step 2, Insert new edge index
+            if (newReader != nullptr) {
+              auto newIndexKeys = indexKeys(partId, newReader.get(), key, index, nullptr);
+              if (!newIndexKeys.empty()) {
+                // check if index has ttl field, write it to index value if exists
+                auto field = CommonUtils::ttlValue(schema, newReader.get());
+                auto indexVal = field.ok() ? IndexKeyUtils::indexVal(std::move(field).value()) : "";
+                auto indexState = env_->getIndexState(spaceId_, partId);
+                if (env_->checkRebuilding(indexState)) {
+                  for (auto& idxKey : newIndexKeys) {
+                    auto opKey = OperationKeyUtils::modifyOperationKey(partId, idxKey);
+                    ret.writeSet.push_back(opKey);
+                    batchHolder->put(std::move(opKey), std::string(indexVal));
+                  }
+                } else if (env_->checkIndexLocked(indexState)) {
+                  // return folly::Optional<std::string>();
+                  return ret;
+                } else {
+                  for (auto& idxKey : newIndexKeys) {
+                    ret.writeSet.push_back(idxKey);
+                    batchHolder->put(std::move(idxKey), std::string(indexVal));
+                  }
                 }
               }
             }
