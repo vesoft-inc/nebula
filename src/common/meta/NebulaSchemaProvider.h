@@ -254,6 +254,7 @@ class NebulaSchemaProvider {
                       std::string defaultValue = "",
                       cpp2::GeoShape geoShape = cpp2::GeoShape::ANY);
 
+
   void setProp(cpp2::SchemaProp schemaProp);
 
   const cpp2::SchemaProp getProp() const;
@@ -266,7 +267,7 @@ class NebulaSchemaProvider {
 
   bool hasVectorCol() const {
     return !vector_fields_.empty();
-  }
+
 
  private:
   std::size_t fieldSize(nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
