@@ -17,6 +17,7 @@ using PartitionID = int32_t;
 using TermID = int64_t;
 using LogID = int64_t;
 using Port = int32_t;
+using VectorID = int64_t;
 
 // Starting from 2.0, both string and int64 vertex ids will be supported.
 //
