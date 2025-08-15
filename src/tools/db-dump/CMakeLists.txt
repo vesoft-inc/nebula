@@ -16,6 +16,9 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         wangle
         curl
+        faiss
+        openblas
+        gomp
 )
 
 #install(

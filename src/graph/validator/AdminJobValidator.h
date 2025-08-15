@@ -34,6 +34,8 @@ class AdminJobValidator final : public Validator {
           case meta::cpp2::JobType::REBUILD_TAG_INDEX:
           case meta::cpp2::JobType::REBUILD_EDGE_INDEX:
           case meta::cpp2::JobType::REBUILD_FULLTEXT_INDEX:
+          case meta::cpp2::JobType::BUILD_TAG_VECTOR_INDEX:
+          case meta::cpp2::JobType::BUILD_EDGE_VECTOR_INDEX:
           case meta::cpp2::JobType::STATS:
           case meta::cpp2::JobType::COMPACT:
           case meta::cpp2::JobType::FLUSH:

@@ -63,6 +63,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:storage_client_stats_obj>
     $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:vector_index_obj>
 )
 
 if(ENABLE_STANDALONE_VERSION)
@@ -102,6 +103,44 @@ nebula_add_test(
         wangle
         gtest
         curl
+)
+
+nebula_add_test(
+    NAME
+        build_tag_vector_index_test
+    SOURCES
+        BuildTagVectorIndexTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+        faiss
+        openblas
+        gomp
+)
+
+nebula_add_test(
+    NAME
+        build_edge_vector_index_test
+    SOURCES
+        BuildEdgeVectorIndexTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+        faiss
+        openblas
+        gomp
 )
 
 nebula_add_test(

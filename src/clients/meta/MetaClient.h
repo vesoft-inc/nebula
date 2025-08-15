@@ -68,6 +68,7 @@ using NameIndexMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, In
 // Index ID => Index Item
 // Get Index Structure by indexID
 using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
+using AnnIndexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::AnnIndexItem>>;
 
 // Listeners is a map of ListenerHost => <PartId + type>, used to add/remove listener on local host
 using Listeners =
@@ -89,6 +90,10 @@ struct SpaceInfoCache {
   Indexes tagIndexes_;
   std::vector<cpp2::IndexItem> edgeIndexItemVec_;
   Indexes edgeIndexes_;
+  std::vector<cpp2::AnnIndexItem> tagAnnIndexItemVec_;
+  AnnIndexes tagAnnIndexes_;
+  std::vector<cpp2::AnnIndexItem> edgeAnnIndexItemVec_;
+  AnnIndexes edgeAnnIndexes_;
   Listeners listeners_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
 
@@ -105,6 +110,10 @@ struct SpaceInfoCache {
         tagIndexes_(info.tagIndexes_),
         edgeIndexItemVec_(info.edgeIndexItemVec_),
         edgeIndexes_(info.edgeIndexes_),
+        tagAnnIndexItemVec_(info.tagAnnIndexItemVec_),
+        tagAnnIndexes_(info.tagAnnIndexes_),
+        edgeAnnIndexItemVec_(info.edgeAnnIndexItemVec_),
+        edgeAnnIndexes_(info.edgeAnnIndexes_),
         listeners_(info.listeners_),
         termOfPartition_(info.termOfPartition_) {}
 
@@ -363,6 +372,10 @@ class MetaClient : public BaseMetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> listTagIndexes(GraphSpaceID spaceId);
 
+  folly::Future<StatusOr<std::vector<cpp2::AnnIndexItem>>> listTagAnnIndexes(GraphSpaceID spaceId);
+
+  folly::Future<StatusOr<std::vector<cpp2::AnnIndexItem>>> listEdgeAnnIndexes(GraphSpaceID spaceId);
+
   folly::Future<StatusOr<bool>> rebuildTagIndex(GraphSpaceID spaceID, std::string name);
 
   folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listTagIndexStatus(GraphSpaceID spaceId);
@@ -575,6 +588,12 @@ class MetaClient : public BaseMetaClient {
   StatusOr<std::shared_ptr<cpp2::IndexItem>> getTagIndexFromCache(GraphSpaceID spaceId,
                                                                   IndexID indexID);
 
+  StatusOr<std::shared_ptr<cpp2::AnnIndexItem>> getTagAnnIndexFromCache(GraphSpaceID spaceId,
+                                                                        IndexID indexID);
+
+  StatusOr<std::shared_ptr<cpp2::AnnIndexItem>> getEdgeAnnIndexFromCache(GraphSpaceID spaceId,
+                                                                         IndexID indexID);
+
   StatusOr<TagID> getRelatedTagIDByIndexNameFromCache(const GraphSpaceID space,
                                                       const std::string& indexName);
 
@@ -689,6 +708,8 @@ class MetaClient : public BaseMetaClient {
   bool loadUsersAndRoles();
 
   bool loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache);
+
+  bool loadAnnIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache);
 
   bool loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache);
 

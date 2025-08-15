@@ -677,7 +677,7 @@ class RocksEngine : public KVEngine {
 
   static const char kDefaultColumnFamilyName[];
   static const char kVectorColumnFamilyName[];
-  static const char kIdVidMapColumnFamilyName[];
+  static const char kIdVidTagColumnFamilyName[];
 };
 
 }  // namespace kvstore

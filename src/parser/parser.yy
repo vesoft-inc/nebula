@@ -196,7 +196,7 @@ using namespace nebula;
 %token KW_BIDIRECT
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
-%token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON VECTORAND
 %token KW_OUT KW_BOTH KW_SUBGRAPH KW_ACROSS
 %token KW_EXPLAIN KW_PROFILE KW_FORMAT
 %token KW_CONTAINS
@@ -462,6 +462,9 @@ name_label_list
         $$->add($1);
     }
     | name_label_list COMMA name_label {
+        $1->add($3);
+        $$ = $1;
+    } name_label_list VECTORAND name_label {
         $1->add($3);
         $$ = $1;
     }
@@ -2755,6 +2758,9 @@ opt_index_field_list
 create_tag_index_sentence
     : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
         $$ = new CreateTagIndexSentence($5, $7, $9, $4, $11, $12);
+    }
+    | KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label_list L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
+
     }
     ;
 

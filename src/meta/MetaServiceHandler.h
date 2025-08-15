@@ -94,6 +94,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ListTagIndexesResp> future_listTagIndexes(
       const cpp2::ListTagIndexesReq& req) override;
 
+  folly::Future<cpp2::ListTagAnnIndexesResp> future_listTagAnnIndexes(
+      const cpp2::ListTagIndexesReq& req) override;
+
   folly::Future<cpp2::ExecResp> future_createEdgeIndex(
       const cpp2::CreateEdgeIndexReq& req) override;
 
@@ -103,6 +106,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
       const cpp2::GetEdgeIndexReq& req) override;
 
   folly::Future<cpp2::ListEdgeIndexesResp> future_listEdgeIndexes(
+      const cpp2::ListEdgeIndexesReq& req) override;
+
+  folly::Future<cpp2::ListEdgeAnnIndexesResp> future_listEdgeAnnIndexes(
       const cpp2::ListEdgeIndexesReq& req) override;
 
   folly::Future<cpp2::ListIndexStatusResp> future_listTagIndexStatus(

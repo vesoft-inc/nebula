@@ -828,6 +828,22 @@ struct RebuildIndexRequest {
     3: common.IndexID               index_id,
 }
 
+struct VectorIndexSpec {
+    1: binary                       index_name,
+    2: binary                       schema_name,      // tag or edge name
+    3: bool                         is_tag,           // true for tag, false for edge
+    4: binary                       prop_name,        // vector property name
+    5: i32                          dimension,        // vector dimension
+    6: binary                       ann_type,         // ANN algorithm type
+    7: list<binary>                 ann_params,       // ANN specific parameters
+}
+
+struct BuildVectorIndexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: list<common.PartitionID>     parts,
+    3: VectorIndexSpec              index_spec,
+}
+
 struct ListClusterInfoResp {
     1: required ResponseCommon  result,
     2: common.DirInfo           dir,
@@ -886,6 +902,9 @@ service StorageAdminService {
 
     AddTaskResp   addAdminTask(1: AddTaskRequest req);
     StopTaskResp  stopAdminTask(1: StopTaskRequest req);
+
+    // Vector Index operations
+    AdminExecResp buildVectorIndex(1: BuildVectorIndexRequest req);
 
     ClearSpaceResp clearSpace(1: ClearSpaceReq req);
 }

@@ -18,6 +18,9 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         curl
+        faiss
+        openblas
+        gomp
 )
 
 install(

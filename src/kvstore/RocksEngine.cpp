@@ -67,7 +67,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
 
   std::vector<std::string> cfNames = {NebulaKeyUtils::kDefaultColumnFamilyName,
                                       NebulaKeyUtils::kVectorColumnFamilyName,
-                                      NebulaKeyUtils::kIdVidMapColumnFamilyName};
+                                      NebulaKeyUtils::kIdVidTagColumnFamilyName};
 
   rocksdb::DBOptions dbOptions;
   rocksdb::ColumnFamilyOptions basecfOptions;
@@ -354,6 +354,14 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
       iter->Seek(rocksdb::Slice(prefix));
       dynamic_cast<RocksPrefixIter*>(storageIter->get())->reset(std::move(iter));
     }
+  } else if (NebulaKeyUtils::isIdVidCf(prefix)) {
+    auto it = cfHandleMap_.find(NebulaKeyUtils::kIdVidTagColumnFamilyName);
+    DCHECK(it != cfHandleMap_.end()) << "id-vid map column family not existed";
+    std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
+    if (iter) {
+      iter->Seek(rocksdb::Slice(prefix));
+      dynamic_cast<RocksPrefixIter*>(storageIter->get())->reset(std::move(iter));
+    }
   } else {
     std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
     if (iter) {
@@ -379,6 +387,14 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
   if (NebulaKeyUtils::isVector(prefix)) {
     auto it = cfHandleMap_.find(NebulaKeyUtils::kVectorColumnFamilyName);
     DCHECK(it != cfHandleMap_.end()) << "vector column family not existed";
+    std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
+    if (iter) {
+      iter->Seek(rocksdb::Slice(prefix));
+      dynamic_cast<RocksPrefixIter*>(storageIter->get())->reset(std::move(iter));
+    }
+  } else if (NebulaKeyUtils::isIdVidCf(prefix)) {
+    auto it = cfHandleMap_.find(NebulaKeyUtils::kIdVidTagColumnFamilyName);
+    DCHECK(it != cfHandleMap_.end()) << "id-vid map column family not existed";
     std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options, it->second));
     if (iter) {
       iter->Seek(rocksdb::Slice(prefix));

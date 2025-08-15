@@ -16,6 +16,9 @@ nebula_add_executable(
         glog
         gflags
         curl
+        faiss
+        openblas
+        gomp
 )
 
 install(

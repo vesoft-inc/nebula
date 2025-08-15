@@ -71,6 +71,30 @@ RowReaderWrapper RowReaderWrapper::getEdgePropReader(meta::SchemaManager* schema
   }
 }
 
+RowReaderWrapper RowReaderWrapper::getEdgePropReader(meta::SchemaManager* schemaMan,
+                                                     GraphSpaceID space,
+                                                     EdgeType edge,
+                                                     PropID vectorIndex,
+                                                     folly::StringPiece row) {
+  if (schemaMan == nullptr) {
+    LOG(ERROR) << "schemaMan should not be nullptr!";
+    return RowReaderWrapper();
+  }
+  SchemaVer schemaVer;
+  int32_t readerVer;
+  RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+  if (schemaVer >= 0) {
+    auto schema = schemaMan->getEdgeSchema(space, edge, schemaVer);
+    if (schema == nullptr) {
+      return RowReaderWrapper();
+    }
+    return RowReaderWrapper(schema.get(), row, readerVer, true, static_cast<int32_t>(vectorIndex));
+  } else {
+    LOG(WARNING) << "Invalid schema version in the row data!";
+    return RowReaderWrapper();
+  }
+}
+
 // static
 RowReaderWrapper RowReaderWrapper::getRowReader(const meta::NebulaSchemaProvider* schema,
                                                 folly::StringPiece row,

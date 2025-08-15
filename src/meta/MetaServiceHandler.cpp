@@ -31,7 +31,9 @@
 #include "meta/processors/index/FTIndexProcessor.h"
 #include "meta/processors/index/GetEdgeIndexProcessor.h"
 #include "meta/processors/index/GetTagIndexProcessor.h"
+#include "meta/processors/index/ListEdgeAnnIndexesProcessor.h"
 #include "meta/processors/index/ListEdgeIndexesProcessor.h"
+#include "meta/processors/index/ListTagAnnIndexesProcessor.h"
 #include "meta/processors/index/ListTagIndexesProcessor.h"
 #include "meta/processors/job/AdminJobProcessor.h"
 #include "meta/processors/job/GetStatsProcessor.h"
@@ -241,6 +243,12 @@ folly::Future<cpp2::ListTagIndexesResp> MetaServiceHandler::future_listTagIndexe
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ListTagAnnIndexesResp> MetaServiceHandler::future_listTagAnnIndexes(
+    const cpp2::ListTagIndexesReq& req) {
+  auto* processor = ListTagAnnIndexesProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ListIndexStatusResp> MetaServiceHandler::future_listTagIndexStatus(
     const cpp2::ListIndexStatusReq& req) {
   auto* processor = ListTagIndexStatusProcessor::instance(kvstore_);
@@ -268,6 +276,12 @@ folly::Future<cpp2::GetEdgeIndexResp> MetaServiceHandler::future_getEdgeIndex(
 folly::Future<cpp2::ListEdgeIndexesResp> MetaServiceHandler::future_listEdgeIndexes(
     const cpp2::ListEdgeIndexesReq& req) {
   auto* processor = ListEdgeIndexesProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListEdgeAnnIndexesResp> MetaServiceHandler::future_listEdgeAnnIndexes(
+    const cpp2::ListEdgeIndexesReq& req) {
+  auto* processor = ListEdgeAnnIndexesProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

@@ -26,6 +26,7 @@
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/StorageFlags.h"
+#include "storage/VectorIndexManager.h"
 #include "storage/http/StorageHttpAdminHandler.h"
 #include "storage/http/StorageHttpPropertyHandler.h"
 #include "storage/http/StorageHttpStatsHandler.h"
@@ -264,6 +265,20 @@ bool StorageServer::start() {
     return false;
   }
 
+  LOG(INFO) << "Init vector index manager";
+  vectorIndexManager_ = &VectorIndexManager::getInstance();
+  auto vectorManagerStatus =
+      vectorIndexManager_->init(kvstore_.get(), schemaMan_.get(), indexMan_.get());
+  if (!vectorManagerStatus.ok()) {
+    LOG(ERROR) << "Init vector index manager failed: " << vectorManagerStatus.toString();
+    return false;
+  }
+  auto vectorManagerStartStatus = vectorIndexManager_->start();
+  if (!vectorManagerStartStatus.ok()) {
+    LOG(ERROR) << "Start vector index manager failed: " << vectorManagerStartStatus.toString();
+    return false;
+  }
+
   if (!initWebService()) {
     LOG(ERROR) << "Init webservice failed!";
     return false;
@@ -332,6 +347,15 @@ void StorageServer::notifyStop() {
 }
 
 void StorageServer::stop() {
+  // Stop vector index manager
+  if (vectorIndexManager_) {
+    auto status = vectorIndexManager_->stop();
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to stop vector index manager: " << status.toString();
+    }
+    vectorIndexManager_ = nullptr;
+  }
+
   // Stop http service
   webSvc_.reset();
 

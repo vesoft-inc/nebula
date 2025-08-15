@@ -11,6 +11,8 @@
 #include <folly/futures/Promise.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <string>
+
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "common/network/NetworkUtils.h"
@@ -399,7 +401,9 @@ class BaseProcessor {
    * @return false
    */
   bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields, const cpp2::IndexItem& item);
-
+  bool checkAnnIndexExist(const std::vector<std::string>& schemaNames,
+                          const cpp2::IndexFieldDef& field,
+                          const cpp2::AnnIndexItem& item);
   /**
    * @brief Check if given zone exist.
    *

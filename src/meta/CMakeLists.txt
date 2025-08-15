@@ -32,10 +32,12 @@ nebula_add_library(
     processors/index/DropTagIndexProcessor.cpp
     processors/index/GetTagIndexProcessor.cpp
     processors/index/ListTagIndexesProcessor.cpp
+    processors/index/ListTagAnnIndexesProcessor.cpp
     processors/index/CreateEdgeIndexProcessor.cpp
     processors/index/DropEdgeIndexProcessor.cpp
     processors/index/GetEdgeIndexProcessor.cpp
     processors/index/ListEdgeIndexesProcessor.cpp
+    processors/index/ListEdgeAnnIndexesProcessor.cpp
     processors/service/ServiceProcessor.cpp
     processors/index/FTIndexProcessor.cpp
     processors/admin/HBProcessor.cpp
@@ -81,6 +83,8 @@ nebula_add_library(
     processors/job/RebuildTagJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp
     processors/job/RebuildFTJobExecutor.cpp
+    processors/job/BuildVectorIndexJobExecutor.cpp
+    processors/job/BuildTagVectorIndexJobExecutor.cpp
     processors/job/StatsJobExecutor.cpp
     processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp

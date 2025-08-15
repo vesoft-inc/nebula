@@ -60,6 +60,7 @@ set(tools_test_deps
     $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:es_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:vector_index_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
     $<TARGET_OBJECTS:http_client_obj>

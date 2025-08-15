@@ -214,6 +214,7 @@ class MetaKeyUtils final {
   static std::string indexKey(GraphSpaceID spaceId, IndexID indexID);
 
   static std::string indexVal(const meta::cpp2::IndexItem& item);
+  static std::string annIndexVal(const nebula::meta::cpp2::AnnIndexItem& item);
 
   static std::string indexPrefix(GraphSpaceID spaceId);
 
@@ -222,6 +223,7 @@ class MetaKeyUtils final {
   static IndexID parseIndexesKeyIndexID(folly::StringPiece key);
 
   static meta::cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
+  static meta::cpp2::AnnIndexItem parseAnnIndex(const folly::StringPiece& rawData);
 
   static std::string rebuildIndexStatus(GraphSpaceID space,
                                         char type,

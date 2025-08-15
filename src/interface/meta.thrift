@@ -156,6 +156,17 @@ struct IndexItem {
     7: optional IndexParams index_params,
 }
 
+struct AnnIndexItem {
+    1: common.IndexID           index_id,
+    2: binary                   index_name,
+    3: binary                   prop_name,
+    4: list<common.SchemaID>    schema_ids,
+    5: list<binary>             schema_names,
+    6: list<ColumnDef>          fields,
+    7: optional binary          comment,
+    8: optional list<binary>    ann_params,         // ANN specific parameters
+}
+
 enum HostStatus {
     ONLINE  = 0x00,
     OFFLINE = 0x01,
@@ -240,6 +251,8 @@ enum JobType {
     INGEST                   = 8,
     LEADER_BALANCE           = 9,
     ZONE_BALANCE             = 10,
+    BUILD_TAG_VECTOR_INDEX   = 11,
+    BUILD_EDGE_VECTOR_INDEX  = 12,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
@@ -619,6 +632,16 @@ struct CreateTagIndexReq {
     7: optional IndexParams index_params,
 }
 
+struct CreateTagAnnIndexReq {
+    1: common.GraphSpaceID      space_id,
+    2: binary                   index_name,
+    3: list<binary>             tag_names,
+    4: IndexFieldDef            field,
+    5: bool                     if_not_exists,
+    6: optional binary          comment,
+    7: optional list<binary>    ann_params,
+}
+
 struct DropTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: binary              index_name,
@@ -644,6 +667,12 @@ struct ListTagIndexesResp {
     1: common.ErrorCode     code,
     2: common.HostAddr      leader,
     3: list<IndexItem>		items,
+}
+
+struct ListTagAnnIndexesResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: list<AnnIndexItem>	items,
 }
 
 struct CreateEdgeIndexReq {
@@ -681,6 +710,12 @@ struct ListEdgeIndexesResp {
     1: common.ErrorCode     code,
     2: common.HostAddr      leader,
     3: list<IndexItem>    	items,
+}
+
+struct ListEdgeAnnIndexesResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: list<AnnIndexItem>    	items,
 }
 
 struct RebuildIndexReq {
@@ -1048,6 +1083,8 @@ struct FTIndex {
     4: binary               analyzer,
 }
 
+
+
 struct CreateFTIndexReq {
     1: binary              fulltext_index_name,
     2: FTIndex             index,
@@ -1240,12 +1277,14 @@ service MetaService {
     ExecResp             dropTagIndex(1: DropTagIndexReq req );
     GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
+    ListTagAnnIndexesResp   listTagAnnIndexes(1:ListTagIndexesReq req);
     ExecResp             rebuildTagIndex(1: RebuildIndexReq req);
     ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
     ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
     ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
     GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
     ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
+    ListEdgeAnnIndexesResp  listEdgeAnnIndexes(1: ListEdgeIndexesReq req);
     ExecResp             rebuildEdgeIndex(1: RebuildIndexReq req);
     ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req);
 

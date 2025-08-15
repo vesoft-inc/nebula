@@ -242,6 +242,9 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         if (NebulaKeyUtils::isVector(pieces[0].str())) {
           // If the key is a vector, we should use the vector column family
           code = batch->put(NebulaKeyUtils::kVectorColumnFamilyName, pieces[0], pieces[1]);
+        } else if (NebulaKeyUtils::isIdVidCf(pieces[0].str())) {
+          // If the key is an id-vid map, we should use the id-vid map column family
+          code = batch->put(NebulaKeyUtils::kIdVidTagColumnFamilyName, pieces[0], pieces[1]);
         } else {
           code = batch->put(pieces[0], pieces[1]);
         }
@@ -261,7 +264,11 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
           nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
           if (NebulaKeyUtils::isVector(kvs[i].str())) {
             code = batch->put(NebulaKeyUtils::kVectorColumnFamilyName, kvs[i], kvs[i + 1]);
-            LOG(ERROR) << "OP_MULTI_PUT: " << folly::hexlify(kvs[i])
+            // LOG(ERROR) << "OP_MULTI_PUT VECTOR: " << folly::hexlify(kvs[i])
+            //            << ", value: " << folly::hexlify(kvs[i + 1]);
+          } else if (NebulaKeyUtils::isIdVidCf(kvs[i].str())) {
+            code = batch->put(NebulaKeyUtils::kIdVidTagColumnFamilyName, kvs[i], kvs[i + 1]);
+            LOG(ERROR) << "OP_MULTI_PUT ID-VID MAP: " << folly::hexlify(kvs[i])
                        << ", value: " << folly::hexlify(kvs[i + 1]);
           } else {
             code = batch->put(kvs[i], kvs[i + 1]);
@@ -278,6 +285,8 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
         if (NebulaKeyUtils::isVector(key.str())) {
           code = batch->remove(NebulaKeyUtils::kVectorColumnFamilyName, key);
+        } else if (NebulaKeyUtils::isIdVidCf(key.str())) {
+          code = batch->remove(NebulaKeyUtils::kIdVidTagColumnFamilyName, key);
         } else {
           code = batch->remove(key);
         }
@@ -294,6 +303,9 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
           if (NebulaKeyUtils::isVector(k.str())) {
             code = batch->remove(NebulaKeyUtils::kVectorColumnFamilyName, k);
             LOG(ERROR) << "OP_MULTI_REMOVE VECTOR key: " << folly::hexlify(k);
+          } else if (NebulaKeyUtils::isIdVidCf(k.str())) {
+            code = batch->remove(NebulaKeyUtils::kIdVidTagColumnFamilyName, k);
+            LOG(ERROR) << "OP_MULTI_REMOVE ID-VID MAP key: " << folly::hexlify(k);
           } else {
             code = batch->remove(k);
           }
@@ -326,6 +338,11 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
                   NebulaKeyUtils::kVectorColumnFamilyName, op.second.first, op.second.second);
               LOG(ERROR) << "OP_BATCH_PUT VECTOR key: " << folly::hexlify(op.second.first)
                          << ", value: " << folly::hexlify(op.second.second);
+            } else if (NebulaKeyUtils::isIdVidCf(op.second.first.str())) {
+              code = batch->put(
+                  NebulaKeyUtils::kIdVidTagColumnFamilyName, op.second.first, op.second.second);
+              LOG(ERROR) << "OP_BATCH_PUT ID-VID MAP key: " << folly::hexlify(op.second.first)
+                         << ", value: " << folly::hexlify(op.second.second);
             } else {
               code = batch->put(op.second.first, op.second.second);
               LOG(ERROR) << "OP_BATCH_PUT SCALAR key: " << folly::hexlify(op.second.first)
@@ -336,6 +353,9 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
             if (NebulaKeyUtils::isVector(op.second.first.str())) {
               code = batch->remove(NebulaKeyUtils::kVectorColumnFamilyName, op.second.first);
               LOG(ERROR) << "OP_BATCH_REMOVE VECTOR key: " << folly::hexlify(op.second.first);
+            } else if (NebulaKeyUtils::isIdVidCf(op.second.first.str())) {
+              code = batch->remove(NebulaKeyUtils::kIdVidTagColumnFamilyName, op.second.first);
+              LOG(ERROR) << "OP_BATCH_REMOVE ID-VID MAP key: " << folly::hexlify(op.second.first);
             } else {
               code = batch->remove(op.second.first);
             }

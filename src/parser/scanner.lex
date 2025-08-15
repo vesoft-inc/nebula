@@ -333,6 +333,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 ";"                         { return TokenType::SEMICOLON; }
 "@"                         { return TokenType::AT; }
 "?"                         { return TokenType::QM; }
+"&"                         { return TokenType::VECTORAND; }
 
 "+"                         { return TokenType::PLUS; }
 "-"                         { return TokenType::MINUS; }

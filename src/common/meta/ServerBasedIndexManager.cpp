@@ -37,6 +37,16 @@ StatusOr<std::shared_ptr<IndexItem>> ServerBasedIndexManager::getEdgeIndex(Graph
   return metaClient_->getEdgeIndexFromCache(space, index);
 }
 
+StatusOr<std::shared_ptr<AnnIndexItem>> ServerBasedIndexManager::getTagAnnIndex(GraphSpaceID space,
+                                                                                IndexID index) {
+  return metaClient_->getTagAnnIndexFromCache(space, index);
+}
+
+StatusOr<std::shared_ptr<AnnIndexItem>> ServerBasedIndexManager::getEdgeAnnIndex(GraphSpaceID space,
+                                                                                 IndexID index) {
+  return metaClient_->getEdgeAnnIndexFromCache(space, index);
+}
+
 StatusOr<std::vector<std::shared_ptr<IndexItem>>> ServerBasedIndexManager::getTagIndexes(
     GraphSpaceID space) {
   return metaClient_->getTagIndexesFromCache(space);

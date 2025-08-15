@@ -97,7 +97,7 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
   }
   // then add data to index
   try {
-    ivfIndex_->add_with_ids(data->cnt - trainsz_, data->fdata + trainsz_ * dim_, data->ids);
+    ivfIndex_->add_with_ids(data->cnt, data->fdata, data->ids);
   } catch (const std::exception &e) {
     LOG(ERROR) << "Failed to add data to IVF index: " << e.what();
     return Status::Error("Failed to add data to IVF index");

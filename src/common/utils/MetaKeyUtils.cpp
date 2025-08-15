@@ -54,6 +54,7 @@ static const std::unordered_map<
                  {"balance_task", {"__balance_task__", nullptr}},
                  {"balance_plan", {"__balance_plan__", nullptr}},
                  {"ft_index", {"__ft_index__", nullptr}},
+                 {"vector_index", {"__vector_index__", nullptr}},
                  {"local_id", {"__local_id__", MetaKeyUtils::parseLocalIdSpace}},
                  {"disk_parts", {"__disk_parts__", MetaKeyUtils::parseDiskPartsSpace}},
                  {"job_manager", {"__job_mgr__", nullptr}}};
@@ -102,6 +103,7 @@ static const std::string kBalancePlanTable    = tableMaps.at("balance_plan").fir
 static const std::string kLocalIdTable        = tableMaps.at("local_id").first;         // NOLINT
 
 const std::string kFTIndexTable        = tableMaps.at("ft_index").first;         // NOLINT
+const std::string kVectorIndexTable    = tableMaps.at("vector_index").first;     // NOLINT
 const std::string kServicesTable  = systemTableMaps.at("services").first;        // NOLINT
 const std::string kSessionsTable = systemTableMaps.at("sessions").first;         // NOLINT
 
@@ -678,6 +680,12 @@ std::string MetaKeyUtils::indexVal(const nebula::meta::cpp2::IndexItem& item) {
   return value;
 }
 
+std::string MetaKeyUtils::annIndexVal(const nebula::meta::cpp2::AnnIndexItem& item) {
+  std::string value;
+  apache::thrift::CompactSerializer::serialize(item, &value);
+  return value;
+}
+
 const std::string& MetaKeyUtils::indexPrefix() {
   return kIndexesTable;
 }
@@ -701,6 +709,12 @@ IndexID MetaKeyUtils::parseIndexesKeyIndexID(folly::StringPiece key) {
 
 nebula::meta::cpp2::IndexItem MetaKeyUtils::parseIndex(const folly::StringPiece& rawData) {
   nebula::meta::cpp2::IndexItem item;
+  apache::thrift::CompactSerializer::deserialize(rawData, item);
+  return item;
+}
+
+nebula::meta::cpp2::AnnIndexItem MetaKeyUtils::parseAnnIndex(const folly::StringPiece& rawData) {
+  nebula::meta::cpp2::AnnIndexItem item;
   apache::thrift::CompactSerializer::deserialize(rawData, item);
   return item;
 }

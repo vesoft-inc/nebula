@@ -277,8 +277,10 @@ std::unique_ptr<meta::IndexManager> MockCluster::memIndexMan(GraphSpaceID spaceI
     indexMan->addTagIndex(spaceId, 2, 2, MockData::mockTeamTagIndexColumns());
     indexMan->addTagIndex(spaceId, 3, 3, MockData::mockGeneralTagIndexColumns());
     indexMan->addTagIndex(spaceId, 4, 4, MockData::mockVectorTagIndexColumns());
+    indexMan->addTagAnnIndex(spaceId, {4}, 6, MockData::mockVectorTagAnnIndexColumn());
     indexMan->addEdgeIndex(spaceId, 101, 101, MockData::mockServeEdgeIndexColumns());
     indexMan->addEdgeIndex(spaceId, 102, 102, MockData::mockTeammateEdgeIndexColumns());
+    indexMan->addEdgeAnnIndex(spaceId, {103}, 7, MockData::mockVectorEdgeAnnIndexColumn());
   }
 
   indexMan->addTagIndex(spaceId, 1, 4, {});

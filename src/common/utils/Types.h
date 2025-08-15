@@ -22,6 +22,8 @@ enum class NebulaKeyType : uint32_t {
   kPrime = 0x00000008,        // used in TOSS, if we write a lock succeed
   kDoublePrime = 0x00000009,  // used in TOSS, if we get RPC back from remote.
   kVector_ = 0x000000F0,      // used for vector data
+  kIdVid = 0x000000A0,        // used for id-vid map
+  kVidId = 0x000000B0,        // used for vid-id map
 };
 
 enum class NebulaSystemKeyType : uint32_t {
@@ -64,8 +66,8 @@ static constexpr uint8_t kPartitionOffset = 8;
 // The key type bits Mask
 // See KeyType enum
 static constexpr uint32_t kTypeMask = 0x000000FF;
-static constexpr uint32_t kTypeMaskWithVector = 0x000000F0;
-static constexpr uint32_t kTypeMaskWithoutVector = 0x0000000F;
+static constexpr uint32_t kTypeMaskWithCF = 0x000000F0;
+static constexpr uint32_t kTypeMaskWithoutCF = 0x0000000F;
 
 static constexpr int32_t kTagIndexLen = sizeof(PartitionID) + sizeof(IndexID);
 

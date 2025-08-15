@@ -13,6 +13,7 @@ namespace nebula {
 namespace mock {
 
 using IndexItem = nebula::meta::cpp2::IndexItem;
+using AnnIndexItem = nebula::meta::cpp2::AnnIndexItem;
 
 class AdHocIndexManager final : public nebula::meta::IndexManager {
  public:
@@ -25,11 +26,20 @@ class AdHocIndexManager final : public nebula::meta::IndexManager {
                    TagID tagID,
                    IndexID indexID,
                    std::vector<nebula::meta::cpp2::ColumnDef>&& fields);
+  void addTagAnnIndex(GraphSpaceID space,
+                      const std::vector<TagID>& tagID,
+                      IndexID indexID,
+                      nebula::meta::cpp2::ColumnDef&& field);
 
   void addEdgeIndex(GraphSpaceID space,
                     EdgeType edgeType,
                     IndexID indexID,
                     std::vector<nebula::meta::cpp2::ColumnDef>&& fields);
+
+  void addEdgeAnnIndex(GraphSpaceID space,
+                       const std::vector<EdgeType>& edgeTypes,
+                       IndexID indexID,
+                       nebula::meta::cpp2::ColumnDef&& field);
 
   StatusOr<std::shared_ptr<IndexItem>> getTagIndex(GraphSpaceID space, IndexID index) override;
 
@@ -47,6 +57,12 @@ class AdHocIndexManager final : public nebula::meta::IndexManager {
 
   Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) override;
 
+  StatusOr<std::shared_ptr<AnnIndexItem>> getTagAnnIndex(GraphSpaceID space,
+                                                         IndexID index) override;
+
+  StatusOr<std::shared_ptr<AnnIndexItem>> getEdgeAnnIndex(GraphSpaceID space,
+                                                          IndexID index) override;
+
   void init(nebula::meta::MetaClient*) {}
 
   void removeTagIndex(GraphSpaceID space, IndexID indexID);
@@ -57,6 +73,8 @@ class AdHocIndexManager final : public nebula::meta::IndexManager {
 
   std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> tagIndexes_;
   std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> edgeIndexes_;
+  std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<AnnIndexItem>>> tagAnnIndexes_;
+  std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<AnnIndexItem>>> edgeAnnIndexes_;
 };
 
 }  // namespace mock

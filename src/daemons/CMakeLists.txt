@@ -34,6 +34,7 @@ set(common_deps
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:vector_index_obj>
     $<TARGET_OBJECTS:log_monitor_obj>
 )
 
@@ -87,6 +88,9 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         wangle
         curl
+        faiss
+        openblas
+        gomp
 )
 
 nebula_add_executable(
@@ -111,6 +115,9 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         wangle
         curl
+        faiss
+        openblas
+        gomp
 )
 
 nebula_add_executable(
@@ -156,6 +163,9 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         wangle
         curl
+        faiss
+        openblas
+        gomp
 )
 
 install(

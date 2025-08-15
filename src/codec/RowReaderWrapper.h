@@ -83,7 +83,11 @@ class RowReaderWrapper {
                                             GraphSpaceID space,
                                             EdgeType edge,
                                             folly::StringPiece row);
-
+  static RowReaderWrapper getEdgePropReader(meta::SchemaManager* schemaMan,
+                                            GraphSpaceID space,
+                                            EdgeType edge,
+                                            PropID vectorIndex,
+                                            folly::StringPiece row);
   /**
    * @brief Generate a row reader wrapper of data
    *

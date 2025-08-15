@@ -6,6 +6,8 @@
 #ifndef COMMON_UTILS_NEBULAKEYUTILS_H_
 #define COMMON_UTILS_NEBULAKEYUTILS_H_
 
+#include <cstdint>
+
 #include "common/thrift/ThriftTypes.h"
 #include "common/utils/Types.h"
 
@@ -32,7 +34,10 @@ namespace nebula {
  *
  * VectroEdgeKeyUtils:
  * type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + propId(4) +placeHolder(1)
- * */
+ *
+ * IDVIDKeyUtils:
+ * type(1) + partId(3) + IndexId(4) + vertexId(*)
+ **/
 
 /**
  * This class supply some utils for transition between Vertex/Edge and key in
@@ -104,6 +109,32 @@ class NebulaKeyUtils final {
 
   static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
   static std::string kvPrefix(PartitionID partId);
+
+  static std::string idVidTagKey(size_t vIdLen,
+                                 PartitionID partId,
+                                 IndexID indexId,
+                                 const VertexID& vId);
+
+  static std::string vidIdTagKey(PartitionID partId, IndexID indexId, VectorID vectorId);
+
+  static std::string idVidEdgeKey(size_t vIdLen,
+                                  PartitionID partId,
+                                  IndexID indexId,
+                                  const VertexID& srcId,
+                                  EdgeType type,
+                                  EdgeRanking rank,
+                                  const VertexID& dstId,
+                                  char pad = '\0');
+
+  static std::string vidIdEdgeKey(PartitionID partId, IndexID indexId, VectorID vectorId);
+
+  static std::string idVidTagPrefix(PartitionID partId, IndexID indexId);
+
+  static std::string vidIdTagPrefix(PartitionID partId, IndexID indexId);
+
+  static std::string idVidEdgePrefix(PartitionID partId, IndexID indexId);
+
+  static std::string vidIdEdgePrefix(PartitionID partId, IndexID indexId);
 
   /**
    * Prefix for tag
@@ -239,8 +270,39 @@ class NebulaKeyUtils final {
 
   static bool isVector(const folly::StringPiece& rawKey) {
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-    auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithVector;
+    auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithCF;
     return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVector_;
+  }
+
+  static bool isIdVidCf(const folly::StringPiece& rawKey) {
+    constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+    auto cfType = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithCF;
+    return static_cast<NebulaKeyType>(cfType) == NebulaKeyType::kIdVid ||
+           static_cast<NebulaKeyType>(cfType) == NebulaKeyType::kVidId;
+  }
+
+  static bool isIdVidTag(const folly::StringPiece& rawKey) {
+    constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+    auto cfType = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithCF;
+    auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithoutCF;
+    return static_cast<NebulaKeyType>(cfType) == NebulaKeyType::kIdVid &&
+           static_cast<NebulaKeyType>(type) == NebulaKeyType::kTag_;
+  }
+
+  static bool isIdVidEdge(const folly::StringPiece& rawKey) {
+    constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+    auto cfType = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithCF;
+    auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithoutCF;
+    return static_cast<NebulaKeyType>(cfType) == NebulaKeyType::kIdVid &&
+           static_cast<NebulaKeyType>(type) == NebulaKeyType::kEdge;
+  }
+
+  static bool isVidIdEdge(const folly::StringPiece& rawKey) {
+    constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+    auto cfType = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithCF;
+    auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithoutCF;
+    return static_cast<NebulaKeyType>(cfType) == NebulaKeyType::kVidId &&
+           static_cast<NebulaKeyType>(type) == NebulaKeyType::kEdge;
   }
 
   static VertexIDSlice getVectorVertexId(size_t vIdLen, const folly::StringPiece& rawKey) {
@@ -277,7 +339,7 @@ class NebulaKeyUtils final {
       return false;
     }
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-    auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithoutVector;
+    auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithoutCF;
     return static_cast<NebulaKeyType>(type) == NebulaKeyType::kEdge;
   }
 
@@ -377,7 +439,8 @@ class NebulaKeyUtils final {
     auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType);
     return NebulaKeyUtils::decodeRank(rawKey.data() + offset);
   }
-  static PropID getEdgePropID(size_t vIdLen, const folly::StringPiece& rawKey) {
+
+  static PropID getVectorEdgePropID(size_t vIdLen, const folly::StringPiece& rawKey) {
     if (rawKey.size() < kVectorEdgeLen + (vIdLen << 1)) {
       dumpBadKey(rawKey, kVectorEdgeLen + (vIdLen << 1), vIdLen);
     }
@@ -385,6 +448,40 @@ class NebulaKeyUtils final {
     auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType) + sizeof(EdgeRanking) + vIdLen;
     return readInt<PropID>(rawKey.data() + offset, sizeof(PropID));
   }
+
+  static VertexIDSlice getVectorSrcId(size_t vIdLen, const folly::StringPiece& rawKey) {
+    if (rawKey.size() < kVectorEdgeLen + (vIdLen << 1)) {
+      dumpBadKey(rawKey, kVectorEdgeLen + (vIdLen << 1), vIdLen);
+    }
+    auto offset = sizeof(PartitionID);
+    return rawKey.subpiece(offset, vIdLen);
+  }
+
+  static VertexIDSlice getVectorDstId(size_t vIdLen, const folly::StringPiece& rawKey) {
+    if (rawKey.size() < kVectorEdgeLen + (vIdLen << 1)) {
+      dumpBadKey(rawKey, kVectorEdgeLen + (vIdLen << 1), vIdLen);
+    }
+
+    auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType) + sizeof(EdgeRanking);
+    return rawKey.subpiece(offset, vIdLen);
+  }
+
+  static EdgeRanking getVectorRank(size_t vIdLen, const folly::StringPiece& rawKey) {
+    if (rawKey.size() < kVectorEdgeLen + (vIdLen << 1)) {
+      dumpBadKey(rawKey, kVectorEdgeLen + (vIdLen << 1), vIdLen);
+    }
+    auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType);
+    return NebulaKeyUtils::decodeRank(rawKey.data() + offset);
+  }
+
+  static EdgeType getVectorEdgeType(size_t vIdLen, const folly::StringPiece& rawKey) {
+    if (rawKey.size() < kVectorEdgeLen + vIdLen) {
+      dumpBadKey(rawKey, kVectorEdgeLen + vIdLen, vIdLen);
+    }
+    auto offset = sizeof(PartitionID) + vIdLen;
+    return readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
+  }
+
   static std::string encodeRank(EdgeRanking rank) {
     rank ^= folly::to<int64_t>(1) << 63;
     auto val = folly::Endian::big(rank);
@@ -460,7 +557,7 @@ class NebulaKeyUtils final {
  public:
   static const char kDefaultColumnFamilyName[];
   static const char kVectorColumnFamilyName[];
-  static const char kIdVidMapColumnFamilyName[];
+  static const char kIdVidTagColumnFamilyName[];
 };
 
 }  // namespace nebula

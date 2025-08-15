@@ -519,6 +519,23 @@ bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>
 }
 
 template <typename RESP>
+bool BaseProcessor<RESP>::checkAnnIndexExist(const std::vector<std::string>& schemaNames,
+                                             const cpp2::IndexFieldDef& field,
+                                             const cpp2::AnnIndexItem& item) {
+  const auto& prop = item.get_prop_name();
+  if (prop == field.get_name()) {
+    const auto& schemas = item.get_schema_names();
+    for (const auto& schema : schemas) {
+      if (schema == schemaNames[0]) {
+        LOG(INFO) << "Annotation index " << item.get_index_name() << " has existed";
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::zoneExist(const std::string& zoneName) {
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto ret = doGet(std::move(zoneKey));
