@@ -160,6 +160,9 @@ if (LIBLZMA_FOUND)
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
 endif()
 
+# Vector index libraries
+set(VECTOR_INDEX_LIBRARIES faiss openblas gomp)
+
 if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN OR ENABLE_UBSAN)
     set(JEMALLOC_LIB )
 else()

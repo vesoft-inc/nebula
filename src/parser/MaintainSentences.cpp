@@ -7,6 +7,8 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <string>
+
 #include "common/base/Base.h"
 
 namespace nebula {
@@ -257,6 +259,96 @@ std::string IndexParamList::toString() const {
   }
   if (!buf.empty()) {
     buf.resize(buf.size() - 1);
+  }
+  return buf;
+}
+
+std::string IVFIndexParamItem::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "{";
+  buf += "ANNINDEX_TYPE:";
+  auto type = getIndexType() == AnnIndexParamItem::IVF ? "\"IVF\"" : "\"HNSW\"";
+  buf += type;
+  buf += ", ";
+  buf += "DIM:";
+  buf += std::to_string(getDim());
+  buf += ", ";
+  buf += "METRIC_TYPE:";
+  auto metricType = getMetric() == MetricType::L2 ? "\"l2\"" : "\"INNER_PRODUCT\"";
+  buf += metricType;
+  buf += ", ";
+  buf += "NLIST:";
+  buf += std::to_string(getNList());
+  buf += ", ";
+  buf += "TRAINSIZE:";
+  buf += std::to_string(getTrainSz());
+  buf += "}";
+  buf.reserve(buf.size());
+  return buf;
+}
+
+std::string HNSWIndexParamItem::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "{";
+  buf += "ANNINDEX_TYPE:";
+  buf += getIndexType() == AnnIndexParamItem::IVF ? "\"IVF\"" : "\"HNSW\"";
+  buf += ", ";
+  buf += "DIM:";
+  buf += std::to_string(getDim());
+  buf += ", ";
+  buf += "METRIC_TYPE:";
+  buf += getMetric() == MetricType::L2 ? "\"l2\"" : "\"INNER_PRODUCT\"";
+  buf += ", ";
+  buf += "MAXDEGREE:";
+  buf += std::to_string(getMaxDegree());
+  buf += ", ";
+  buf += "EFCONSTRUCTION:";
+  buf += std::to_string(getEfConstruction());
+  buf += ", ";
+  buf += "MAXELEMENTS:";
+  buf += std::to_string(getCapacity());
+  buf += "}";
+  buf.reserve(buf.size());
+  return buf;
+}
+
+std::string CreateTagAnnIndexSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "CREATE TAG ANNINDEX ";
+  if (isIfNotExist()) {
+    buf += "IF NOT EXISTS ";
+  }
+  buf += *indexName_;
+  buf += " ON ";
+  std::vector<std::string> tagNames;
+  for (const auto& tagName : tagNames_) {
+    tagNames.emplace_back(tagName);
+  }
+  std::string tagName;
+  folly::join("&", tagNames, tagName);
+  buf += tagName;
+  buf += "::(";
+
+  auto field = field_.get();
+  std::string f = field->get_name();
+  if (field->type_length_ref().has_value()) {
+    f += "(" + std::to_string(*field->type_length_ref()) + ")";
+  }
+  buf += f;
+  buf += ") ";
+  std::string params;
+  if (annIndexParam_ != nullptr) {
+    params = annIndexParam_->toString();
+  }
+  if (!params.empty()) {
+    buf += params;
+  }
+  if (comment_ != nullptr) {
+    buf += " COMMENT ";
+    buf += *comment_;
   }
   return buf;
 }

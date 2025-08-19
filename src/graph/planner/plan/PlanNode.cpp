@@ -128,6 +128,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "CreateEdgeIndex";
     case Kind::kCreateFTIndex:
       return "CreateFTIndex";
+    case Kind::kCreateTagAnnIndex:
+      return "CreateTagAnnIndex";
+    case Kind::kCreateEdgeAnnIndex:
+      return "CreateEdgeAnnIndex";
     case Kind::kDropTagIndex:
       return "DropTagIndex";
     case Kind::kDropEdgeIndex:

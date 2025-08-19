@@ -360,7 +360,7 @@ class ANNBenchmarkTest : public ::testing::Test {
       return nullptr;
     }
     auto owned = makeOwnedVecData(trainVectors_, dim_);
-    st = index->add(&owned.view);
+    st = index->add(&owned.view, true);
     if (!st.ok()) {
       LOG(ERROR) << "HNSW add failed: " << st.toString();
       return nullptr;
@@ -389,7 +389,7 @@ class ANNBenchmarkTest : public ::testing::Test {
       return nullptr;
     }
     auto owned = makeOwnedVecData(trainVectors_, learnVectors_, dim_);
-    st = index->add(&owned.view);
+    st = index->add(&owned.view, true);
     if (!st.ok()) {
       LOG(ERROR) << "IVF add failed: " << st.toString();
       return nullptr;
@@ -671,7 +671,7 @@ TEST_F(ANNBenchmarkTest, SIFT1MMemoryUsageTest) {
       int64_t hnswInitMemory = memoryAfterHNSWInit - memoryAfterLoad;
 
       auto owned = makeOwnedVecData(testVectors, dim_);
-      ASSERT_TRUE(hnswIndex->add(&owned.view).ok());
+      ASSERT_TRUE(hnswIndex->add(&owned.view, true).ok());
 
       int64_t memoryAfterHNSWBuild = MemoryMonitor::getMemoryUsage();
       int64_t hnswTotalMemory = memoryAfterHNSWBuild - memoryAfterLoad;
@@ -704,7 +704,7 @@ TEST_F(ANNBenchmarkTest, SIFT1MMemoryUsageTest) {
       std::vector<Vector> learnFlatData = DatasetLoader::loadVectors(learnDataPath_, learnSize);
 
       auto owned2 = makeOwnedVecData(testVectors, learnFlatData, dim_);
-      ASSERT_TRUE(ivfIndex->add(&owned2.view).ok());
+      ASSERT_TRUE(ivfIndex->add(&owned2.view, true).ok());
 
       int64_t memoryAfterIVFBuild = MemoryMonitor::getMemoryUsage();
       int64_t ivfTotalMemory = memoryAfterIVFBuild - memoryAfterLoad;

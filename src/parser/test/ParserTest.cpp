@@ -35,6 +35,57 @@ class ParserTest : public ::testing::Test {
   std::unique_ptr<QueryContext> qctx_;
 };
 
+TEST_F(ParserTest, TestVectorSchemaCreation) {
+  // All type
+  {
+    std::string query = "CREATE TAG person(id int, vec vector(3))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+
+  {
+    std::string query =
+        "CREATE TAG person(id INT16 DEFAULT 10, vec vector(3) NOT NULL DEFAULT vector "
+        "(0.1,0.2,0.3));";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "CREATE TAG person(id INT16 DEFAULT 10, vec vector(1) NOT NULL DEFAULT vector (0.1));";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
+TEST_F(ParserTest, AnnIndexOperation) {
+  {
+    std::string query =
+        "Create TAG ANNINDEX tag5_idx ON tag5&tag6::(vec) {ANNINDEX_TYPE:'IVF', DIM:3, "
+        "METRIC_TYPE:'L2', NLIST:3, TRAINSIZE:3}";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    auto& sentence = result.value();
+    EXPECT_EQ(query, sentence->toString());
+  }
+  {
+    std::string query =
+        R"(CREATE TAG ANNINDEX name_index ON teacher&student::(vector) {ANNINDEX_TYPE:"IVF", DIM:128, METRIC_TYPE:"l2", NLIST:8, TRAINSIZE:3}")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    auto& sentence = result.value();
+    EXPECT_EQ(query, sentence->toString());
+  }
+  {
+    std::string query =
+        R"(CREATE TAG ANNINDEX name_index ON teacher&student::(vector) {ANNINDEX_TYPE:"HNSW", DIM:128, METRIC_TYPE:"l2", MAXDEGREE:16, EFCONSTRUCTION:200, MAXELEMENTS:1000})";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    auto& sentence = result.value();
+    EXPECT_EQ(query, sentence->toString());
+  }
+}
+
 TEST_F(ParserTest, TestSchemaCreation) {
   // All type
   {
@@ -112,29 +163,6 @@ TEST_F(ParserTest, TestSchemaCreation) {
   }
   {
     std::string query = "CREATE TAG any_shape(geo geography(polygon))";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-}
-
-TEST_F(ParserTest, TestVectorSchemaCreation) {
-  // All type
-  {
-    std::string query = "CREATE TAG person(id int, vec vector(3))";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-
-  {
-    std::string query =
-        "CREATE TAG person(id INT16 DEFAULT 10, vec vector(3) NOT NULL DEFAULT vector "
-        "(0.1,0.2,0.3));";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "CREATE TAG person(id INT16 DEFAULT 10, vec vector(1) NOT NULL DEFAULT vector (0.1));";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

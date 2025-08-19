@@ -12,7 +12,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include <boost/filesystem.hpp>
-#include <unordered_set>
 
 #include "clients/meta/FileBasedClusterIdMan.h"
 #include "clients/meta/stats/MetaClientStats.h"
@@ -340,6 +339,11 @@ bool MetaClient::loadData() {
       return false;
     }
 
+    if (!loadAnnIndexes(spaceId, spaceCache)) {
+      LOG(ERROR) << "Load AnnIndexes Failed";
+      return false;
+    }
+
     if (!loadListeners(spaceId, spaceCache)) {
       LOG(ERROR) << "Load Listeners Failed";
       return false;
@@ -620,12 +624,12 @@ bool MetaClient::loadAnnIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoC
     return false;
   }
 
-  // auto edgeIndexesRet = listEdgeIndexes(spaceId).get();
-  // if (!edgeIndexesRet.ok()) {
-  //   LOG(ERROR) << "Get edge indexes failed for spaceId " << spaceId << ", "
-  //              << edgeIndexesRet.status();
-  //   return false;
-  // }
+  auto edgeIndexesRet = listEdgeAnnIndexes(spaceId).get();
+  if (!edgeIndexesRet.ok()) {
+    LOG(ERROR) << "Get edge indexes failed for spaceId " << spaceId << ", "
+               << edgeIndexesRet.status();
+    return false;
+  }
 
   auto tagIndexItemVec = tagIndexesRet.value();
   cache->tagAnnIndexItemVec_ = tagIndexItemVec;
@@ -637,15 +641,15 @@ bool MetaClient::loadAnnIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoC
     tagNameIndexMap_[pair] = indexID;
   }
 
-  // auto edgeIndexItemVec = edgeIndexesRet.value();
-  // cache->edgeIndexItemVec_ = edgeIndexItemVec;
-  // cache->edgeIndexes_ = buildIndexes(edgeIndexItemVec);
-  // for (auto& edgeIndex : edgeIndexItemVec) {
-  //   auto indexName = edgeIndex.get_index_name();
-  //   auto indexID = edgeIndex.get_index_id();
-  //   std::pair<GraphSpaceID, std::string> pair(spaceId, indexName);
-  //   edgeNameIndexMap_[pair] = indexID;
-  // }
+  auto edgeIndexItemVec = edgeIndexesRet.value();
+  cache->edgeAnnIndexItemVec_ = edgeIndexItemVec;
+  cache->edgeAnnIndexes_ = buildAnnIndexes(edgeIndexItemVec);
+  for (auto& edgeIndex : edgeIndexItemVec) {
+    auto indexName = edgeIndex.get_index_name();
+    auto indexID = edgeIndex.get_index_id();
+    std::pair<GraphSpaceID, std::string> pair(spaceId, indexName);
+    edgeNameIndexMap_[pair] = indexID;
+  }
   return true;
 }
 
@@ -1949,6 +1953,38 @@ folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listTagIndexes
       std::move(req),
       [](auto client, auto request) { return client->future_listTagIndexes(request); },
       [](cpp2::ListTagIndexesResp&& resp) -> decltype(auto) { return std::move(resp).get_items(); },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<IndexID>> MetaClient::createTagAnnIndex(
+    GraphSpaceID spaceID,
+    std::string indexName,
+    std::vector<std::string> tagNames,
+    cpp2::IndexFieldDef field,
+    bool ifNotExists,
+    std::vector<std::string> annIndexParam,
+    const std::string* comment) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::CreateTagAnnIndexReq req;
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(indexName);
+  req.tag_names_ref() = std::move(tagNames);
+  req.field_ref() = std::move(field);
+  req.if_not_exists_ref() = ifNotExists;
+  if (!annIndexParam.empty()) {
+    req.ann_params_ref().ensure() = std::move(annIndexParam);
+  }
+  if (comment != nullptr) {
+    req.comment_ref() = *comment;
+  }
+
+  folly::Promise<StatusOr<IndexID>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_createTagAnnIndex(request); },
+      [](cpp2::ExecResp&& resp) -> IndexID { return resp.get_id().get_index_id(); },
       std::move(promise));
   return future;
 }

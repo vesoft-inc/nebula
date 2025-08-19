@@ -77,16 +77,18 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 }
 
 // add data to index incrementally
-[[nodiscard]] Status IVFIndex::add(const VecData *data) {
+[[nodiscard]] Status IVFIndex::add(const VecData *data, bool isTest) {
   if (data == nullptr) {
     return Status::Error("VecData is null");
   }
-  if (data->cnt < 1 || data->cnt < trainsz_ || data->dim != dim_) {
+  if (data->cnt < 1 || data->dim != dim_ || (isTest && data->cnt < trainsz_)) {
     return Status::Error("Invalid VecData");
   }
   if (ivfIndex_ == nullptr) {
     return Status::Error("IVF index is not initialized");
   }
+  auto dataCnt = isTest ? data->cnt - trainsz_ : data->cnt;
+  auto fData = isTest ? data->fdata + trainsz_ * dim_ : data->fdata;
   std::unique_lock lock(latch_);
   // first train ivfflat index
   try {
@@ -97,7 +99,7 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
   }
   // then add data to index
   try {
-    ivfIndex_->add_with_ids(data->cnt, data->fdata, data->ids);
+    ivfIndex_->add_with_ids(dataCnt, fData, data->ids);
   } catch (const std::exception &e) {
     LOG(ERROR) << "Failed to add data to IVF index: " << e.what();
     return Status::Error("Failed to add data to IVF index");
@@ -278,6 +280,14 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 [[nodiscard]] Status IVFIndex::createCheckpoint(const std::string &snapshotPath) {
   UNUSED(snapshotPath);
   return Status::OK();
+}
+// return data count in ann index
+[[nodiscard]] size_t IVFIndex::size() const {
+  if (ivfIndex_ == nullptr) {
+    return 0;
+  }
+  std::shared_lock lock(latch_);
+  return ivfIndex_->ntotal;
 }
 
 AnnIndexType IVFIndex::indexType() const {

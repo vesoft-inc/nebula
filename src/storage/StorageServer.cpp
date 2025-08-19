@@ -11,6 +11,8 @@
 
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/memory/MemoryUtils.h"
+#include "common/meta/IndexManager.h"
+#include "common/meta/SchemaManager.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
@@ -18,6 +20,7 @@
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/utils/Utils.h"
+#include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
 #include "storage/BaseProcessor.h"
@@ -265,19 +268,19 @@ bool StorageServer::start() {
     return false;
   }
 
-  LOG(INFO) << "Init vector index manager";
-  vectorIndexManager_ = &VectorIndexManager::getInstance();
-  auto vectorManagerStatus =
-      vectorIndexManager_->init(kvstore_.get(), schemaMan_.get(), indexMan_.get());
-  if (!vectorManagerStatus.ok()) {
-    LOG(ERROR) << "Init vector index manager failed: " << vectorManagerStatus.toString();
-    return false;
-  }
-  auto vectorManagerStartStatus = vectorIndexManager_->start();
-  if (!vectorManagerStartStatus.ok()) {
-    LOG(ERROR) << "Start vector index manager failed: " << vectorManagerStartStatus.toString();
-    return false;
-  }
+  // LOG(INFO) << "Init vector index manager";
+  // vectorIndexManager_ = &VectorIndexManager::getInstance();
+  // auto vectorManagerStatus =
+  //     vectorIndexManager_->init(kvstore_.get(), schemaMan_.get(), indexMan_.get());
+  // if (!vectorManagerStatus.ok()) {
+  //   LOG(ERROR) << "Init vector index manager failed: " << vectorManagerStatus.toString();
+  //   return false;
+  // }
+  // auto vectorManagerStartStatus = vectorIndexManager_->start();
+  // if (!vectorManagerStartStatus.ok()) {
+  //   LOG(ERROR) << "Start vector index manager failed: " << vectorManagerStartStatus.toString();
+  //   return false;
+  // }
 
   if (!initWebService()) {
     LOG(ERROR) << "Init webservice failed!";
@@ -348,13 +351,13 @@ void StorageServer::notifyStop() {
 
 void StorageServer::stop() {
   // Stop vector index manager
-  if (vectorIndexManager_) {
-    auto status = vectorIndexManager_->stop();
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to stop vector index manager: " << status.toString();
-    }
-    vectorIndexManager_ = nullptr;
-  }
+  // if (vectorIndexManager_) {
+  //   auto status = vectorIndexManager_->stop();
+  //   if (!status.ok()) {
+  //     LOG(ERROR) << "Failed to stop vector index manager: " << status.toString();
+  //   }
+  //   vectorIndexManager_ = nullptr;
+  // }
 
   // Stop http service
   webSvc_.reset();
@@ -420,6 +423,27 @@ std::shared_ptr<GraphStorageLocalServer> StorageServer::getStorageServer() {
   return server;
 }
 #endif
+
+kvstore::KVStore* StorageServer::getStore() {
+  if (kvstore_) {
+    return kvstore_.get();
+  }
+  return nullptr;
+}
+
+meta::IndexManager* StorageServer::getIndexMgr() {
+  if (indexMan_) {
+    return indexMan_.get();
+  }
+  return nullptr;
+}
+
+meta::SchemaManager* StorageServer::getSchemaMgr() {
+  if (schemaMan_) {
+    return schemaMan_.get();
+  }
+  return nullptr;
+}
 
 std::unique_ptr<apache::thrift::ThriftServer> StorageServer::getAdminServer() {
   try {

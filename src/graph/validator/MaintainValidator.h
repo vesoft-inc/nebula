@@ -153,6 +153,23 @@ class DropEdgeValidator final : public Validator {
   Status toPlan() override;
 };
 
+class CreateTagAnnIndexValidator final : public Validator {
+ public:
+  CreateTagAnnIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+  Status toPlan() override;
+
+ private:
+  std::vector<std::string> names_;
+  std::string index_;
+  meta::cpp2::IndexFieldDef field_;
+  bool ifNotExist_;
+  std::vector<std::string> annIndexParam_;
+};
+
 class CreateTagIndexValidator final : public Validator {
  public:
   CreateTagIndexValidator(Sentence* sentence, QueryContext* context)

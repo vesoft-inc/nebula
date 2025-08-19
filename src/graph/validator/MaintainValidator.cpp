@@ -11,6 +11,7 @@
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
+#include "common/vectorIndex/VectorIndexUtils.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Maintain.h"
 #include "graph/planner/plan/Query.h"
@@ -321,6 +322,54 @@ Status DropEdgeValidator::toPlan() {
   auto *doNode = DropEdge::make(qctx_, nullptr, *sentence->name(), sentence->isIfExists());
   root_ = doNode;
   tail_ = root_;
+  return Status::OK();
+}
+
+Status CreateTagAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<CreateTagAnnIndexSentence *>(sentence_);
+  names_ = sentence->tagNames();
+  index_ = *sentence->indexName();
+  field_ = *sentence->field();
+  ifNotExist_ = sentence->isIfNotExist();
+  auto *annIndexParam = sentence->getAnnIndexParam();
+  if (annIndexParam) {
+    NG_RETURN_IF_ERROR(IndexUtil::validateAnnIndexParam(annIndexParam, annIndexParam_));
+  }
+  return Status::OK();
+}
+
+Status CreateTagAnnIndexValidator::toPlan() {
+  auto sentence = static_cast<CreateTagAnnIndexSentence *>(sentence_);
+  auto indexParam = annIndexParam_;
+  auto isTag = true;
+  auto propName = sentence->field()->get_name();
+  auto tagNums = sentence->tagNames().size();
+  auto tagNameList = sentence->tagNames();
+  // First, create the TagAnnIndex
+  auto *createNode = CreateTagAnnIndex::make(qctx_,
+                                             nullptr,
+                                             sentence->tagNames(),
+                                             *sentence->indexName(),
+                                             *sentence->field(),
+                                             sentence->isIfNotExist(),
+                                             annIndexParam_,
+                                             sentence->comment());
+
+  // [index_name, is_tag, prop_name, tag nums, tag_name_list, ann_params...]
+  std::vector<std::string> params{*sentence->indexName()};
+
+  params.emplace_back(std::to_string(isTag));
+  params.emplace_back(std::move(propName));
+  params.emplace_back(std::to_string(tagNums));
+  params.insert(params.end(), tagNameList.begin(), tagNameList.end());
+  params.insert(params.end(), annIndexParam_.begin(), annIndexParam_.end());
+  auto *submitJobNode = SubmitJob::make(qctx_,
+                                        createNode,
+                                        meta::cpp2::JobOp::ADD,
+                                        meta::cpp2::JobType::BUILD_TAG_VECTOR_INDEX,
+                                        params);
+  root_ = submitJobNode;
+  tail_ = createNode;
   return Status::OK();
 }
 

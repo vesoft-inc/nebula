@@ -90,6 +90,7 @@ nebula_add_test(
         MatchValidatorTest.cpp
         LookupValidatorTest.cpp
         SymbolsTest.cpp
+        CreateTagAnnIndexTest.cpp
     OBJECTS
         ${VALIDATOR_TEST_LIBS}
     LIBRARIES

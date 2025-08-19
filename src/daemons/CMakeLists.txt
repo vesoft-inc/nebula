@@ -34,7 +34,6 @@ set(common_deps
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
-    $<TARGET_OBJECTS:vector_index_obj>
     $<TARGET_OBJECTS:log_monitor_obj>
 )
 
@@ -80,17 +79,16 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_client_obj>
         $<TARGET_OBJECTS:storage_client_base_obj>
         $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:vector_index_obj>
         ${common_deps}
         ${storage_meta_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${VECTOR_INDEX_LIBRARIES}
         wangle
         curl
-        faiss
-        openblas
-        gomp
 )
 
 nebula_add_executable(
@@ -115,9 +113,6 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         wangle
         curl
-        faiss
-        openblas
-        gomp
 )
 
 nebula_add_executable(
@@ -163,9 +158,6 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         wangle
         curl
-        faiss
-        openblas
-        gomp
 )
 
 install(
@@ -261,12 +253,14 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:meta_v2_thrift_obj>
         $<TARGET_OBJECTS:gc_obj>
+        $<TARGET_OBJECTS:vector_index_obj>
         ${storage_meta_deps}
         ${common_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
+        ${VECTOR_INDEX_LIBRARIES}
         wangle
         curl
 )

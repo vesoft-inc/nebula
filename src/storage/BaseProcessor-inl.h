@@ -48,8 +48,6 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
     std::lock_guard<std::mutex> lg(this->lock_);
     handleErrorCode(code, spaceId, partId);
     this->callingNum_--;
-    LOG(ERROR) << "CallingNum: " << this->callingNum_ << ", SpaceId: " << spaceId
-               << ", PartId: " << partId << ", Code: " << static_cast<int32_t>(code);
     if (this->callingNum_ == 0) {
       finished = true;
     }
@@ -114,7 +112,6 @@ template <typename RESP>
 void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<kvstore::KV>&& data) {
-  LOG(ERROR) << "doPut, spaceId: " << spaceId;
   this->env_->kvstore_->asyncMultiPut(
       spaceId, partId, std::move(data), [spaceId, partId, this](nebula::cpp2::ErrorCode code) {
         handleAsync(spaceId, partId, code);

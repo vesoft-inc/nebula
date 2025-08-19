@@ -94,6 +94,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ListTagIndexesResp> future_listTagIndexes(
       const cpp2::ListTagIndexesReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_createTagAnnIndex(
+      const cpp2::CreateTagAnnIndexReq& req) override;
+
   folly::Future<cpp2::ListTagAnnIndexesResp> future_listTagAnnIndexes(
       const cpp2::ListTagIndexesReq& req) override;
 

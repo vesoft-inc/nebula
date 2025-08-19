@@ -29,6 +29,7 @@ nebula_add_library(
     processors/schema/SchemaUtil.cpp
     processors/id/GetWorkerIdProcessor.cpp
     processors/index/CreateTagIndexProcessor.cpp
+    processors/index/CreateTagAnnIndexProcessor.cpp
     processors/index/DropTagIndexProcessor.cpp
     processors/index/GetTagIndexProcessor.cpp
     processors/index/ListTagIndexesProcessor.cpp
@@ -126,6 +127,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:meta_v2_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
     $<TARGET_OBJECTS:storage_admin_service_handler>
+    $<TARGET_OBJECTS:vector_index_obj>
     $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_transaction_executor>
     $<TARGET_OBJECTS:storage_client_obj>

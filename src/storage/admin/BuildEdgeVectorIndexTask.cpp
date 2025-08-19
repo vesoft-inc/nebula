@@ -5,8 +5,10 @@
 
 #include "storage/admin/BuildEdgeVectorIndexTask.h"
 
+#include <chrono>
 #include <cstdint>
 #include <iterator>
+#include <thread>
 
 #include "codec/RowReaderWrapper.h"
 #include "common/base/Status.h"
@@ -25,11 +27,60 @@ const int32_t kReserveNum = 1024 * 4;
 
 StatusOr<std::shared_ptr<AnnIndexItem>> BuildEdgeVectorIndexTask::getIndex(GraphSpaceID space,
                                                                            IndexID index) {
-  auto indexRet = env_->indexMan_->getEdgeAnnIndex(space, index);
-  if (!indexRet.ok()) {
+  // 使用可配置的重试参数
+  const int maxRetries = FLAGS_vector_index_cache_retry_times;
+  const int retryIntervalMs = FLAGS_vector_index_cache_retry_interval_ms;
+
+  for (int retry = 0; retry < maxRetries; ++retry) {
+    auto indexRet = env_->indexMan_->getEdgeAnnIndex(space, index);
+    if (indexRet.ok()) {
+      return indexRet.value();
+    }
+
+    // 如果是IndexNotFound且不是最后一次重试，则刷新缓存并重试
+    if (indexRet.status().code() == Status::Code::kIndexNotFound && retry < maxRetries - 1) {
+      LOG(INFO) << "Edge Index " << index << " not found in cache, refreshing meta cache. Retry "
+                << (retry + 1) << "/" << maxRetries;
+
+      // 强制刷新meta client缓存
+      if (auto* metaClient = env_->metaClient_) {
+        auto refreshStatus = metaClient->refreshCache();
+        if (!refreshStatus.ok()) {
+          LOG(WARNING) << "Failed to refresh meta cache: " << refreshStatus;
+        }
+      }
+
+      // 等待一段时间再重试
+      std::this_thread::sleep_for(std::chrono::milliseconds(retryIntervalMs));
+      continue;
+    }
+
+    // 最后一次重试：尝试直接从Meta服务获取所有Ann索引，然后查找目标索引
+    if (indexRet.status().code() == Status::Code::kIndexNotFound && retry == maxRetries - 1) {
+      LOG(INFO) << "Last retry: attempting to fetch edge index directly from meta service";
+
+      if (auto* metaClient = env_->metaClient_) {
+        auto allIndexesRet = metaClient->listEdgeAnnIndexes(space).get();
+        if (allIndexesRet.ok()) {
+          for (const auto& item : allIndexesRet.value()) {
+            if (item.get_index_id() == index) {
+              LOG(INFO) << "Found edge index " << index << " directly from meta service";
+              auto sharedItem = std::make_shared<meta::cpp2::AnnIndexItem>(item);
+              return sharedItem;
+            }
+          }
+        } else {
+          LOG(WARNING) << "Failed to fetch edge indexes from meta service: "
+                       << allIndexesRet.status();
+        }
+      }
+    }
+
+    // 其他错误直接返回
     return Status::Error("Get Edge Ann Index Failed: %s", indexRet.status().toString().c_str());
   }
-  return indexRet.value();
+
+  return Status::Error("Get Edge Ann Index Failed after %d retries: IndexNotFound", maxRetries);
 }
 
 nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
@@ -140,15 +191,12 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
     auto ranking = NebulaKeyUtils::getVectorRank(vidSize, key);
     VLOG(1) << "Source " << source << " Destination " << destination << " Ranking " << ranking
             << " Edge Type " << edgeType;
-    LOG(ERROR) << "Source " << source << " Destination " << destination << " Ranking " << ranking
-               << " Edge Type " << edgeType;
 
     VectorID vectorId = (folly::hash::fnv64_buf(source.data(), source.size()) +
                          folly::hash::fnv64_buf(destination.data(), destination.size()) + ranking) %
                         INT64_MAX;
     auto edgeId = source.toString() + std::to_string(edgeType) + destination.toString() +
                   std::to_string(ranking);
-    LOG(ERROR) << "Vector Id: " << vectorId;
     auto schemaIter = schemas.find(edgeType);
     if (schemaIter == schemas.end()) {
       LOG(WARNING) << "Space " << space << ", edge " << edgeType << " invalid";
@@ -175,7 +223,6 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
 
         batchSize += vecObj.dim() * sizeof(float) + sizeof(vectorId);
         const auto& vec = vecObj.data();
-        LOG(ERROR) << "Vector Id: " << vectorId << ", vec obj: " << vecObj.toString();
         data.insert(
             data.end(), std::make_move_iterator(vec.begin()), std::make_move_iterator(vec.end()));
         vectorIds.emplace_back(vectorId);
@@ -190,22 +237,17 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
     batchSize += vidData.back().first.size() + sizeof(vectorId);
     vidData.emplace_back(std::move(vidIdKey), std::move(edgeId));
     batchSize += vidData.back().first.size() + edgeId.size();
-    LOG(ERROR) << "VID data size: " << vidData.size() << ", vectorIds size: " << vectorIds.size()
-               << ", data size: " << data.size();
     iter->next();
   }
 
   // write vid data to kvstore
   ret = writeData(space, part, std::move(vidData), batchSize, rateLimiter);
-  LOG(ERROR) << "Vector Ids: " << folly::join(",", vectorIds);
   // buildAnnIndex
   VecData vecData;
   vecData.fdata = data.data();
   vecData.ids = vectorIds.data();
   vecData.cnt = static_cast<int32_t>(vectorIds.size());
   vecData.dim = folly::to<size_t>(dim);
-  LOG(ERROR) << "Vec Data: "
-             << "size=" << vecData.cnt << ", dim=" << vecData.dim;
   return buildAnnIndex(space, part, item, vecData);
 }
 

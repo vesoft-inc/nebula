@@ -45,6 +45,7 @@ class Sentence {
     kDescribeEdge,
     kCreateTagIndex,
     kCreateEdgeIndex,
+    kCreateTagAnnIndex,
     kDropTagIndex,
     kDropEdgeIndex,
     kDescribeTagIndex,

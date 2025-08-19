@@ -14,9 +14,6 @@
 #include <folly/synchronization/Rcu.h>
 #include <gtest/gtest_prod.h>
 
-#include <atomic>
-#include <cstdint>
-
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "common/base/StatusOr.h"
@@ -371,6 +368,14 @@ class MetaClient : public BaseMetaClient {
   folly::Future<StatusOr<cpp2::IndexItem>> getTagIndex(GraphSpaceID spaceId, std::string name);
 
   folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> listTagIndexes(GraphSpaceID spaceId);
+
+  folly::Future<StatusOr<IndexID>> createTagAnnIndex(GraphSpaceID spaceID,
+                                                     std::string indexName,
+                                                     std::vector<std::string> tagNames,
+                                                     cpp2::IndexFieldDef field,
+                                                     bool ifNotExists = false,
+                                                     std::vector<std::string> annIndexParam = {},
+                                                     const std::string* comment = nullptr);
 
   folly::Future<StatusOr<std::vector<cpp2::AnnIndexItem>>> listTagAnnIndexes(GraphSpaceID spaceId);
 

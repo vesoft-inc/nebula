@@ -9,12 +9,6 @@
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/futures/Future.h>
 
-#include <memory>
-#include <mutex>
-#include <shared_mutex>
-#include <thread>
-#include <unordered_map>
-
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/meta/IndexManager.h"
@@ -30,7 +24,6 @@ namespace storage {
 // Key type for identifying vector indexes: <PartitionID, IndexID>
 using VectorIndexKey = std::pair<PartitionID, IndexID>;
 
-// Custom hash function for VectorIndexKey
 struct VectorIndexKeyHash {
   std::size_t operator()(const VectorIndexKey& key) const {
     return std::hash<PartitionID>()(key.first) ^ (std::hash<IndexID>()(key.second) << 1);
@@ -47,15 +40,19 @@ class VectorIndexManager final {
   static VectorIndexManager& getInstance();
 
   // Initialize the manager with necessary dependencies
-  Status init(kvstore::KVStore* kvstore,
-              meta::SchemaManager* schemaManager,
-              meta::IndexManager* indexManager);
+  Status init(meta::IndexManager* indexManager, std::string annIndexPath);
 
   // Start the manager (background tasks, cleanup threads, etc.)
   Status start();
 
   // Stop the manager gracefully
   Status stop();
+
+  // Wait until the manager stops (similar to StorageServer::waitUntilStop)
+  void waitUntilStop();
+
+  // Notify the manager to stop (used for signal handling)
+  void notifyStop();
 
   // Create a vector index for a specific partition and index ID
   Status createOrUpdateIndex(GraphSpaceID spaceId,
@@ -102,6 +99,8 @@ class VectorIndexManager final {
     return ret;
   }
 
+  size_t getIndexSize(GraphSpaceID spaceId, PartitionID partitionId, IndexID indexId) const;
+
   // Non-copyable and non-movable
   VectorIndexManager(const VectorIndexManager&) = delete;
   VectorIndexManager& operator=(const VectorIndexManager&) = delete;
@@ -120,11 +119,12 @@ class VectorIndexManager final {
 
   Status validateIndexItem(const std::shared_ptr<meta::cpp2::AnnIndexItem>& indexItem);
 
-  std::string getIndexRootPath(GraphSpaceID spaceId, PartitionID partitionId, IndexID indexId);
+  std::string getAnnIndexPath(GraphSpaceID spaceId, PartitionID partitionId, IndexID indexId);
 
-  // Background cleanup task
-  void cleanupExpiredIndexes();
-  void backgroundCleanup();
+  // write All Ann Indexes to disk
+  Status writeAnnIndexesToDisk();
+  // Load existing indexes from disk during initialization
+  Status loadExistingIndexes();
 
   // Thread-safe index map
   mutable std::shared_mutex indexMapMutex_;
@@ -134,18 +134,19 @@ class VectorIndexManager final {
       indexMap_;
 
   // Dependencies
-  kvstore::KVStore* kvstore_{nullptr};
-  meta::SchemaManager* schemaManager_{nullptr};
+  // kvstore::KVStore* kvstore_{nullptr};
+  // meta::SchemaManager* schemaManager_{nullptr};
   meta::IndexManager* indexManager_{nullptr};
+  std::string annIndexPath_;
 
   // Manager state
   std::atomic<bool> running_{false};
   std::atomic<bool> stopped_{false};
 
-  // Background cleanup thread
-  std::unique_ptr<std::thread> cleanupThread_;
-  std::mutex cleanupMutex_;
-  std::condition_variable cleanupCondVar_;
+  // Synchronization for waitUntilStop
+  std::mutex muStop_;
+  std::condition_variable cvStop_;
+
   mutable std::atomic<size_t> indexId_{0};
 
   // Configuration

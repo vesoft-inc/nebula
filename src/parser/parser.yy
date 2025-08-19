@@ -11,7 +11,7 @@
 %parse-param { std::string &errmsg }
 %parse-param { nebula::Sentence** sentences }
 %parse-param { nebula::graph::QueryContext* qctx }
-
+%debug
 %code requires {
 #include <iostream>
 #include <sstream>
@@ -118,6 +118,7 @@ using namespace nebula;
     nebula::SchemaPropItem                 *alter_schema_prop_item;
     nebula::IndexParamList                 *index_param_list;
     nebula::IndexParamItem                 *index_param_item;
+    nebula::AnnIndexParamItem              *annindex_param;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
     nebula::meta::cpp2::ConfigModule        config_module;
@@ -180,7 +181,8 @@ using namespace nebula;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
 %token KW_ATOMIC_EDGE
 %token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
-%token KW_DROP KW_CLEAR KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
+%token KW_DROP KW_CLEAR KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES KW_ANNINDEX
+%token KW_ANNINDEXTYPE KW_DIM KW_METRICTYPE KW_NLIST KW_TRAINSIZE KW_MAXDEGREE KW_EFCONSTRUCTION KW_MAXELEMENTS
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
@@ -305,6 +307,7 @@ using namespace nebula;
 %type <alter_schema_prop_item> alter_schema_prop_item
 %type <index_param_list> opt_with_index_param_list index_param_list
 %type <index_param_item> index_param_item
+%type <annindex_param> opt_annindex_param annindex_param
 %type <order_factor> order_factor
 %type <order_factors> order_factors
 %type <config_module> config_module_enum
@@ -367,7 +370,7 @@ using namespace nebula;
 %type <acl_item_clause> acl_item_clause
 
 %type <name_label_list> name_label_list
-%type <index_field> index_field
+%type <index_field> index_field opt_annindex_field
 %type <index_field_list> index_field_list opt_index_field_list
 
 %type <query_unique_identifier> query_unique_identifier
@@ -464,7 +467,8 @@ name_label_list
     | name_label_list COMMA name_label {
         $1->add($3);
         $$ = $1;
-    } name_label_list VECTORAND name_label {
+    }
+    | name_label_list VECTORAND name_label {
         $1->add($3);
         $$ = $1;
     }
@@ -591,6 +595,14 @@ unreserved_keyword
     | KW_CLEAR              { $$ = new std::string("clear"); }
     | KW_ANALYZER           { $$ = new std::string("analyzer"); }
     | KW_VECTOR             { $$ = new std::string("vector"); }
+    | KW_ANNINDEXTYPE       { $$ = new std::string("annindex_type"); }
+    | KW_DIM                { $$ = new std::string("dim"); }
+    | KW_METRICTYPE         { $$ = new std::string("metric_type"); }
+    | KW_NLIST              { $$ = new std::string("nlist"); }
+    | KW_TRAINSIZE          { $$ = new std::string("trainsize"); }
+    | KW_MAXDEGREE          { $$ = new std::string("maxdegree"); }
+    | KW_EFCONSTRUCTION     { $$ = new std::string("efconstruction"); }
+    | KW_MAXELEMENTS        { $$ = new std::string("maxelements"); }
     ;
 
 expression
@@ -2755,12 +2767,72 @@ opt_index_field_list
     }
     ;
 
+opt_annindex_field
+    : %empty {
+        $$ = nullptr;
+    }
+    | index_field {
+        $$ = $1;
+    }
+    ;
+
+annindex_param 
+    : L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON STRING COMMA KW_NLIST COLON legal_integer COMMA KW_TRAINSIZE COLON legal_integer R_BRACE {
+        // IVF format: {ANNINDEX_TYPE:"IVF", DIM:128, METRIC_TYPE:"l2", NLIST:8, TRAINSIZE:3}
+        if (*$4 == "IVF") {
+            if (*$12 == "L2" || *$12 == "l2") {
+                $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20));
+            } else if (*$12 == "INNER_PRODUCT") {
+                $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20));
+            } else {
+                delete $4;
+                delete $12;
+                throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVFparameters");
+            }
+        } else {
+            delete $4;
+            delete $12;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVF parameters");
+        }
+        delete $4;
+        delete $12;
+    }
+    // TODO(LZY): L2 and inner product maybe need to as KEYWORD
+    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON STRING COMMA KW_MAXDEGREE COLON legal_integer COMMA KW_EFCONSTRUCTION COLON legal_integer COMMA KW_MAXELEMENTS COLON legal_integer R_BRACE {
+        // HNSW format: {ANNINDEX_TYPE:"HNSW", DIM:128, METRIC_TYPE:"l2", MAXDEGREE:16, EFCONSTRUCTION:200, MAXELEMENTS:1000}
+        if (*$4 == "HNSW") {
+            if (*$12 == "L2" || *$12 == "l2") {
+                $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20), Value($24));
+            } else if (*$12 == "INNER_PRODUCT") {
+                $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20), Value($24));
+            }
+
+        } else {
+            delete $4;
+            delete $12;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for HNSW parameters");
+        }
+        delete $4;
+        delete $12;
+    }
+    ;
+
+opt_annindex_param 
+    : %empty{
+        $$ = nullptr;
+    }
+    | annindex_param {
+        $$ = $1;
+    }
+    ;
+
 create_tag_index_sentence
     : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
         $$ = new CreateTagIndexSentence($5, $7, $9, $4, $11, $12);
     }
-    | KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label_list L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
-
+    | KW_CREATE KW_TAG KW_ANNINDEX opt_if_not_exists name_label KW_ON name_label_list COLON COLON L_PAREN opt_annindex_field R_PAREN opt_annindex_param opt_comment_prop {
+        // For ANN index, we need to create a CreateTagAnnIndexSentence
+        $$ = new CreateTagAnnIndexSentence($5, $7, $11, $4, $13, $14);
     }
     ;
 

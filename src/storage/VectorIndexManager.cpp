@@ -9,6 +9,7 @@
 #include <folly/hash/Hash.h>
 
 #include "common/base/Logging.h"
+#include "common/fs/FileUtils.h"
 #include "common/meta/IndexManager.h"
 #include "common/meta/SchemaManager.h"
 #include "common/utils/Utils.h"
@@ -24,16 +25,24 @@ VectorIndexManager& VectorIndexManager::getInstance() {
   return instance;
 }
 
-Status VectorIndexManager::init(kvstore::KVStore* kvstore,
-                                meta::SchemaManager* schemaManager,
-                                meta::IndexManager* indexManager) {
-  if (kvstore == nullptr || schemaManager == nullptr || indexManager == nullptr) {
+Status VectorIndexManager::init(meta::IndexManager* indexManager, std::string annIndexPath) {
+  if (indexManager == nullptr || annIndexPath.empty()) {
     return Status::Error("Invalid parameters for VectorIndexManager initialization");
   }
 
-  kvstore_ = kvstore;
-  schemaManager_ = schemaManager;
   indexManager_ = indexManager;
+  annIndexPath_ = std::move(annIndexPath);
+  if (!fs::FileUtils::exist(annIndexPath_)) {
+    auto status = fs::FileUtils::makeDir(annIndexPath_);
+    if (!status) {
+      LOG(ERROR) << "Make ann index path failed";
+    }
+  }
+  // Load existing indexes from disk if any
+  auto loadStatus = loadExistingIndexes();
+  if (!loadStatus.ok()) {
+    LOG(WARNING) << "Failed to load existing indexes: " << loadStatus.toString();
+  }
 
   LOG(INFO) << "VectorIndexManager initialized successfully";
   return Status::OK();
@@ -47,41 +56,38 @@ Status VectorIndexManager::start() {
   running_.store(true);
   stopped_.store(false);
 
-  // Start background cleanup thread
-  cleanupThread_ = std::make_unique<std::thread>([this]() { this->backgroundCleanup(); });
-
   LOG(INFO) << "VectorIndexManager started successfully";
   return Status::OK();
 }
 
 Status VectorIndexManager::stop() {
-  if (stopped_.load()) {
-    return Status::OK();
-  }
-
+  writeAnnIndexesToDisk();
   running_.store(false);
-
-  // Notify cleanup thread to stop
-  {
-    std::lock_guard<std::mutex> lock(cleanupMutex_);
-    cleanupCondVar_.notify_all();
-  }
-
-  // Wait for cleanup thread to finish
-  if (cleanupThread_ && cleanupThread_->joinable()) {
-    cleanupThread_->join();
-  }
-  cleanupThread_.reset();
-
+  stopped_.store(true);
   // Clear all indexes
   {
     std::unique_lock<std::shared_mutex> lock(indexMapMutex_);
     indexMap_.clear();
   }
-
-  stopped_.store(true);
   LOG(INFO) << "VectorIndexManager stopped successfully";
   return Status::OK();
+}
+
+void VectorIndexManager::waitUntilStop() {
+  std::unique_lock<std::mutex> lkStop(muStop_);
+  while (!stopped_.load()) {
+    cvStop_.wait(lkStop);
+  }
+  this->stop();
+}
+
+void VectorIndexManager::notifyStop() {
+  std::unique_lock<std::mutex> lkStop(muStop_);
+  if (!stopped_.load()) {
+    running_.store(false);
+    stopped_.store(true);
+    cvStop_.notify_all();
+  }
 }
 
 Status VectorIndexManager::createOrUpdateIndex(
@@ -113,7 +119,6 @@ Status VectorIndexManager::createOrUpdateIndex(
       }
     }
   }
-  LOG(ERROR) << "Vector index not found for partition " << partitionId << ", index " << indexId;
   // Create new index
   auto newIndex = createIndex(spaceId, partitionId, indexId, indexItem);
   if (!newIndex) {
@@ -183,10 +188,8 @@ Status VectorIndexManager::addVectors(GraphSpaceID spaceId,
   if (!indexOrError.ok()) {
     return indexOrError.status();
   }
-
   auto index = indexOrError.value();
-  LOG(ERROR) << "Begin to add vectors";
-  return index->add(&vecData);
+  return index->add(&vecData, false);
 }
 
 StatusOr<SearchResult> VectorIndexManager::searchVectors(GraphSpaceID spaceId,
@@ -197,7 +200,6 @@ StatusOr<SearchResult> VectorIndexManager::searchVectors(GraphSpaceID spaceId,
   if (!indexOrError.ok()) {
     return indexOrError.status();
   }
-
   auto index = indexOrError.value();
   SearchResult result;
   auto status = index->search(&searchParams, &result);
@@ -226,10 +228,7 @@ Status VectorIndexManager::rebuildIndex(
     PartitionID partitionId,
     IndexID indexId,
     const std::shared_ptr<meta::cpp2::AnnIndexItem>& indexItem) {
-  // Remove existing index if it exists
   removeIndex(spaceId, partitionId, indexId);
-
-  // Create new index
   return createOrUpdateIndex(spaceId, partitionId, indexId, indexItem);
 }
 
@@ -238,36 +237,26 @@ std::shared_ptr<AnnIndex> VectorIndexManager::createIndex(
     PartitionID partitionId,
     IndexID indexId,
     const std::shared_ptr<meta::cpp2::AnnIndexItem>& indexItem) {
-  // Extract parameters from indexItem
   std::string indexName = indexItem->get_index_name();
-  // Get ANN parameters
   const auto& annParams = *indexItem->get_ann_params();
   if (annParams.empty()) {
     LOG(ERROR) << "Empty ANN parameters for index " << indexId;
     return nullptr;
   }
-
   std::string indexType = annParams[0];
-  size_t dim =
-      folly::to<size_t>(annParams[1]);  // Default dimension, should be extracted from schema
+  size_t dim = folly::to<size_t>(annParams[1]);
   MetricType metricType = MetricType::L2;
   std::string lowerMetric = annParams[2];
   std::transform(lowerMetric.begin(), lowerMetric.end(), lowerMetric.begin(), ::tolower);
   if (lowerMetric.find("inner") != std::string::npos) {
     metricType = MetricType::INNER_PRODUCT;
   }
-
-  // Get root path for index files
-  std::string rootPath = getIndexRootPath(spaceId, partitionId, indexId);
-
+  std::string rootPath = getAnnIndexPath(spaceId, partitionId, indexId);
   std::shared_ptr<AnnIndex> index;
-
   if (indexType == "IVF") {
     // Create IVF index
     size_t nlist = annParams.size() > 3 ? folly::to<size_t>(annParams[3]) : 8;
     size_t trainSize = annParams.size() > 4 ? folly::to<size_t>(annParams[4]) : 10;
-    LOG(ERROR) << "IVF params: "
-               << "nlist: " << nlist << ", trainsize: " << trainSize;
     index = std::make_shared<IVFIndex>(spaceId,
                                        partitionId,
                                        indexId,
@@ -286,16 +275,11 @@ std::shared_ptr<AnnIndex> VectorIndexManager::createIndex(
       LOG(ERROR) << "Failed to initialize IVF index: " << status.toString();
       return nullptr;
     }
-    LOG(ERROR) << "Build IVF Index";
-
   } else if (indexType == "HNSW") {
     // Create HNSW index
     size_t M = annParams.size() > 3 ? folly::to<size_t>(annParams[3]) : 16;
     size_t efConstruction = annParams.size() > 4 ? folly::to<size_t>(annParams[4]) : 200;
     size_t capacity = annParams.size() > 5 ? folly::to<size_t>(annParams[5]) : 10000;
-    LOG(ERROR) << "HNSW params: "
-               << "M: " << M << ", efConstruction: " << efConstruction
-               << ", capacity: " << capacity;
     index = std::make_shared<HNSWIndex>(spaceId,
                                         partitionId,
                                         indexId,
@@ -312,7 +296,6 @@ std::shared_ptr<AnnIndex> VectorIndexManager::createIndex(
       LOG(ERROR) << "Failed to initialize HNSW index: " << status.toString();
       return nullptr;
     }
-    LOG(ERROR) << "Build HNSW Index";
   } else {
     LOG(ERROR) << "Unsupported index type: " << indexType;
     return nullptr;
@@ -346,49 +329,145 @@ Status VectorIndexManager::validateIndexItem(
   return Status::OK();
 }
 
-std::string VectorIndexManager::getIndexRootPath(GraphSpaceID spaceId,
-                                                 PartitionID partitionId,
-                                                 IndexID indexId) {
-  // Create a hierarchical path: /vector_indexes/{spaceId}/{partitionId}/{indexId}/
-  return fmt::format("/vector_indexes/{}/{}/{}/", spaceId, partitionId, indexId);
-}
+size_t VectorIndexManager::getIndexSize(GraphSpaceID spaceId,
+                                        PartitionID partitionId,
+                                        IndexID indexId) const {
+  VectorIndexKey key{partitionId, indexId};
 
-void VectorIndexManager::cleanupExpiredIndexes() {
-  // Implementation for cleaning up expired or unused indexes
-  // This could include removing indexes for dropped spaces, partitions, etc.
-  LOG(INFO) << "Running vector index cleanup";
-
-  // Get current stats before cleanup
-  LOG(INFO) << "Performing vector index cleanup";
-
-  // TODO: Implement actual cleanup logic
-  // This would involve checking for:
-  // - Dropped spaces
-  // - Dropped partitions
-  // - Removed indexes
-  // And cleaning up corresponding vector index data
-}
-
-void VectorIndexManager::backgroundCleanup() {
-  LOG(INFO) << "Vector index background cleanup thread started";
-
-  while (running_.load()) {
-    try {
-      std::unique_lock<std::mutex> lock(cleanupMutex_);
-      if (cleanupCondVar_.wait_for(lock, std::chrono::seconds(kCleanupIntervalSeconds), [this]() {
-            return !running_.load();
-          })) {
-        // Condition variable was notified (probably shutdown)
-        break;
-      }
-      // Perform cleanup
-      cleanupExpiredIndexes();
-    } catch (const std::exception& e) {
-      LOG(ERROR) << "Exception in vector index cleanup thread: " << e.what();
+  std::shared_lock<std::shared_mutex> readLock(indexMapMutex_);
+  auto it = indexMap_.find(spaceId);
+  if (it != indexMap_.end()) {
+    auto index = it->second.find(key);
+    if (index != it->second.end()) {
+      return index->second->size();
     }
   }
+  return 0;
+}
 
-  LOG(INFO) << "Vector index background cleanup thread stopped";
+std::string VectorIndexManager::getAnnIndexPath(GraphSpaceID spaceId,
+                                                PartitionID partitionId,
+                                                IndexID indexId) {
+  return fmt::format("{}/{}_{}_{}", annIndexPath_, spaceId, partitionId, indexId);
+}
+
+Status VectorIndexManager::loadExistingIndexes() {
+  if (annIndexPath_.empty()) {
+    LOG(WARNING) << "ANN index path is empty, skipping load existing indexes";
+    return Status::OK();
+  }
+
+  try {
+    auto fileType = fs::FileUtils::fileType(annIndexPath_.c_str());
+    if (fileType != fs::FileType::DIRECTORY) {
+      LOG(ERROR) << "ANN index directory does not exist: " << annIndexPath_;
+      return Status::OK();
+    }
+
+    std::unique_lock<std::shared_mutex> writeLock(indexMapMutex_);
+    auto files = fs::FileUtils::listAllFilesInDir(annIndexPath_.c_str(), false, nullptr);
+    if (files.empty()) {
+      LOG(ERROR) << "No existing index files found in " << annIndexPath_;
+      return Status::OK();
+    }
+    for (const auto& filename : files) {
+      if (filename.size() > 6 && filename.substr(filename.size() - 6) == ".index") {
+        // Parse filename to extract spaceId, partitionId, indexId
+        // Format: {spaceId}_{partitionId}_{indexId}.index
+        std::string baseName = filename.substr(0, filename.size() - 6);
+        std::vector<std::string> parts;
+        std::string current;
+
+        for (char c : baseName) {
+          if (c == '_') {
+            if (!current.empty()) {
+              parts.push_back(current);
+              current.clear();
+            }
+          } else {
+            current += c;
+          }
+        }
+        if (!current.empty()) {
+          parts.push_back(current);
+        }
+
+        if (parts.size() != 3) {
+          LOG(WARNING) << "Invalid index file name format: " << filename;
+          continue;
+        }
+
+        try {
+          GraphSpaceID spaceId = folly::to<GraphSpaceID>(parts[0]);
+          PartitionID partitionId = folly::to<PartitionID>(parts[1]);
+          IndexID indexId = folly::to<IndexID>(parts[2]);
+          // Try both tag and edge indexes since we don't know the type from filename
+          auto tagIndexRet = indexManager_->getTagAnnIndex(spaceId, indexId);
+          auto edgeIndexRet = indexManager_->getEdgeAnnIndex(spaceId, indexId);
+
+          std::shared_ptr<meta::cpp2::AnnIndexItem> indexItem;
+          if (tagIndexRet.ok() && tagIndexRet.value()) {
+            indexItem = tagIndexRet.value();
+          } else if (edgeIndexRet.ok() && edgeIndexRet.value()) {
+            indexItem = edgeIndexRet.value();
+          } else {
+            LOG(ERROR) << "Failed to get index metadata for space " << spaceId << ", index "
+                       << indexId << ". Tag index result: " << tagIndexRet.status().toString()
+                       << ", Edge index result: " << edgeIndexRet.status().toString();
+            continue;
+          }
+          // Create index instance
+          auto index = createIndex(spaceId, partitionId, indexId, indexItem);
+          if (!index) {
+            LOG(ERROR) << "Failed to create index instance for space " << spaceId << ", partition "
+                       << partitionId << ", index " << indexId;
+            continue;
+          }
+          // Load index from disk
+          std::string fullPath = fs::FileUtils::joinPath(annIndexPath_, filename);
+          auto loadStatus = index->read(fullPath);
+          if (!loadStatus.ok()) {
+            LOG(ERROR) << "Failed to load index from file " << fullPath << ": "
+                       << loadStatus.toString();
+            continue;
+          }
+          // Add to index map
+          VectorIndexKey key{partitionId, indexId};
+          indexMap_[spaceId][key] = index;
+        } catch (const std::exception& e) {
+          LOG(ERROR) << "Failed to parse index file name " << filename << ": " << e.what();
+          continue;
+        }
+      }
+    }
+
+    LOG(INFO) << "Finished loading existing indexes from " << annIndexPath_;
+    return Status::OK();
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Error while loading existing indexes: " << e.what();
+    return Status::Error("Failed to load existing indexes: %s", e.what());
+  }
+}
+
+Status VectorIndexManager::writeAnnIndexesToDisk() {
+  std::unique_lock<std::shared_mutex> writeLock(indexMapMutex_);
+  for (const auto& spacePair : indexMap_) {
+    GraphSpaceID spaceId = spacePair.first;
+    for (const auto& indexPair : spacePair.second) {
+      const VectorIndexKey& key = indexPair.first;
+      const auto& index = indexPair.second;
+
+      // Write each index to its respective file
+      std::string filePath = fmt::format("{}_{}_{}.index", spaceId, key.first, key.second);
+      auto status = index->write(annIndexPath_, filePath);
+      if (!status.ok()) {
+        LOG(ERROR) << "Failed to write index to disk: " << status.toString();
+        return status;
+      }
+    }
+  }
+  LOG(INFO) << "All vector indexes written to disk successfully";
+  return Status::OK();
 }
 
 }  // namespace storage

@@ -27,6 +27,7 @@ class MockIndexManager final : public nebula::meta::IndexManager {
   void init();
 
   using IndexItem = meta::cpp2::IndexItem;
+  using AnnIndexItem = meta::cpp2::AnnIndexItem;
 
   StatusOr<std::shared_ptr<IndexItem>> getTagIndex(GraphSpaceID space, IndexID index) override {
     UNUSED(space);
@@ -35,6 +36,20 @@ class MockIndexManager final : public nebula::meta::IndexManager {
   }
 
   StatusOr<std::shared_ptr<IndexItem>> getEdgeIndex(GraphSpaceID space, IndexID index) override {
+    UNUSED(space);
+    UNUSED(index);
+    LOG(FATAL) << "Unimplemented";
+  }
+
+  StatusOr<std::shared_ptr<AnnIndexItem>> getTagAnnIndex(GraphSpaceID space,
+                                                         IndexID index) override {
+    UNUSED(space);
+    UNUSED(index);
+    LOG(FATAL) << "Unimplemented";
+  }
+
+  StatusOr<std::shared_ptr<AnnIndexItem>> getEdgeAnnIndex(GraphSpaceID space,
+                                                          IndexID index) override {
     UNUSED(space);
     UNUSED(index);
     LOG(FATAL) << "Unimplemented";

@@ -110,6 +110,8 @@ class PlanNode {
     kCreateTagIndex,
     kCreateEdgeIndex,
     kCreateFTIndex,
+    kCreateTagAnnIndex,
+    kCreateEdgeAnnIndex,
     kDropFTIndex,
     kDropTagIndex,
     kDropEdgeIndex,

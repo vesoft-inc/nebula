@@ -162,7 +162,7 @@ TEST_F(HNSWIndexTest, AddVectors) {
 
   ASSERT_TRUE(index->init(params.get()).ok());
 
-  auto status = index->add(&vecData_);
+  auto status = index->add(&vecData_, true);
   EXPECT_TRUE(status.ok()) << status.toString();
 }
 
@@ -172,7 +172,7 @@ TEST_F(HNSWIndexTest, SearchVectors) {
   auto searchParams = createSearchParams(5);
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
   SearchResult result;
   auto status = index->search(searchParams.get(), &result);
   EXPECT_TRUE(status.ok()) << status.toString();
@@ -187,7 +187,7 @@ TEST_F(HNSWIndexTest, UpsertVectors) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   // Modify some data and upsert
   std::vector<float> upsertData = {trainData_[0], trainData_[1], trainData_[2]};  // First vector
@@ -213,7 +213,7 @@ TEST_F(HNSWIndexTest, RemoveVectors) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   // Remove some vectors
   std::vector<VectorID> removeIds = {trainIds_[0], trainIds_[1], trainIds_[2]};
@@ -229,7 +229,7 @@ TEST_F(HNSWIndexTest, ReconstructVector) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   auto result = index->reconstruct(trainIds_[0]);
   if (result.ok()) {
@@ -243,7 +243,7 @@ TEST_F(HNSWIndexTest, WriteAndReadIndex) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   std::string indexFile = "test_hnsw_index.bin";
 
@@ -345,7 +345,7 @@ TEST_F(IVFIndexTest, AddVectors) {
 
   ASSERT_TRUE(index->init(params.get()).ok());
 
-  auto status = index->add(&vecData_);
+  auto status = index->add(&vecData_, true);
   EXPECT_TRUE(status.ok()) << status.toString();
 }
 
@@ -355,7 +355,7 @@ TEST_F(IVFIndexTest, SearchVectors) {
   auto searchParams = createSearchParams(5);
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   SearchResult result;
   auto status = index->search(searchParams.get(), &result);
@@ -371,7 +371,7 @@ TEST_F(IVFIndexTest, UpsertVectors) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   // Modify some data and upsert
   std::vector<float> upsertData(dim_);
@@ -398,7 +398,7 @@ TEST_F(IVFIndexTest, RemoveVectors) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   // Remove some vectors
   std::vector<VectorID> removeIds = {trainIds_[0], trainIds_[1], trainIds_[2]};
@@ -414,7 +414,7 @@ TEST_F(IVFIndexTest, ReconstructVector) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   auto result = index->reconstruct(trainIds_[0]);
   if (result.ok()) {
@@ -428,7 +428,7 @@ TEST_F(IVFIndexTest, WriteAndReadIndex) {
   auto buildParams = createBuildParams();
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   std::string indexFile = "test_ivf_index.bin";
 
@@ -465,7 +465,7 @@ TEST_F(IVFIndexTest, InnerProductMetric) {
       MetricType::INNER_PRODUCT, AnnIndexType::IVF, nlist_, trainSize_);
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   auto searchParams = std::make_unique<SearchParamsIVF>(5, queryData_.data(), dim_, nprobe_);
 
@@ -526,7 +526,7 @@ TEST_F(AnnIndexConcurrencyTest, HNSWConcurrentSearch) {
   auto buildParams = std::make_unique<BuildParamsHNSW>(metricType_, 16, 200, 2000);
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   constexpr int numThreads = 10;
   constexpr int searchesPerThread = 50;
@@ -572,7 +572,7 @@ TEST_F(AnnIndexConcurrencyTest, IVFConcurrentSearch) {
   auto buildParams = std::make_unique<BuildParamsIVF>(metricType_, AnnIndexType::IVF, 4, 10);
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   constexpr int numThreads = 10;
   constexpr int searchesPerThread = 50;
@@ -687,7 +687,7 @@ TEST_F(AnnIndexConcurrencyTest, IVFConcurrentUpsertAndRemove) {
   auto buildParams = std::make_unique<BuildParamsIVF>(metricType_, AnnIndexType::IVF, 8, 100);
 
   ASSERT_TRUE(index->init(buildParams.get()).ok());
-  ASSERT_TRUE(index->add(&vecData_).ok());
+  ASSERT_TRUE(index->add(&vecData_, true).ok());
 
   constexpr int numThreads = 4;
   std::vector<std::thread> threads;

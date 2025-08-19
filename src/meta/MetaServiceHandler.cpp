@@ -25,6 +25,7 @@
 #include "meta/processors/id/GetSegmentIdProcessor.h"
 #include "meta/processors/id/GetWorkerIdProcessor.h"
 #include "meta/processors/index/CreateEdgeIndexProcessor.h"
+#include "meta/processors/index/CreateTagAnnIndexProcessor.h"
 #include "meta/processors/index/CreateTagIndexProcessor.h"
 #include "meta/processors/index/DropEdgeIndexProcessor.h"
 #include "meta/processors/index/DropTagIndexProcessor.h"
@@ -240,6 +241,12 @@ folly::Future<cpp2::GetTagIndexResp> MetaServiceHandler::future_getTagIndex(
 folly::Future<cpp2::ListTagIndexesResp> MetaServiceHandler::future_listTagIndexes(
     const cpp2::ListTagIndexesReq& req) {
   auto* processor = ListTagIndexesProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createTagAnnIndex(
+    const cpp2::CreateTagAnnIndexReq& req) {
+  auto* processor = CreateTagAnnIndexProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

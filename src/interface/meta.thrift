@@ -1277,6 +1277,7 @@ service MetaService {
     ExecResp             dropTagIndex(1: DropTagIndexReq req );
     GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
+    ExecResp             createTagAnnIndex(1: CreateTagAnnIndexReq req);
     ListTagAnnIndexesResp   listTagAnnIndexes(1:ListTagIndexesReq req);
     ExecResp             rebuildTagIndex(1: RebuildIndexReq req);
     ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);

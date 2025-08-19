@@ -5,7 +5,7 @@
 
 #include "storage/admin/BuildTagVectorIndexTask.h"
 
-#include <iterator>
+#include <folly/String.h>
 
 #include "codec/RowReaderWrapper.h"
 #include "common/base/Status.h"
@@ -24,11 +24,59 @@ const int32_t kReserveNum = 1024 * 4;
 
 StatusOr<std::shared_ptr<AnnIndexItem>> BuildTagVectorIndexTask::getIndex(GraphSpaceID space,
                                                                           IndexID index) {
-  auto indexRet = env_->indexMan_->getTagAnnIndex(space, index);
-  if (!indexRet.ok()) {
+  // 使用可配置的重试参数
+  const int maxRetries = FLAGS_vector_index_cache_retry_times;
+  const int retryIntervalMs = FLAGS_vector_index_cache_retry_interval_ms;
+
+  for (int retry = 0; retry < maxRetries; ++retry) {
+    auto indexRet = env_->indexMan_->getTagAnnIndex(space, index);
+    if (indexRet.ok()) {
+      return indexRet.value();
+    }
+
+    // 如果是IndexNotFound且不是最后一次重试，则刷新缓存并重试
+    if (indexRet.status().code() == Status::Code::kIndexNotFound && retry < maxRetries - 1) {
+      LOG(ERROR) << "Index " << index << " not found in cache, refreshing meta cache. Retry "
+                 << (retry + 1) << "/" << maxRetries;
+
+      // 强制刷新meta client缓存
+      if (auto* metaClient = env_->metaClient_) {
+        auto refreshStatus = metaClient->refreshCache();
+        if (!refreshStatus.ok()) {
+          LOG(WARNING) << "Failed to refresh meta cache: " << refreshStatus;
+        }
+      }
+
+      // 等待一段时间再重试
+      std::this_thread::sleep_for(std::chrono::milliseconds(retryIntervalMs));
+      continue;
+    }
+
+    // 最后一次重试：尝试直接从Meta服务获取所有Ann索引，然后查找目标索引
+    if (indexRet.status().code() == Status::Code::kIndexNotFound && retry == maxRetries - 1) {
+      LOG(ERROR) << "Last retry: attempting to fetch index directly from meta service";
+
+      if (auto* metaClient = env_->metaClient_) {
+        auto allIndexesRet = metaClient->listTagAnnIndexes(space).get();
+        if (allIndexesRet.ok()) {
+          for (const auto& item : allIndexesRet.value()) {
+            if (item.get_index_id() == index) {
+              LOG(INFO) << "Found index " << index << " directly from meta service";
+              auto sharedItem = std::make_shared<meta::cpp2::AnnIndexItem>(item);
+              return sharedItem;
+            }
+          }
+        } else {
+          LOG(WARNING) << "Failed to fetch indexes from meta service: " << allIndexesRet.status();
+        }
+      }
+    }
+
+    // 其他错误直接返回
     return Status::Error("Get Tag Ann Index Failed: %s", indexRet.status().toString().c_str());
   }
-  return indexRet.value();
+
+  return Status::Error("Get Tag Ann Index Failed after %d retries: IndexNotFound", maxRetries);
 }
 
 nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildIndexGlobal(
@@ -37,7 +85,7 @@ nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildIndexGlobal(
     const std::shared_ptr<AnnIndexItem>& item,
     kvstore::RateLimiter* rateLimiter) {
   if (UNLIKELY(canceled_)) {
-    LOG(INFO) << "Rebuild Tag Index is Canceled";
+    LOG(INFO) << "Build Tag Ann Index is Canceled";
     return nebula::cpp2::ErrorCode::E_USER_CANCEL;
   }
 
@@ -157,9 +205,6 @@ nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildIndexGlobal(
           return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
         }
         auto vecObj = value.moveVector();
-
-        LOG(ERROR) << "Vertex ID: " << vertex.toString() << ", Vector ID: " << vectorId
-                   << ", Vec Obj: " << vecObj.toString();
         batchSize += vecObj.dim() * sizeof(float) + sizeof(vectorId);
         const auto& vec = vecObj.data();
         data.insert(
@@ -176,23 +221,17 @@ nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildIndexGlobal(
     batchSize += vidData.back().first.size() + sizeof(vectorId);
     vidData.emplace_back(std::move(vidIdKey), vertex.toString());
     batchSize += vidData.back().first.size() + sizeof(vertex);
-    LOG(ERROR) << "VID data size: " << vidData.size() << ", vectorIds size: " << vectorIds.size()
-               << ", data size: " << data.size();
     iter->next();
   }
 
   // write vid data to kvstore
-  LOG(ERROR) << "Write id vid data";
   ret = writeData(space, part, std::move(vidData), batchSize, rateLimiter);
-
   // buildAnnIndex
   VecData vecData;
   vecData.fdata = data.data();
   vecData.ids = vectorIds.data();
   vecData.cnt = static_cast<int32_t>(vectorIds.size());
   vecData.dim = folly::to<size_t>(dim);
-  LOG(ERROR) << "Vec Data: "
-             << "size=" << vecData.cnt << ", dim=" << vecData.dim;
   return buildAnnIndex(space, part, item, vecData);
 }
 
@@ -201,10 +240,15 @@ nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildAnnIndex(
     PartitionID part,
     const std::shared_ptr<AnnIndexItem>& item,
     const VecData& data) {
+  if (data.cnt == 0) {
+    LOG(ERROR) << "Part: " << part << ", No vectors to add to the index, skipping.";
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
   // Build ANN index
   auto& vecIdxMgr = VectorIndexManager::getInstance();
   Status ret = Status::OK();
   IndexID indexId = item->get_index_id();
+
   if (!vecIdxMgr.getIndex(space, part, indexId).ok()) {
     ret = vecIdxMgr.createOrUpdateIndex(space, part, indexId, item);
     if (!ret.ok()) {
@@ -212,14 +256,12 @@ nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildAnnIndex(
       return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
   }
-
   // Add vectors to the index
   ret = vecIdxMgr.addVectors(space, part, indexId, data);
   if (!ret.ok()) {
-    LOG(ERROR) << "Failed to add vectors to ANN index: " << ret;
+    LOG(ERROR) << "Part: " << part << ", Failed to add vectors to ANN index: " << ret;
     return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
   }
-
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

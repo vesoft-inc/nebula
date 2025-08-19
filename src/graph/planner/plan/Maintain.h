@@ -323,6 +323,143 @@ class DropEdge final : public DropSchemaNode {
       : DropSchemaNode(qctx, Kind::kDropEdge, input, std::move(name), ifExists) {}
 };
 
+class CreateAnnIndexNode : public SingleDependencyNode {
+ protected:
+  CreateAnnIndexNode(QueryContext* qctx,
+                     PlanNode* input,
+                     Kind kind,
+                     std::vector<std::string> schemaName,
+                     std::string indexName,
+                     meta::cpp2::IndexFieldDef field,
+                     bool ifNotExists,
+                     std::vector<std::string> annindexParam,
+                     const std::string* comment)
+      : SingleDependencyNode(qctx, kind, input),
+        schemaNames_(std::move(schemaName)),
+        indexName_(std::move(indexName)),
+        field_(std::move(field)),
+        ifNotExists_(ifNotExists),
+        annindexParam_(std::move(annindexParam)),
+        comment_(comment) {}
+
+ public:
+  const std::vector<std::string>& getSchemaNames() const {
+    return schemaNames_;
+  }
+
+  const std::string& getIndexName() const {
+    return indexName_;
+  }
+
+  const meta::cpp2::IndexFieldDef& getField() const {
+    return field_;
+  }
+
+  bool getIfNotExists() const {
+    return ifNotExists_;
+  }
+
+  const std::vector<std::string>& getAnnIndexParam() const {
+    return annindexParam_;
+  }
+
+  const std::string* getComment() const {
+    return comment_;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  std::vector<std::string> schemaNames_;
+  std::string indexName_;
+  meta::cpp2::IndexFieldDef field_;
+  bool ifNotExists_;
+  std::vector<std::string> annindexParam_;
+  const std::string* comment_;
+};
+
+class CreateTagAnnIndex final : public CreateAnnIndexNode {
+ public:
+  static CreateTagAnnIndex* make(QueryContext* qctx,
+                                 PlanNode* input,
+                                 std::vector<std::string> tagNames,
+                                 std::string indexName,
+                                 meta::cpp2::IndexFieldDef field,
+                                 bool ifNotExists,
+                                 std::vector<std::string> annindexParam,
+                                 const std::string* comment) {
+    return qctx->objPool()->makeAndAdd<CreateTagAnnIndex>(qctx,
+                                                          input,
+                                                          std::move(tagNames),
+                                                          std::move(indexName),
+                                                          std::move(field),
+                                                          ifNotExists,
+                                                          std::move(annindexParam),
+                                                          comment);
+  }
+
+ private:
+  friend ObjectPool;
+  CreateTagAnnIndex(QueryContext* qctx,
+                    PlanNode* input,
+                    std::vector<std::string> tagNames,
+                    std::string indexName,
+                    meta::cpp2::IndexFieldDef field,
+                    bool ifNotExists,
+                    std::vector<std::string> annindexParam,
+                    const std::string* comment)
+      : CreateAnnIndexNode(qctx,
+                           input,
+                           Kind::kCreateTagAnnIndex,
+                           std::move(tagNames),
+                           std::move(indexName),
+                           std::move(field),
+                           ifNotExists,
+                           std::move(annindexParam),
+                           comment) {}
+};
+
+class CreateEdgeAnnIndex final : public CreateAnnIndexNode {
+ public:
+  static CreateEdgeAnnIndex* make(QueryContext* qctx,
+                                  PlanNode* input,
+                                  std::vector<std::string> edgeNames,
+                                  std::string indexName,
+                                  meta::cpp2::IndexFieldDef field,
+                                  bool ifNotExists,
+                                  std::vector<std::string> annindexParam,
+                                  const std::string* comment) {
+    return qctx->objPool()->makeAndAdd<CreateEdgeAnnIndex>(qctx,
+                                                           input,
+                                                           std::move(edgeNames),
+                                                           std::move(indexName),
+                                                           std::move(field),
+                                                           ifNotExists,
+                                                           std::move(annindexParam),
+                                                           comment);
+  }
+
+ private:
+  friend ObjectPool;
+  CreateEdgeAnnIndex(QueryContext* qctx,
+                     PlanNode* input,
+                     std::vector<std::string> edgeNames,
+                     std::string indexName,
+                     meta::cpp2::IndexFieldDef field,
+                     bool ifNotExists,
+                     std::vector<std::string> annindexParam,
+                     const std::string* comment)
+      : CreateAnnIndexNode(qctx,
+                           input,
+                           Kind::kCreateEdgeAnnIndex,
+                           std::move(edgeNames),
+                           std::move(indexName),
+                           std::move(field),
+                           ifNotExists,
+                           std::move(annindexParam),
+                           comment) {}
+};
+
 class CreateIndexNode : public SingleDependencyNode {
  protected:
   CreateIndexNode(QueryContext* qctx,

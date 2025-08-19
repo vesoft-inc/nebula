@@ -28,6 +28,11 @@ DEFINE_uint32(rebuild_index_part_rate_limit,
 
 DEFINE_uint32(rebuild_index_batch_size, 1024 * 128, "batch size for rebuild index, in bytes");
 
+// Vector Index相关配置
+DEFINE_int32(vector_index_cache_retry_times, 3, "retry times when getting vector index from cache");
+
+DEFINE_int32(vector_index_cache_retry_interval_ms, 5000, "retry interval in milliseconds");
+
 DEFINE_int32(reader_handlers, 32, "Total reader handlers");
 
 DEFINE_uint64(default_mvcc_ver,

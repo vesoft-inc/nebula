@@ -50,6 +50,8 @@ class GQLParser {
     end_ = pos_ + buffer_.size();
 
     scanner_.setQuery(&buffer_);
+    // parser_.set_debug_level(1);
+    // parser_.set_debug_stream(std::cerr);
     if (parser_.parse() != 0) {
       pos_ = nullptr;
       end_ = nullptr;

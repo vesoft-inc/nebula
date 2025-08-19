@@ -52,7 +52,7 @@ class AnnIndex {
 
   [[nodiscard]] virtual Status init(const BuildParams *params) = 0;
   // add data to index incrementally
-  [[nodiscard]] virtual Status add(const VecData *data) = 0;
+  [[nodiscard]] virtual Status add(const VecData *data, bool isTest) = 0;
   // upsert data to index
   [[nodiscard]] virtual Status upsert(const VecData *data) = 0;
   // soft delete data from index, return number of deleted vectors
@@ -85,6 +85,8 @@ class AnnIndex {
   [[nodiscard]] virtual Status load() = 0;
   // create checkpoint for snapshot
   [[nodiscard]] virtual Status createCheckpoint(const std::string &snapshotPath) = 0;
+  // return data counts in ann index
+  [[nodiscard]] virtual size_t size() const = 0;
 
   virtual AnnIndexType indexType() const = 0;
   virtual std::string toString() const = 0;

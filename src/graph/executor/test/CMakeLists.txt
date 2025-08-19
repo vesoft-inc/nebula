@@ -71,6 +71,7 @@ set(EXEC_QUERY_TEST_OBJS
     ${EXEC_QUERY_TEST_OBJS}
     $<TARGET_OBJECTS:sa_test_graph_flags_obj>
     $<TARGET_OBJECTS:storage_server_stub_obj>
+    $<TARGET_OBJECTS:vector_index_obj>
 )
 endif()
 
@@ -79,6 +80,7 @@ SET(EXEC_QUERY_TEST_LIBS
     gtest
     wangle
     ${PROXYGEN_LIBRARIES}
+    ${VECTOR_INDEX_LIBRARIES}
     curl
 )
 

@@ -22,6 +22,10 @@ DECLARE_uint32(rebuild_index_part_rate_limit);
 
 DECLARE_uint32(rebuild_index_batch_size);
 
+DECLARE_int32(vector_index_cache_retry_times);
+
+DECLARE_int32(vector_index_cache_retry_interval_ms);
+
 DECLARE_int32(reader_handlers);
 
 DECLARE_uint64(default_mvcc_ver);

@@ -7,12 +7,12 @@ nebula_add_test(
     NAME ann_index_test
     SOURCES AnnIndexTest.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:vector_index_obj>
-    LIBRARIES gtest gtest_main faiss openblas gomp
+    LIBRARIES gtest gtest_main ${VECTOR_INDEX_LIBRARIES} ${THRIFT_LIBRARIES}
 )
 
 nebula_add_executable(
     NAME ann_benchmark
     SOURCES ANNBenchmark.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:memory_obj> $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:time_obj> $<TARGET_OBJECTS:vector_index_obj>
-    LIBRARIES gtest gtest_main faiss openblas jemalloc gomp
+    LIBRARIES gtest gtest_main jemalloc ${VECTOR_INDEX_LIBRARIES} ${THRIFT_LIBRARIES}
 )

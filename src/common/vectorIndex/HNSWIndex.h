@@ -21,7 +21,7 @@ class HNSWIndex : public AnnIndex {
 
   [[nodiscard]] Status init(const BuildParams *params) override;
   // add data to index incrementally
-  [[nodiscard]] Status add(const VecData *data) override;
+  [[nodiscard]] Status add(const VecData *data, bool isTest = false) override;
   // upsert data to index
   [[nodiscard]] Status upsert(const VecData *data) override;
   // soft delete data from index, return number of deleted vectors
@@ -54,6 +54,8 @@ class HNSWIndex : public AnnIndex {
   [[nodiscard]] Status load() override;
   // create checkpoint for snapshot
   [[nodiscard]] Status createCheckpoint(const std::string &snapshotPath) override;
+  // return data counts in ann index
+  [[nodiscard]] size_t size() const override;
 
   AnnIndexType indexType() const override;
   std::string toString() const override;

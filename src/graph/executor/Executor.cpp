@@ -59,6 +59,7 @@
 #include "graph/executor/maintain/EdgeExecutor.h"
 #include "graph/executor/maintain/EdgeIndexExecutor.h"
 #include "graph/executor/maintain/FTIndexExecutor.h"
+#include "graph/executor/maintain/TagAnnIndexExecutor.h"
 #include "graph/executor/maintain/TagExecutor.h"
 #include "graph/executor/maintain/TagIndexExecutor.h"
 #include "graph/executor/mutate/DeleteExecutor.h"
@@ -331,6 +332,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kCreateTagIndex: {
       return pool->makeAndAdd<CreateTagIndexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kCreateTagAnnIndex: {
+      return pool->makeAndAdd<CreateTagAnnIndexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kCreateEdgeAnnIndex: {
+      return nullptr;
     }
     case PlanNode::Kind::kCreateEdgeIndex: {
       return pool->makeAndAdd<CreateEdgeIndexExecutor>(node, qctx);

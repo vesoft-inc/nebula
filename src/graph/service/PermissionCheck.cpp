@@ -80,6 +80,7 @@ namespace graph {
     case Sentence::Kind::kDropTag:
     case Sentence::Kind::kDropEdge:
     case Sentence::Kind::kCreateTagIndex:
+    case Sentence::Kind::kCreateTagAnnIndex:
     case Sentence::Kind::kCreateEdgeIndex:
     case Sentence::Kind::kCreateFTIndex:
     case Sentence::Kind::kDropTagIndex:

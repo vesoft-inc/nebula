@@ -6,6 +6,7 @@
 
 #include <hnswlib/space_l2.h>
 
+#include <cstddef>
 #include <filesystem>
 
 #include "common/base/Base.h"
@@ -68,7 +69,8 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 }
 
 // add data to index incrementally
-[[nodiscard]] Status HNSWIndex::add(const VecData *data) {
+[[nodiscard]] Status HNSWIndex::add(const VecData *data, bool isTest) {
+  UNUSED(isTest);
   if (data == nullptr) {
     return Status::Error("VecData is null");
   }
@@ -307,6 +309,15 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 [[nodiscard]] Status HNSWIndex::createCheckpoint(const std::string &snapshotPath) {
   UNUSED(snapshotPath);
   return Status::OK();
+}
+
+// return data count in ann index
+[[nodiscard]] size_t HNSWIndex::size() const {
+  if (rawHnsw_ == nullptr) {
+    return 0;
+  }
+  std::shared_lock lock(latch_);
+  return rawHnsw_->getCurrentElementCount() - rawHnsw_->getDeletedCount();
 }
 
 AnnIndexType HNSWIndex::indexType() const {

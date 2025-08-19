@@ -7,6 +7,7 @@
 
 #include "common/base/StatusOr.h"
 #include "graph/util/SchemaUtil.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
@@ -20,6 +21,8 @@ class IndexUtil final {
   static Status validateIndexParams(const std::vector<IndexParamItem *> &params,
                                     meta::cpp2::IndexParams &indexParams);
 
+  static Status validateAnnIndexParam(const AnnIndexParamItem *param,
+                                      std::vector<std::string> &annIndexParam);
   // TODO(Aiee) no status will be returned. Change the interface
   // Extracts the field and type from the indexItem and returns a Dataset to depscribe the index
   static StatusOr<DataSet> toDescIndex(const meta::cpp2::IndexItem &indexItem);

@@ -22,9 +22,6 @@ class BuildEdgeVectorIndexJobExecutor : public BuildVectorIndexJobExecutor {
 
   folly::Future<Status> executeInternal(HostAddr&& address,
                                         std::vector<PartitionID>&& parts) override;
-
- protected:
-  std::vector<std::string> taskParameters_;
 };
 
 }  // namespace meta

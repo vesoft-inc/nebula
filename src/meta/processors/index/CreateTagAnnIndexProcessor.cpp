@@ -6,6 +6,8 @@
 #include "meta/processors/index/CreateTagAnnIndexProcessor.h"
 
 #include "common/base/CommonMacro.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
@@ -89,6 +91,8 @@ void CreateTagAnnIndexProcessor::process(const cpp2::CreateTagAnnIndexReq& req) 
       return;
     }
     auto tagID = nebula::value(tagIDRet);
+    nebula::cpp2::SchemaID schemaID;
+    schemaID.tag_id_ref() = tagID;
 
     auto schemaRet = getLatestTagSchema(space, tagID);
     if (!nebula::ok(schemaRet)) {
@@ -122,7 +126,7 @@ void CreateTagAnnIndexProcessor::process(const cpp2::CreateTagAnnIndexReq& req) 
       return;
     }
     columns.emplace_back(col);
-    schemaIDs.emplace_back(tagID);
+    schemaIDs.emplace_back(schemaID);
   }
 
   std::vector<kvstore::KV> data;

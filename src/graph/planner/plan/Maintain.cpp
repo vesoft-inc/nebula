@@ -42,6 +42,20 @@ std::unique_ptr<PlanNodeDescription> DropSchemaNode::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> CreateAnnIndexNode::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  for (auto& schemaName : schemaNames_) {
+    addDescription("schemaName", schemaName, desc.get());
+  }
+  addDescription("indexName", indexName_, desc.get());
+  addDescription("fields", folly::toJson(field_.get_name()), desc.get());
+  addDescription("ifNotExists", folly::to<std::string>(ifNotExists_), desc.get());
+  if (!annindexParam_.empty()) {
+    addDescription("annIndexParam", folly::toJson(util::toJson(annindexParam_)), desc.get());
+  }
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> CreateIndexNode::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("schemaName", schemaName_, desc.get());

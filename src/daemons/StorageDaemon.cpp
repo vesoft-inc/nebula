@@ -14,6 +14,7 @@
 #include "common/time/TimezoneInfo.h"
 #include "daemons/SetupLogging.h"
 #include "storage/StorageServer.h"
+#include "storage/VectorIndexManager.h"
 #include "storage/stats/StorageStats.h"
 #include "version/Version.h"
 
@@ -26,6 +27,7 @@ DEFINE_string(wal_path,
               "",
               "NebulaGraph wal path. By default, wal will be stored as a sibling of "
               "rocksdb data.");
+DEFINE_string(vector_path, "", "Ann index path.");
 DEFINE_string(listener_path,
               "",
               "Path for listener, only wal will be saved."
@@ -45,8 +47,11 @@ using nebula::Status;
 using nebula::StatusOr;
 using nebula::network::NetworkUtils;
 
-static void signalHandler(nebula::storage::StorageServer *storageServer, int sig);
-static Status setupSignalHandler(nebula::storage::StorageServer *storageServer);
+static void signalHandler(nebula::storage::StorageServer *storageServer,
+                          nebula::storage::VectorIndexManager *vectorIndexMgr,
+                          int sig);
+static Status setupSignalHandler(nebula::storage::StorageServer *storageServer,
+                                 nebula::storage::VectorIndexManager *vectorIndexMgr);
 #if defined(ENABLE_BREAKPAD)
 extern Status setupBreakpad();
 #endif
@@ -154,12 +159,6 @@ int main(int argc, char *argv[]) {
 
   auto storageServer = std::make_unique<nebula::storage::StorageServer>(
       localhost, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
-  // Setup the signal handlers
-  status = setupSignalHandler(storageServer.get());
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return EXIT_FAILURE;
-  }
 
   // load the time zone data
   status = nebula::time::Timezone::init();
@@ -182,25 +181,55 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  auto vectorIndexMgr = &nebula::storage::VectorIndexManager::getInstance();
+  if (FLAGS_vector_path.empty()) {
+    LOG(ERROR) << "Vector index path should not be empty";
+    return EXIT_FAILURE;
+  }
+
+  std::string vector_path = folly::trimWhitespace(FLAGS_vector_path).str();
+  vector_path = boost::filesystem::absolute(vector_path).string();  // 关键转换
+  vectorIndexMgr->init(storageServer->getIndexMgr(), vector_path);
+  if (!vectorIndexMgr->start().ok()) {
+    LOG(ERROR) << "Vector index manager start failed";
+    storageServer->stop();
+    return EXIT_FAILURE;
+  }
+
+  // Setup the signal handlers after both servers are created
+  status = setupSignalHandler(storageServer.get(), vectorIndexMgr);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+
   storageServer->waitUntilStop();
+  vectorIndexMgr->waitUntilStop();
   LOG(INFO) << "The storage Daemon stopped";
   return EXIT_SUCCESS;
 }
 
-Status setupSignalHandler(nebula::storage::StorageServer *storageServer) {
+Status setupSignalHandler(nebula::storage::StorageServer *storageServer,
+                          nebula::storage::VectorIndexManager *vectorIndexMgr) {
   return nebula::SignalHandler::install(
-      {SIGINT, SIGTERM}, [storageServer](nebula::SignalHandler::GeneralSignalInfo *info) {
-        signalHandler(storageServer, info->sig());
+      {SIGINT, SIGTERM},
+      [storageServer, vectorIndexMgr](nebula::SignalHandler::GeneralSignalInfo *info) {
+        signalHandler(storageServer, vectorIndexMgr, info->sig());
       });
 }
 
-void signalHandler(nebula::storage::StorageServer *storageServer, int sig) {
+void signalHandler(nebula::storage::StorageServer *storageServer,
+                   nebula::storage::VectorIndexManager *vectorIndexMgr,
+                   int sig) {
   switch (sig) {
     case SIGINT:
     case SIGTERM:
       FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
       if (storageServer) {
         storageServer->notifyStop();
+      }
+      if (vectorIndexMgr) {
+        vectorIndexMgr->notifyStop();
       }
       break;
     default:

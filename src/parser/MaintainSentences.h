@@ -9,6 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/vectorIndex/VectorIndexUtils.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
@@ -679,6 +680,153 @@ class CreateTagIndexSentence final : public CreateSentence {
   std::unique_ptr<std::string> tagName_;
   std::unique_ptr<IndexFieldList> fields_;
   std::unique_ptr<IndexParamList> indexParams_;
+  std::unique_ptr<std::string> comment_;
+};
+class AnnIndexParamItem {
+ public:
+  enum AnnIndexType : int8_t { IVF, HNSW };
+  enum MetricType : int8_t { L2, INNER_PRODUCT };
+
+  AnnIndexParamItem(AnnIndexType type, Value dim, MetricType metric) {
+    indexType_ = type;
+    dim_ = dim;
+    metric_ = metric;
+  }
+
+  virtual ~AnnIndexParamItem() = default;
+
+  AnnIndexType getIndexType() const {
+    return indexType_;
+  }
+
+  int getDim() const {
+    return dim_.getInt();
+  }
+
+  MetricType getMetric() const {
+    return metric_;
+  }
+
+  virtual std::string toString() const = 0;
+
+ private:
+  AnnIndexType indexType_;
+  MetricType metric_;
+  Value dim_;
+};
+
+class IVFIndexParamItem final : public AnnIndexParamItem {
+ public:
+  IVFIndexParamItem(Value dim, MetricType metric, Value nlist, Value trainSz)
+      : AnnIndexParamItem(AnnIndexParamItem::IVF, dim, metric), nlist_(nlist), trainSz_(trainSz) {}
+  int getNList() const {
+    return nlist_.getInt();
+  }
+
+  int getTrainSz() const {
+    return trainSz_.getInt();
+  }
+
+  std::string toString() const override;
+
+ private:
+  Value nlist_;
+  Value trainSz_;
+};
+
+class HNSWIndexParamItem final : public AnnIndexParamItem {
+ public:
+  HNSWIndexParamItem(
+      Value dim, MetricType metric, Value maxDegree, Value efConstruction, Value capacity)
+      : AnnIndexParamItem(AnnIndexParamItem::HNSW, dim, metric),
+        maxDegree_(maxDegree),
+        efConstruction_(efConstruction),
+        capacity_(capacity) {}
+
+  int getMaxDegree() const {
+    return maxDegree_.getInt();
+  }
+
+  int getEfConstruction() const {
+    return efConstruction_.getInt();
+  }
+
+  int getCapacity() const {
+    return capacity_.getInt();
+  }
+
+  std::string toString() const override;
+
+ private:
+  Value maxDegree_;
+  Value efConstruction_;
+  Value capacity_;
+};
+
+// class AnnIndexField final {
+//  public:
+//   explicit AnnIndexField(std::unique_ptr<meta::cpp2::IndexFieldDef> field) {
+//     field_ = std::move(field);
+//   }
+
+//   meta::cpp2::IndexFieldDef *field() const {
+//     return field_ != nullptr ? field_.get() : nullptr;
+//   }
+
+//  private:
+//   std::unique_ptr<meta::cpp2::IndexFieldDef> field_;
+// };
+
+class CreateTagAnnIndexSentence final : public CreateSentence {
+ public:
+  CreateTagAnnIndexSentence(std::string *indexName,
+                            NameLabelList *tagNames,
+                            meta::cpp2::IndexFieldDef *field,
+                            bool ifNotExists,
+                            AnnIndexParamItem *annIndexParam,
+                            std::string *comment)
+      : CreateSentence(ifNotExists) {
+    indexName_.reset(indexName);
+    for (auto &f : tagNames->labels()) {
+      tagNames_.push_back(*f);
+    }
+    if (field == nullptr) {
+      field_.reset(nullptr);
+    } else {
+      field_.reset(field);
+    }
+    annIndexParam_.reset(annIndexParam);
+    comment_.reset(comment);
+    kind_ = Kind::kCreateTagAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+  std::vector<std::string> tagNames() const {
+    return tagNames_;
+  }
+
+  const meta::cpp2::IndexFieldDef *field() const {
+    return field_.get();
+  }
+
+  const AnnIndexParamItem *getAnnIndexParam() const {
+    return annIndexParam_.get();
+  }
+
+  const std::string *comment() const {
+    return comment_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+  std::vector<std::string> tagNames_;
+  std::unique_ptr<meta::cpp2::IndexFieldDef> field_;
+  std::unique_ptr<AnnIndexParamItem> annIndexParam_;
   std::unique_ptr<std::string> comment_;
 };
 

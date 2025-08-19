@@ -17,9 +17,9 @@ namespace meta {
 nebula::cpp2::ErrorCode BuildVectorIndexJobExecutor::check() {
   // Parameters validation: [index_name, is_tag, prop_name, tag nums, tag_name_list, ann_type,
   // ann_params...]
+  indexName_ = paras_[0];
   auto tagsNum = std::stoi(paras_[3]);
-  annType_ = paras_[3 + tagsNum];
-
+  annType_ = paras_[4 + tagsNum];
   // Validate ANN type
   if (annType_ != "HNSW" && annType_ != "IVF") {
     LOG(ERROR) << "Unsupported ANN type: " << annType_;
@@ -49,11 +49,8 @@ nebula::cpp2::ErrorCode BuildVectorIndexJobExecutor::prepare() {
   }
 
   indexId = *reinterpret_cast<const IndexID*>(indexValue.c_str());
-  LOG(INFO) << "Rebuild Index Space " << space_ << ", Index " << indexId;
   taskParameters_.emplace_back(folly::to<std::string>(indexId));
   taskParameters_.insert(taskParameters_.end(), paras_.begin() + 1, paras_.end());
-
-  LOG(INFO) << "Vector index metadata created successfully for index: " << indexName_;
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

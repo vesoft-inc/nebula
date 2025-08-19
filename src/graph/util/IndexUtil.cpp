@@ -4,7 +4,8 @@
 
 #include "graph/util/IndexUtil.h"
 
-#include <string>
+#include "common/vectorIndex/VectorIndexUtils.h"
+#include "parser/MaintainSentences.h"
 
 namespace nebula {
 namespace graph {
@@ -27,6 +28,42 @@ Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &param
         break;
       }
     }
+  }
+
+  return Status::OK();
+}
+
+Status IndexUtil::validateAnnIndexParam(const AnnIndexParamItem *param,
+                                        std::vector<std::string> &annIndexParam) {
+  auto type = param->getIndexType();
+  if (static_cast<AnnIndexType>(type) != AnnIndexType::IVF &&
+      static_cast<AnnIndexType>(type) != AnnIndexType::HNSW) {
+    return Status::SemanticError("Invalid ANN index type");
+  }
+  auto typeStr = static_cast<AnnIndexType>(type) == AnnIndexType::IVF ? "IVF" : "HNSW";
+  auto metric = param->getMetric();
+  if (static_cast<MetricType>(metric) != MetricType::L2 &&
+      static_cast<MetricType>(metric) != MetricType::INNER_PRODUCT) {
+    return Status::SemanticError("Invalid ANN index metric");
+  }
+  auto metricStr = static_cast<MetricType>(metric) == MetricType::L2 ? "L2" : "INNER_PRODUCT";
+  auto dim = param->getDim();
+
+  annIndexParam.emplace_back(std::move(typeStr));
+  annIndexParam.emplace_back(std::to_string(dim));
+  annIndexParam.emplace_back(std::move(metricStr));
+  if (static_cast<AnnIndexType>(type) == AnnIndexType::IVF) {
+    auto nlist = dynamic_cast<const IVFIndexParamItem *>(param)->getNList();
+    auto trainSz = dynamic_cast<const IVFIndexParamItem *>(param)->getTrainSz();
+    annIndexParam.emplace_back(std::to_string(nlist));
+    annIndexParam.emplace_back(std::to_string(trainSz));
+  } else {
+    auto maxDegree = dynamic_cast<const HNSWIndexParamItem *>(param)->getMaxDegree();
+    auto efConstruction = dynamic_cast<const HNSWIndexParamItem *>(param)->getEfConstruction();
+    auto capacity = dynamic_cast<const HNSWIndexParamItem *>(param)->getCapacity();
+    annIndexParam.emplace_back(std::to_string(maxDegree));
+    annIndexParam.emplace_back(std::to_string(efConstruction));
+    annIndexParam.emplace_back(std::to_string(capacity));
   }
 
   return Status::OK();
