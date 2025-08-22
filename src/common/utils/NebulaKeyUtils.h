@@ -6,8 +6,6 @@
 #ifndef COMMON_UTILS_NEBULAKEYUTILS_H_
 #define COMMON_UTILS_NEBULAKEYUTILS_H_
 
-#include <cstdint>
-
 #include "common/thrift/ThriftTypes.h"
 #include "common/utils/Types.h"
 
