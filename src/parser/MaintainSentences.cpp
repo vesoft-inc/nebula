@@ -7,6 +7,8 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <string>
+
 #include "common/base/Base.h"
 
 namespace nebula {

@@ -251,6 +251,18 @@ folly::Future<cpp2::ListTagIndexesResp> MetaServiceHandler::future_listTagIndexe
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createTagAnnIndex(
+    const cpp2::CreateTagAnnIndexReq& req) {
+  auto* processor = CreateTagAnnIndexProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListTagAnnIndexesResp> MetaServiceHandler::future_listTagAnnIndexes(
+    const cpp2::ListTagIndexesReq& req) {
+  auto* processor = ListTagAnnIndexesProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ListIndexStatusResp> MetaServiceHandler::future_listTagIndexStatus(
     const cpp2::ListIndexStatusReq& req) {
   auto* processor = ListTagIndexStatusProcessor::instance(kvstore_);
@@ -281,15 +293,15 @@ folly::Future<cpp2::ListEdgeIndexesResp> MetaServiceHandler::future_listEdgeInde
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ListIndexStatusResp> MetaServiceHandler::future_listEdgeIndexStatus(
-    const cpp2::ListIndexStatusReq& req) {
-  auto* processor = ListEdgeIndexStatusProcessor::instance(kvstore_);
+folly::Future<cpp2::ListEdgeAnnIndexesResp> MetaServiceHandler::future_listEdgeAnnIndexes(
+    const cpp2::ListEdgeIndexesReq& req) {
+  auto* processor = ListEdgeAnnIndexesProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createTagAnnIndex(
-    const cpp2::CreateTagAnnIndexReq& req) {
-  auto* processor = CreateTagAnnIndexProcessor::instance(kvstore_);
+folly::Future<cpp2::ListIndexStatusResp> MetaServiceHandler::future_listEdgeIndexStatus(
+    const cpp2::ListIndexStatusReq& req) {
+  auto* processor = ListEdgeIndexStatusProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
@@ -308,12 +320,6 @@ folly::Future<cpp2::GetTagAnnIndexResp> MetaServiceHandler::future_getTagAnnInde
 folly::Future<cpp2::ListIndexStatusResp> MetaServiceHandler::future_listTagAnnIndexStatus(
     const cpp2::ListIndexStatusReq& req) {
   auto* processor = ListTagAnnIndexStatusProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ListTagAnnIndexesResp> MetaServiceHandler::future_listTagAnnIndexes(
-    const cpp2::ListTagIndexesReq& req) {
-  auto* processor = ListTagAnnIndexesProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
@@ -338,12 +344,6 @@ folly::Future<cpp2::GetEdgeAnnIndexResp> MetaServiceHandler::future_getEdgeAnnIn
 folly::Future<cpp2::ListIndexStatusResp> MetaServiceHandler::future_listEdgeAnnIndexStatus(
     const cpp2::ListIndexStatusReq& req) {
   auto* processor = ListEdgeAnnIndexStatusProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ListEdgeAnnIndexesResp> MetaServiceHandler::future_listEdgeAnnIndexes(
-    const cpp2::ListEdgeIndexesReq& req) {
-  auto* processor = ListEdgeAnnIndexesProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
