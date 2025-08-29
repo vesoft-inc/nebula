@@ -49,6 +49,7 @@ class StorageServer final {
   kvstore::KVStore* getStore();
   meta::IndexManager* getIndexMgr();
   meta::SchemaManager* getSchemaMgr();
+  void setEnvAnnIndexMgr(VectorIndexManager* annIndexMan);
 
  private:
   enum ServiceStatus { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STOPPED = 2 };

@@ -613,6 +613,30 @@ class DescIndexNode : public SingleDependencyNode {
   std::string indexName_;
 };
 
+class DescTagAnnIndex final : public DescIndexNode {
+ public:
+  static DescTagAnnIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
+    return qctx->objPool()->makeAndAdd<DescTagAnnIndex>(qctx, input, std::move(indexName));
+  }
+
+ private:
+  friend ObjectPool;
+  DescTagAnnIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
+      : DescIndexNode(qctx, input, Kind::kDescTagAnnIndex, std::move(indexName)) {}
+};
+
+class DescEdgeAnnIndex final : public DescIndexNode {
+ public:
+  static DescEdgeAnnIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
+    return qctx->objPool()->makeAndAdd<DescEdgeAnnIndex>(qctx, input, std::move(indexName));
+  }
+
+ private:
+  friend ObjectPool;
+  DescEdgeAnnIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
+      : DescIndexNode(qctx, input, Kind::kDescEdgeAnnIndex, std::move(indexName)) {}
+};
+
 class DescTagIndex final : public DescIndexNode {
  public:
   static DescTagIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
@@ -691,6 +715,50 @@ class DropEdgeIndex final : public DropIndexNode {
       : DropIndexNode(qctx, Kind::kDropEdgeIndex, input, std::move(indexName), ifExists) {}
 };
 
+class DropTagAnnIndex final : public DropIndexNode {
+ public:
+  static DropTagAnnIndex* make(QueryContext* qctx,
+                               PlanNode* input,
+                               std::string indexName,
+                               bool ifExists) {
+    return qctx->objPool()->makeAndAdd<DropTagAnnIndex>(
+        qctx, input, std::move(indexName), ifExists);
+  }
+
+ private:
+  friend ObjectPool;
+  DropTagAnnIndex(QueryContext* qctx, PlanNode* input, std::string indexName, bool ifExists)
+      : DropIndexNode(qctx, Kind::kDropTagAnnIndex, input, std::move(indexName), ifExists) {}
+};
+
+class DropEdgeAnnIndex final : public DropIndexNode {
+ public:
+  static DropEdgeAnnIndex* make(QueryContext* qctx,
+                                PlanNode* input,
+                                std::string indexName,
+                                bool ifExists) {
+    return qctx->objPool()->makeAndAdd<DropEdgeAnnIndex>(
+        qctx, input, std::move(indexName), ifExists);
+  }
+
+ private:
+  friend ObjectPool;
+  DropEdgeAnnIndex(QueryContext* qctx, PlanNode* input, std::string indexName, bool ifExists)
+      : DropIndexNode(qctx, Kind::kDropEdgeAnnIndex, input, std::move(indexName), ifExists) {}
+};
+
+class ShowCreateTagAnnIndex final : public DescIndexNode {
+ public:
+  static ShowCreateTagAnnIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
+    return qctx->objPool()->makeAndAdd<ShowCreateTagAnnIndex>(qctx, input, std::move(indexName));
+  }
+
+ private:
+  friend ObjectPool;
+  ShowCreateTagAnnIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
+      : DescIndexNode(qctx, input, Kind::kShowCreateTagAnnIndex, std::move(indexName)) {}
+};
+
 class ShowCreateTagIndex final : public DescIndexNode {
  public:
   static ShowCreateTagIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
@@ -703,6 +771,18 @@ class ShowCreateTagIndex final : public DescIndexNode {
       : DescIndexNode(qctx, input, Kind::kShowCreateTagIndex, std::move(indexName)) {}
 };
 
+class ShowCreateEdgeAnnIndex final : public DescIndexNode {
+ public:
+  static ShowCreateEdgeAnnIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
+    return qctx->objPool()->makeAndAdd<ShowCreateEdgeAnnIndex>(qctx, input, std::move(indexName));
+  }
+
+ private:
+  friend ObjectPool;
+  ShowCreateEdgeAnnIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
+      : DescIndexNode(qctx, input, Kind::kShowCreateEdgeAnnIndex, std::move(indexName)) {}
+};
+
 class ShowCreateEdgeIndex final : public DescIndexNode {
  public:
   static ShowCreateEdgeIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
@@ -713,6 +793,48 @@ class ShowCreateEdgeIndex final : public DescIndexNode {
   friend ObjectPool;
   ShowCreateEdgeIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
       : DescIndexNode(qctx, input, Kind::kShowCreateEdgeIndex, std::move(indexName)) {}
+};
+
+class ShowTagAnnIndexes final : public SingleDependencyNode {
+ public:
+  static ShowTagAnnIndexes* make(QueryContext* qctx, PlanNode* input, std::string name) {
+    return qctx->objPool()->makeAndAdd<ShowTagAnnIndexes>(qctx, input, std::move(name));
+  }
+
+  const std::string& name() const {
+    return name_;
+  }
+
+ private:
+  friend ObjectPool;
+  ShowTagAnnIndexes(QueryContext* qctx, PlanNode* input, std::string name)
+      : SingleDependencyNode(qctx, Kind::kShowTagAnnIndexes, input) {
+    name_ = std::move(name);
+  }
+
+ private:
+  std::string name_;
+};
+
+class ShowEdgeAnnIndexes final : public SingleDependencyNode {
+ public:
+  static ShowEdgeAnnIndexes* make(QueryContext* qctx, PlanNode* input, std::string name) {
+    return qctx->objPool()->makeAndAdd<ShowEdgeAnnIndexes>(qctx, input, std::move(name));
+  }
+
+  const std::string& name() const {
+    return name_;
+  }
+
+ private:
+  friend ObjectPool;
+  ShowEdgeAnnIndexes(QueryContext* qctx, PlanNode* input, std::string name)
+      : SingleDependencyNode(qctx, Kind::kShowEdgeAnnIndexes, input) {
+    name_ = std::move(name);
+  }
+
+ private:
+  std::string name_;
 };
 
 class ShowTagIndexes final : public SingleDependencyNode {
@@ -755,6 +877,30 @@ class ShowEdgeIndexes final : public SingleDependencyNode {
 
  private:
   std::string name_;
+};
+
+class ShowTagAnnIndexStatus final : public SingleDependencyNode {
+ public:
+  static ShowTagAnnIndexStatus* make(QueryContext* qctx, PlanNode* input) {
+    return qctx->objPool()->makeAndAdd<ShowTagAnnIndexStatus>(qctx, input);
+  }
+
+ private:
+  friend ObjectPool;
+  ShowTagAnnIndexStatus(QueryContext* qctx, PlanNode* input)
+      : SingleDependencyNode(qctx, Kind::kShowTagAnnIndexStatus, input) {}
+};
+
+class ShowEdgeAnnIndexStatus final : public SingleDependencyNode {
+ public:
+  static ShowEdgeAnnIndexStatus* make(QueryContext* qctx, PlanNode* input) {
+    return qctx->objPool()->makeAndAdd<ShowEdgeAnnIndexStatus>(qctx, input);
+  }
+
+ private:
+  friend ObjectPool;
+  ShowEdgeAnnIndexStatus(QueryContext* qctx, PlanNode* input)
+      : SingleDependencyNode(qctx, Kind::kShowEdgeAnnIndexStatus, input) {}
 };
 
 class ShowTagIndexStatus final : public SingleDependencyNode {

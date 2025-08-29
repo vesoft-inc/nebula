@@ -269,7 +269,10 @@ class NebulaKeyUtils final {
   static bool isVector(const folly::StringPiece& rawKey) {
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
     auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithCF;
-    return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVector_;
+    auto schemaType = readInt<uint32_t>(rawKey.data(), len) & kTypeMaskWithoutCF;
+    return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVector_ &&
+           ((static_cast<NebulaKeyType>(schemaType) == NebulaKeyType::kTag_) ||
+            (static_cast<NebulaKeyType>(schemaType) == NebulaKeyType::kEdge));
   }
 
   static bool isIdVidCf(const folly::StringPiece& rawKey) {

@@ -12,10 +12,10 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Create tag index on given tag fields. This processor has similar logic with the
- *        CreateEdgeIndexProcessor. It only check if the tag index could be built
- *        and then create a tag index item to save all the tag index meta.
- *        After tag index created, any vertex inserted satisfying the tag and fields
+ * @brief Create tag ann index on given tag field. This processor has similar logic with the
+ *        CreateEdgeIndexProcessor. It only check if the tag ann index could be built
+ *        and then create a tag ann index item to save all the tag ann index meta.
+ *        After tag ann index created, any vertex inserted satisfying the tag ann index and fields
  *        will trigger corresponding index built.
  *
  */

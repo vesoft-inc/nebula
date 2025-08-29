@@ -48,7 +48,8 @@ void ListTagAnnIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
 
     auto val = nebula::value(indexSchemaRet);
     auto item = MetaKeyUtils::parseAnnIndex(val);
-    if (item.get_schema_ids().at(0).getType() == nebula::cpp2::SchemaID::Type::tag_id) {
+    if (!item.get_schema_ids().empty() &&
+        item.get_schema_ids().at(0).getType() == nebula::cpp2::SchemaID::Type::tag_id) {
       items.emplace_back(std::move(item));
     }
     indexIndexIter->next();

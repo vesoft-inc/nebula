@@ -195,6 +195,7 @@ int main(int argc, char *argv[]) {
     storageServer->stop();
     return EXIT_FAILURE;
   }
+  storageServer->setEnvAnnIndexMgr(vectorIndexMgr);
 
   // Setup the signal handlers after both servers are created
   status = setupSignalHandler(storageServer.get(), vectorIndexMgr);

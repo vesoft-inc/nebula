@@ -377,13 +377,38 @@ class MetaClient : public BaseMetaClient {
                                                      std::vector<std::string> annIndexParam = {},
                                                      const std::string* comment = nullptr);
 
+  folly::Future<StatusOr<bool>> dropTagAnnIndex(GraphSpaceID spaceId,
+                                                std::string name,
+                                                bool ifExists = false);
+
+  folly::Future<StatusOr<cpp2::AnnIndexItem>> getTagAnnIndex(GraphSpaceID spaceId,
+                                                             std::string name);
+
   folly::Future<StatusOr<std::vector<cpp2::AnnIndexItem>>> listTagAnnIndexes(GraphSpaceID spaceId);
+
+  folly::Future<StatusOr<IndexID>> createEdgeAnnIndex(GraphSpaceID spaceID,
+                                                      std::string indexName,
+                                                      std::vector<std::string> edgeNames,
+                                                      cpp2::IndexFieldDef field,
+                                                      bool ifNotExists = false,
+                                                      std::vector<std::string> annIndexParam = {},
+                                                      const std::string* comment = nullptr);
+
+  folly::Future<StatusOr<bool>> dropEdgeAnnIndex(GraphSpaceID spaceId,
+                                                 std::string name,
+                                                 bool ifExists = false);
+
+  folly::Future<StatusOr<cpp2::AnnIndexItem>> getEdgeAnnIndex(GraphSpaceID spaceId,
+                                                              std::string name);
 
   folly::Future<StatusOr<std::vector<cpp2::AnnIndexItem>>> listEdgeAnnIndexes(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<bool>> rebuildTagIndex(GraphSpaceID spaceID, std::string name);
 
   folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listTagIndexStatus(GraphSpaceID spaceId);
+
+  folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listTagAnnIndexStatus(
+      GraphSpaceID spaceId);
 
   folly::Future<StatusOr<IndexID>> createEdgeIndex(GraphSpaceID spaceID,
                                                    std::string indexName,
@@ -405,6 +430,9 @@ class MetaClient : public BaseMetaClient {
   folly::Future<StatusOr<bool>> rebuildEdgeIndex(GraphSpaceID spaceId, std::string name);
 
   folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listEdgeIndexStatus(GraphSpaceID spaceId);
+
+  folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listEdgeAnnIndexStatus(
+      GraphSpaceID spaceId);
 
   // Operations for users.
   folly::Future<StatusOr<bool>> createUser(std::string account,

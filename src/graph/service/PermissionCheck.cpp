@@ -80,11 +80,14 @@ namespace graph {
     case Sentence::Kind::kDropTag:
     case Sentence::Kind::kDropEdge:
     case Sentence::Kind::kCreateTagIndex:
-    case Sentence::Kind::kCreateTagAnnIndex:
     case Sentence::Kind::kCreateEdgeIndex:
+    case Sentence::Kind::kCreateTagAnnIndex:
+    case Sentence::Kind::kCreateEdgeAnnIndex:
     case Sentence::Kind::kCreateFTIndex:
     case Sentence::Kind::kDropTagIndex:
     case Sentence::Kind::kDropEdgeIndex:
+    case Sentence::Kind::kDropTagAnnIndex:
+    case Sentence::Kind::kDropEdgeAnnIndex:
     case Sentence::Kind::kDropFTIndex:
     case Sentence::Kind::kAddListener:
     case Sentence::Kind::kRemoveListener: {
@@ -131,7 +134,9 @@ namespace graph {
     case Sentence::Kind::kDescribeTag:
     case Sentence::Kind::kDescribeEdge:
     case Sentence::Kind::kDescribeTagIndex:
+    case Sentence::Kind::kDescribeTagAnnIndex:
     case Sentence::Kind::kDescribeEdgeIndex:
+    case Sentence::Kind::kDescribeEdgeAnnIndex:
     case Sentence::Kind::kGo:
     case Sentence::Kind::kSet:
     case Sentence::Kind::kPipe:
@@ -155,13 +160,19 @@ namespace graph {
     case Sentence::Kind::kShowEdges:
     case Sentence::Kind::kShowStats:
     case Sentence::Kind::kShowTagIndexes:
+    case Sentence::Kind::kShowTagAnnIndexes:
     case Sentence::Kind::kShowEdgeIndexes:
+    case Sentence::Kind::kShowEdgeAnnIndexes:
     case Sentence::Kind::kShowTagIndexStatus:
     case Sentence::Kind::kShowEdgeIndexStatus:
+    case Sentence::Kind::kShowTagAnnIndexStatus:
+    case Sentence::Kind::kShowEdgeAnnIndexStatus:
     case Sentence::Kind::kShowCreateTag:
     case Sentence::Kind::kShowCreateEdge:
     case Sentence::Kind::kShowCreateTagIndex:
     case Sentence::Kind::kShowCreateEdgeIndex:
+    case Sentence::Kind::kShowCreateTagAnnIndex:
+    case Sentence::Kind::kShowCreateEdgeAnnIndex:
     case Sentence::Kind::kShowListener:
     case Sentence::Kind::kShowFTIndexes:
     case Sentence::Kind::kAdminShowJobs: {

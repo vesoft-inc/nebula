@@ -90,7 +90,7 @@ void VectorIndexManager::notifyStop() {
   }
 }
 
-Status VectorIndexManager::createOrUpdateIndex(
+StatusOr<std::shared_ptr<AnnIndex>> VectorIndexManager::createOrUpdateIndex(
     GraphSpaceID spaceId,
     PartitionID partitionId,
     IndexID indexId,
@@ -106,16 +106,13 @@ Status VectorIndexManager::createOrUpdateIndex(
   // Check if index already exists
   {
     std::shared_lock<std::shared_mutex> readLock(indexMapMutex_);
-    if (!indexMap_.empty()) {
-      auto it = indexMap_.find(spaceId);
-      if (it != indexMap_.end()) {
-        LOG(INFO) << "Vector index already exists for partition " << partitionId << ", index "
-                  << indexId << ", updating it";
-      }
-      auto index = it->second.find(key);
-      if (index != it->second.end()) {
-        LOG(INFO) << "Vector index already exists for partition " << partitionId << ", index "
-                  << indexId << ", updating it";
+    auto it = indexMap_.find(spaceId);
+    if (it != indexMap_.end()) {
+      auto indexIt = it->second.find(key);
+      if (indexIt != it->second.end()) {
+        LOG(INFO) << "Vector index already exists for space " << spaceId << ", partition "
+                  << partitionId << ", index " << indexId << ", returning existing index";
+        return indexIt->second;
       }
     }
   }
@@ -132,7 +129,7 @@ Status VectorIndexManager::createOrUpdateIndex(
 
   LOG(INFO) << "Successfully created/updated vector index for space " << spaceId << ", partition "
             << partitionId << ", index " << indexId;
-  return Status::OK();
+  return newIndex;
 }
 
 StatusOr<std::shared_ptr<AnnIndex>> VectorIndexManager::getIndex(GraphSpaceID spaceId,
@@ -180,36 +177,6 @@ Status VectorIndexManager::removeIndex(GraphSpaceID spaceId,
   return Status::OK();
 }
 
-Status VectorIndexManager::addVectors(GraphSpaceID spaceId,
-                                      PartitionID partitionId,
-                                      IndexID indexId,
-                                      const VecData& vecData) {
-  auto indexOrError = getIndex(spaceId, partitionId, indexId);
-  if (!indexOrError.ok()) {
-    return indexOrError.status();
-  }
-  auto index = indexOrError.value();
-  return index->add(&vecData, false);
-}
-
-StatusOr<SearchResult> VectorIndexManager::searchVectors(GraphSpaceID spaceId,
-                                                         PartitionID partitionId,
-                                                         IndexID indexId,
-                                                         const SearchParams& searchParams) {
-  auto indexOrError = getIndex(spaceId, partitionId, indexId);
-  if (!indexOrError.ok()) {
-    return indexOrError.status();
-  }
-  auto index = indexOrError.value();
-  SearchResult result;
-  auto status = index->search(&searchParams, &result);
-  if (!status.ok()) {
-    return status;
-  }
-
-  return result;
-}
-
 bool VectorIndexManager::hasIndex(GraphSpaceID spaceId,
                                   PartitionID partitionId,
                                   IndexID indexId) const {
@@ -229,7 +196,11 @@ Status VectorIndexManager::rebuildIndex(
     IndexID indexId,
     const std::shared_ptr<meta::cpp2::AnnIndexItem>& indexItem) {
   removeIndex(spaceId, partitionId, indexId);
-  return createOrUpdateIndex(spaceId, partitionId, indexId, indexItem);
+  auto result = createOrUpdateIndex(spaceId, partitionId, indexId, indexItem);
+  if (!result.ok()) {
+    return result.status();
+  }
+  return Status::OK();
 }
 
 std::shared_ptr<AnnIndex> VectorIndexManager::createIndex(

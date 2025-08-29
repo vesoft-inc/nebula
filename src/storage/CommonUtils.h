@@ -18,6 +18,7 @@
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
+#include "storage/VectorIndexManager.h"
 
 namespace nebula {
 namespace storage {
@@ -72,6 +73,7 @@ class StorageEnv {
   kvstore::KVStore* kvstore_{nullptr};
   meta::SchemaManager* schemaMan_{nullptr};
   meta::IndexManager* indexMan_{nullptr};
+  VectorIndexManager* annIndexMan_{nullptr};
   std::atomic<int32_t> onFlyingRequest_{0};
   std::unique_ptr<IndexGuard> rebuildIndexGuard_{nullptr};
   meta::MetaClient* metaClient_{nullptr};

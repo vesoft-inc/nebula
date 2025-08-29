@@ -96,6 +96,14 @@ Status StorageServer::setupMemoryMonitorThread() {
   return Status::OK();
 }
 
+void StorageServer::setEnvAnnIndexMgr(VectorIndexManager* annIndexMan) {
+  if (env_ != nullptr) {
+    env_->annIndexMan_ = annIndexMan;
+  }
+  CHECK(env_ != nullptr && env_->annIndexMan_ != nullptr)
+      << "Env and its Ann Index Manager both should be not nullptr";
+}
+
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   kvstore::KVOptions options;
   options.dataPaths_ = dataPaths_;
@@ -267,20 +275,6 @@ bool StorageServer::start() {
     LOG(ERROR) << "Init kvstore failed";
     return false;
   }
-
-  // LOG(INFO) << "Init vector index manager";
-  // vectorIndexManager_ = &VectorIndexManager::getInstance();
-  // auto vectorManagerStatus =
-  //     vectorIndexManager_->init(kvstore_.get(), schemaMan_.get(), indexMan_.get());
-  // if (!vectorManagerStatus.ok()) {
-  //   LOG(ERROR) << "Init vector index manager failed: " << vectorManagerStatus.toString();
-  //   return false;
-  // }
-  // auto vectorManagerStartStatus = vectorIndexManager_->start();
-  // if (!vectorManagerStartStatus.ok()) {
-  //   LOG(ERROR) << "Start vector index manager failed: " << vectorManagerStartStatus.toString();
-  //   return false;
-  // }
 
   if (!initWebService()) {
     LOG(ERROR) << "Init webservice failed!";

@@ -619,14 +619,14 @@ bool MetaClient::loadAnnIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoC
   memory::MemoryCheckOffGuard g;
   auto tagIndexesRet = listTagAnnIndexes(spaceId).get();
   if (!tagIndexesRet.ok()) {
-    LOG(ERROR) << "Get tag indexes failed for spaceId " << spaceId << ", "
+    LOG(ERROR) << "Get tag ann indexes failed for spaceId " << spaceId << ", "
                << tagIndexesRet.status();
     return false;
   }
 
   auto edgeIndexesRet = listEdgeAnnIndexes(spaceId).get();
   if (!edgeIndexesRet.ok()) {
-    LOG(ERROR) << "Get edge indexes failed for spaceId " << spaceId << ", "
+    LOG(ERROR) << "Get edge ann indexes failed for spaceId " << spaceId << ", "
                << edgeIndexesRet.status();
     return false;
   }
@@ -1989,6 +1989,64 @@ folly::Future<StatusOr<IndexID>> MetaClient::createTagAnnIndex(
   return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::dropTagAnnIndex(GraphSpaceID spaceID,
+                                                          std::string name,
+                                                          bool ifExists) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::DropTagIndexReq req;
+  req.space_id_ref() = (spaceID);
+  req.index_name_ref() = (std::move(name));
+  req.if_exists_ref() = (ifExists);
+
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_dropTagAnnIndex(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<cpp2::AnnIndexItem>> MetaClient::getTagAnnIndex(GraphSpaceID spaceID,
+                                                                       std::string name) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::GetTagIndexReq req;
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(name);
+
+  folly::Promise<StatusOr<cpp2::AnnIndexItem>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getTagAnnIndex(request); },
+      [](cpp2::GetTagAnnIndexResp&& resp) -> cpp2::AnnIndexItem {
+        return std::move(resp).get_item();
+      },
+      std::move(promise));
+  return future;
+}
+
+// folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listTagAnnIndexStatus(
+//     GraphSpaceID spaceID) {
+//   memory::MemoryCheckOffGuard g;
+//   cpp2::ListIndexStatusReq req;
+//   req.space_id_ref() = spaceID;
+
+//   folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+//   auto future = promise.getFuture();
+//   getResponse(
+//       std::move(req),
+//       [](auto client, auto request) { return client->future_listTagAnnIndexStatus(request); },
+//       [](cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+//         return std::move(resp).get_statuses();
+//       },
+//       std::move(promise));
+//   return future;
+// }
+
 folly::Future<StatusOr<std::vector<cpp2::AnnIndexItem>>> MetaClient::listTagAnnIndexes(
     GraphSpaceID spaceId) {
   memory::MemoryCheckOffGuard g;
@@ -2001,7 +2059,100 @@ folly::Future<StatusOr<std::vector<cpp2::AnnIndexItem>>> MetaClient::listTagAnnI
       std::move(req),
       [](auto client, auto request) { return client->future_listTagAnnIndexes(request); },
       [](cpp2::ListTagAnnIndexesResp&& resp) -> decltype(auto) {
+        if (resp.get_items().empty()) {
+          return std::vector<cpp2::AnnIndexItem>{};
+        }
         return std::move(resp).get_items();
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<IndexID>> MetaClient::createEdgeAnnIndex(
+    GraphSpaceID spaceID,
+    std::string indexName,
+    std::vector<std::string> edgeNames,
+    cpp2::IndexFieldDef field,
+    bool ifNotExists,
+    std::vector<std::string> annIndexParam,
+    const std::string* comment) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::CreateEdgeAnnIndexReq req;
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(indexName);
+  req.edge_names_ref() = std::move(edgeNames);
+  req.field_ref() = std::move(field);
+  req.if_not_exists_ref() = ifNotExists;
+  if (!annIndexParam.empty()) {
+    req.ann_params_ref().ensure() = std::move(annIndexParam);
+  }
+  if (comment != nullptr) {
+    req.comment_ref() = *comment;
+  }
+
+  folly::Promise<StatusOr<IndexID>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_createEdgeAnnIndex(request); },
+      [](cpp2::ExecResp&& resp) -> IndexID { return resp.get_id().get_index_id(); },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::dropEdgeAnnIndex(GraphSpaceID spaceId,
+                                                           std::string name,
+                                                           bool ifExists) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::DropEdgeIndexReq req;
+  req.space_id_ref() = spaceId;
+  req.index_name_ref() = std::move(name);
+  req.if_exists_ref() = ifExists;
+
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_dropEdgeAnnIndex(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<cpp2::AnnIndexItem>> MetaClient::getEdgeAnnIndex(GraphSpaceID spaceId,
+                                                                        std::string name) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::GetEdgeIndexReq req;
+  req.space_id_ref() = spaceId;
+  req.index_name_ref() = std::move(name);
+
+  folly::Promise<StatusOr<cpp2::AnnIndexItem>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getEdgeAnnIndex(request); },
+      [](cpp2::GetEdgeAnnIndexResp&& resp) -> cpp2::AnnIndexItem {
+        return std::move(resp).get_item();
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listEdgeAnnIndexStatus(
+    GraphSpaceID spaceID) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::ListIndexStatusReq req;
+  req.space_id_ref() = spaceID;
+
+  folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_listEdgeAnnIndexStatus(request); },
+      [](cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_statuses();
       },
       std::move(promise));
   return future;
@@ -2054,6 +2205,24 @@ folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listTagIndex
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_listTagIndexStatus(request); },
+      [](cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_statuses();
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listTagAnnIndexStatus(
+    GraphSpaceID spaceID) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::ListIndexStatusReq req;
+  req.space_id_ref() = spaceID;
+
+  folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_listTagAnnIndexStatus(request); },
       [](cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
         return std::move(resp).get_statuses();
       },

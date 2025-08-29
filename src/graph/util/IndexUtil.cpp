@@ -80,6 +80,20 @@ StatusOr<DataSet> IndexUtil::toDescIndex(const meta::cpp2::IndexItem &indexItem)
   return dataSet;
 }
 
+StatusOr<DataSet> IndexUtil::toDescIndex(const meta::cpp2::AnnIndexItem &indexItem) {
+  DataSet dataSet({"Field", "Type"});
+  // tag/edge.vector_prop
+  auto &prop = indexItem.get_prop_name();
+  auto len = indexItem.get_fields().front().get_type().get_type_length();
+  for (auto &schema : indexItem.get_schema_names()) {
+    Row row;
+    row.values.emplace_back(Value(schema + "." + prop.c_str()));
+    row.values.emplace_back(Value("vector(" + std::to_string(*len) + ")"));
+    dataSet.emplace_back(std::move(row));
+  }
+  return dataSet;
+}
+
 StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
                                                const std::string &indexName,
                                                const meta::cpp2::IndexItem &indexItem) {
@@ -127,6 +141,69 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     createStr += " WITH (";
     createStr += folly::join(", ", params);
     createStr += ")";
+  }
+
+  if (indexItem.comment_ref().has_value()) {
+    createStr += " comment \"";
+    createStr += *indexItem.get_comment();
+    createStr += "\"";
+  }
+
+  row.emplace_back(std::move(createStr));
+  dataSet.rows.emplace_back(std::move(row));
+  return dataSet;
+}
+
+StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
+                                               const std::string &indexName,
+                                               const meta::cpp2::AnnIndexItem &indexItem) {
+  DataSet dataSet;
+  std::string createStr;
+  createStr.reserve(1024);
+  const auto &schemaNames = indexItem.get_schema_names();
+  if (isTagIndex) {
+    dataSet.colNames = {"Tag Index Name", "Create Tag Index"};
+    createStr = "CREATE TAG ANNINDEX `" + indexName + "` ON `";
+    for (const auto &schemaName : schemaNames) {
+      createStr += schemaName + "`, `";
+    }
+    createStr = createStr.substr(0, createStr.size() - 3);
+    createStr += "` (\n";
+  } else {
+    dataSet.colNames = {"Edge Index Name", "Create Edge Index"};
+    createStr = "CREATE EDGE ANNINDEX `" + indexName + "` ON `";
+    for (const auto &schemaName : schemaNames) {
+      createStr += schemaName + "`, `";
+    }
+    createStr = createStr.substr(0, createStr.size() - 3);
+    createStr += "` (\n";
+  }
+  Row row;
+  row.emplace_back(indexName);
+  for (auto &col : indexItem.get_fields()) {
+    createStr += " `" + col.get_name();
+    createStr += "`";
+    const auto &type = col.get_type();
+    if (type.type_length_ref().has_value()) {
+      createStr += "(" + std::to_string(*type.type_length_ref()) + ")";
+    }
+    createStr += ",\n";
+  }
+  if (!(*indexItem.fields_ref()).empty()) {
+    createStr.resize(createStr.size() - 2);
+    createStr += "\n";
+  }
+  createStr += ")";
+
+  const auto *indexParams = indexItem.get_ann_params();
+  std::vector<std::string> params;
+  if (indexParams) {
+    params = *indexParams;
+  }
+  if (!params.empty()) {
+    createStr += " {";
+    createStr += folly::join(", ", params);
+    createStr += "}";
   }
 
   if (indexItem.comment_ref().has_value()) {

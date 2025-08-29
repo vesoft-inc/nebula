@@ -12,6 +12,7 @@
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "meta/processors/job/BuildEdgeVectorIndexJobExecutor.h"
 #include "meta/processors/job/BuildTagVectorIndexJobExecutor.h"
 #include "meta/processors/job/CompactJobExecutor.h"
 #include "meta/processors/job/DataBalanceJobExecutor.h"
@@ -87,6 +88,10 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
       break;
     case cpp2::JobType::BUILD_TAG_VECTOR_INDEX:
       ret.reset(new BuildTagVectorIndexJobExecutor(
+          jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
+      break;
+    case cpp2::JobType::BUILD_EDGE_VECTOR_INDEX:
+      ret.reset(new BuildEdgeVectorIndexJobExecutor(
           jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     default:

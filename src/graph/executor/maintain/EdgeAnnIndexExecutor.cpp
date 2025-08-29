@@ -2,7 +2,7 @@
 //
 // This source code is licensed under Apache 2.0 License.
 
-#include "graph/executor/maintain/TagAnnIndexExecutor.h"
+#include "graph/executor/maintain/EdgeAnnIndexExecutor.h"
 
 #include "graph/planner/plan/Maintain.h"
 #include "graph/util/IndexUtil.h"
@@ -10,20 +10,20 @@
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> CreateTagAnnIndexExecutor::execute() {
+folly::Future<Status> CreateEdgeAnnIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *ctiNode = asNode<CreateTagAnnIndex>(node());
+  auto *ctiNode = asNode<CreateEdgeAnnIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
-      ->createTagAnnIndex(spaceId,
-                          ctiNode->getIndexName(),
-                          ctiNode->getSchemaNames(),
-                          ctiNode->getField(),
-                          ctiNode->getIfNotExists(),
-                          ctiNode->getAnnIndexParam(),
-                          ctiNode->getComment())
+      ->createEdgeAnnIndex(spaceId,
+                           ctiNode->getIndexName(),
+                           ctiNode->getSchemaNames(),
+                           ctiNode->getField(),
+                           ctiNode->getIfNotExists(),
+                           ctiNode->getAnnIndexParam(),
+                           ctiNode->getComment())
       .via(runner())
       .thenValue([ctiNode, spaceId](StatusOr<IndexID> resp) {
         memory::MemoryCheckGuard guard;
@@ -38,46 +38,47 @@ folly::Future<Status> CreateTagAnnIndexExecutor::execute() {
       });
 }
 
-folly::Future<Status> DropTagAnnIndexExecutor::execute() {
+folly::Future<Status> DropEdgeAnnIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *dtiNode = asNode<DropTagAnnIndex>(node());
+  auto *deiNode = asNode<DropEdgeAnnIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
-      ->dropTagAnnIndex(spaceId, dtiNode->getIndexName(), dtiNode->getIfExists())
+      ->dropEdgeAnnIndex(spaceId, deiNode->getIndexName(), deiNode->getIfExists())
       .via(runner())
-      .thenValue([dtiNode, spaceId](StatusOr<bool> resp) {
+      .thenValue([deiNode, spaceId](StatusOr<IndexID> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
-          LOG(WARNING) << "SpaceId: " << spaceId << ", Drop tag index `" << dtiNode->getIndexName()
-                       << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Drop edge ann index`"
+                       << deiNode->getIndexName() << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
       });
 }
 
-folly::Future<Status> DescTagAnnIndexExecutor::execute() {
+folly::Future<Status> DescEdgeAnnIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *dtiNode = asNode<DescTagAnnIndex>(node());
+  auto *deiNode = asNode<DescEdgeAnnIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
-      ->getTagAnnIndex(spaceId, dtiNode->getIndexName())
+      ->getEdgeAnnIndex(spaceId, deiNode->getIndexName())
       .via(runner())
-      .thenValue([this, dtiNode, spaceId](StatusOr<meta::cpp2::AnnIndexItem> resp) {
+      .thenValue([this, deiNode, spaceId](StatusOr<meta::cpp2::AnnIndexItem> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
-          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag ann index `"
-                       << dtiNode->getIndexName() << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc ann edge index`"
+                       << deiNode->getIndexName() << "' failed: " << resp.status();
           return resp.status();
         }
+
         auto ret = IndexUtil::toDescIndex(resp.value());
         if (!ret.ok()) {
-          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag ann index `"
-                       << dtiNode->getIndexName() << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc ann edge index`"
+                       << deiNode->getIndexName() << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -85,25 +86,55 @@ folly::Future<Status> DescTagAnnIndexExecutor::execute() {
       });
 }
 
-folly::Future<Status> ShowCreateTagAnnIndexExecutor::execute() {
+folly::Future<Status> ShowEdgeAnnIndexStatusExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *sctiNode = asNode<ShowCreateTagAnnIndex>(node());
+  auto spaceId = qctx()->rctx()->session()->space().id;
+  return qctx()->getMetaClient()->listEdgeAnnIndexStatus(spaceId).via(runner()).thenValue(
+      [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
+        memory::MemoryCheckGuard guard;
+        if (!resp.ok()) {
+          LOG(WARNING) << "SpaceId: " << spaceId
+                       << ", Show edge ann index status failed: " << resp.status();
+          return resp.status();
+        }
+
+        auto indexStatuses = std::move(resp).value();
+
+        DataSet dataSet;
+        dataSet.colNames = {"Name", "Index Status"};
+        for (auto &indexStatus : indexStatuses) {
+          Row row;
+          row.values.emplace_back(std::move(indexStatus.get_name()));
+          row.values.emplace_back(std::move(indexStatus.get_status()));
+          dataSet.rows.emplace_back(std::move(row));
+        }
+        return finish(ResultBuilder()
+                          .value(Value(std::move(dataSet)))
+                          .iter(Iterator::Kind::kDefault)
+                          .build());
+      });
+}
+
+folly::Future<Status> ShowCreateEdgeAnnIndexExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+
+  auto *sctiNode = asNode<ShowCreateEdgeAnnIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
-      ->getTagAnnIndex(spaceId, sctiNode->getIndexName())
+      ->getEdgeAnnIndex(spaceId, sctiNode->getIndexName())
       .via(runner())
       .thenValue([this, sctiNode, spaceId](StatusOr<meta::cpp2::AnnIndexItem> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
-          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag ann index `"
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create edge ann index `"
                        << sctiNode->getIndexName() << "' failed: " << resp.status();
           return resp.status();
         }
-        auto ret = IndexUtil::toShowCreateIndex(true, sctiNode->getIndexName(), resp.value());
+        auto ret = IndexUtil::toShowCreateIndex(false, sctiNode->getIndexName(), resp.value());
         if (!ret.ok()) {
-          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag index `"
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create edge ann index `"
                        << sctiNode->getIndexName() << "' failed: " << resp.status();
           return ret.status();
         }
@@ -112,39 +143,43 @@ folly::Future<Status> ShowCreateTagAnnIndexExecutor::execute() {
       });
 }
 
-folly::Future<Status> ShowTagAnnIndexesExecutor::execute() {
+folly::Future<Status> ShowEdgeAnnIndexesExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *iNode = asNode<ShowTagAnnIndexes>(node());
+  auto *iNode = asNode<ShowEdgeAnnIndexes>(node());
   const auto &bySchema = iNode->name();
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()->getMetaClient()->listTagAnnIndexes(spaceId).via(runner()).thenValue(
+  return qctx()->getMetaClient()->listEdgeAnnIndexes(spaceId).via(runner()).thenValue(
       [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::AnnIndexItem>> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
-          LOG(WARNING) << "SpaceId: " << spaceId << ", Show tag ann indexes failed"
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show edge ann indexes failed"
                        << resp.status();
           return resp.status();
         }
 
-        auto tagIndexItems = std::move(resp).value();
+        auto edgeIndexItems = std::move(resp).value();
 
         DataSet dataSet;
         dataSet.colNames.emplace_back("Index Name");
         if (bySchema.empty()) {
-          dataSet.colNames.emplace_back("By Tag");
+          dataSet.colNames.emplace_back("By Edge");
         }
         dataSet.colNames.emplace_back("Columns");
 
         std::map<std::string, std::pair<std::vector<std::string>, std::vector<std::string>>> ids;
-        for (auto &tagIndex : tagIndexItems) {
-          const auto &prop = tagIndex.get_prop_name();
+        for (auto &edgeIndex : edgeIndexItems) {
+          const auto &schemas = edgeIndex.get_schema_names();
+          const auto &prop = edgeIndex.get_prop_name();
           std::vector<std::string> colsName;
           std::vector<std::string> schemaNames;
-          for (const auto &schema : tagIndex.get_schema_names()) {
+          for (const auto &schema : schemas) {
             colsName.emplace_back(schema + "." + prop.c_str());
             schemaNames.emplace_back(schema);
           }
-          ids[tagIndex.get_index_name()] = {std::move(schemaNames), std::move(colsName)};
+          // For now, just use the first schema name
+          std::string sch = schemas.empty() ? "" : schemas[0];
+          ids[edgeIndex.get_index_name()] =
+              std::make_pair(std::move(schemaNames), std::move(colsName));
         }
         for (const auto &i : ids) {
           if (!bySchema.empty() &&
@@ -167,36 +202,6 @@ folly::Future<Status> ShowTagAnnIndexesExecutor::execute() {
             list.values.emplace_back(c);
           }
           row.values.emplace_back(std::move(list));
-          dataSet.rows.emplace_back(std::move(row));
-        }
-        return finish(ResultBuilder()
-                          .value(Value(std::move(dataSet)))
-                          .iter(Iterator::Kind::kDefault)
-                          .build());
-      });
-}
-
-folly::Future<Status> ShowTagAnnIndexStatusExecutor::execute() {
-  SCOPED_TIMER(&execTime_);
-
-  auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()->getMetaClient()->listTagAnnIndexStatus(spaceId).via(runner()).thenValue(
-      [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
-        memory::MemoryCheckGuard guard;
-        if (!resp.ok()) {
-          LOG(WARNING) << "SpaceId: " << spaceId
-                       << ", Show tag index status failed: " << resp.status();
-          return resp.status();
-        }
-
-        auto indexStatuses = std::move(resp).value();
-
-        DataSet dataSet;
-        dataSet.colNames = {"Name", "Index Status"};
-        for (auto &indexStatus : indexStatuses) {
-          Row row;
-          row.values.emplace_back(std::move(indexStatus.get_name()));
-          row.values.emplace_back(std::move(indexStatus.get_status()));
           dataSet.rows.emplace_back(std::move(row));
         }
         return finish(ResultBuilder()

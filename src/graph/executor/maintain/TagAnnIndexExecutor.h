@@ -1,4 +1,4 @@
-// Copyright (c) 2020 vesoft inc. All rights reserved.
+// Copyright (c) 2025 vesoft inc. All rights reserved.
 //
 // This source code is licensed under Apache 2.0 License.
 
@@ -18,45 +18,45 @@ class CreateTagAnnIndexExecutor final : public Executor {
   folly::Future<Status> execute() override;
 };
 
-// class DropTagIndexExecutor final : public Executor {
-//  public:
-//   DropTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
-//       : Executor("DropTagIndexExecutor", node, qctx) {}
+class DropTagAnnIndexExecutor final : public Executor {
+ public:
+  DropTagAnnIndexExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("DropTagAnnIndexExecutor", node, qctx) {}
 
-//   folly::Future<Status> execute() override;
-// };
+  folly::Future<Status> execute() override;
+};
 
-// class DescTagIndexExecutor final : public Executor {
-//  public:
-//   DescTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
-//       : Executor("DescTagIndexExecutor", node, qctx) {}
+class DescTagAnnIndexExecutor final : public Executor {
+ public:
+  DescTagAnnIndexExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("DescTagAnnIndexExecutor", node, qctx) {}
 
-//   folly::Future<Status> execute() override;
-// };
+  folly::Future<Status> execute() override;
+};
 
-// class ShowCreateTagIndexExecutor final : public Executor {
-//  public:
-//   ShowCreateTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
-//       : Executor("ShowCreateTagIndexExecutor", node, qctx) {}
+class ShowCreateTagAnnIndexExecutor final : public Executor {
+ public:
+  ShowCreateTagAnnIndexExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ShowCreateTagAnnIndexExecutor", node, qctx) {}
 
-//   folly::Future<Status> execute() override;
-// };
+  folly::Future<Status> execute() override;
+};
 
-// class ShowTagIndexesExecutor final : public Executor {
-//  public:
-//   ShowTagIndexesExecutor(const PlanNode *node, QueryContext *qctx)
-//       : Executor("ShowTagIndexesExecutor", node, qctx) {}
+class ShowTagAnnIndexesExecutor final : public Executor {
+ public:
+  ShowTagAnnIndexesExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ShowTagAnnIndexesExecutor", node, qctx) {}
 
-//   folly::Future<Status> execute() override;
-// };
+  folly::Future<Status> execute() override;
+};
 
-// class ShowTagIndexStatusExecutor final : public Executor {
-//  public:
-//   ShowTagIndexStatusExecutor(const PlanNode *node, QueryContext *qctx)
-//       : Executor("ShowTagIndexStatusExecutor", node, qctx) {}
+class ShowTagAnnIndexStatusExecutor final : public Executor {
+ public:
+  ShowTagAnnIndexStatusExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ShowTagAnnIndexStatusExecutor", node, qctx) {}
 
-//   folly::Future<Status> execute() override;
-// };
+  folly::Future<Status> execute() override;
+};
 
 }  // namespace graph
 }  // namespace nebula

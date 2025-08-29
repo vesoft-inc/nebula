@@ -170,6 +170,23 @@ class CreateTagAnnIndexValidator final : public Validator {
   std::vector<std::string> annIndexParam_;
 };
 
+class CreateEdgeAnnIndexValidator final : public Validator {
+ public:
+  CreateEdgeAnnIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+  Status toPlan() override;
+
+ private:
+  std::vector<std::string> names_;
+  std::string index_;
+  meta::cpp2::IndexFieldDef field_;
+  bool ifNotExist_;
+  std::vector<std::string> annIndexParam_;
+};
+
 class CreateTagIndexValidator final : public Validator {
  public:
   CreateTagIndexValidator(Sentence* sentence, QueryContext* context)
@@ -204,6 +221,36 @@ class CreateEdgeIndexValidator final : public Validator {
   std::unique_ptr<meta::cpp2::IndexParams> indexParams_;
 };
 
+class DropTagAnnIndexValidator final : public Validator {
+ public:
+  DropTagAnnIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string indexName_;
+  bool ifExist_;
+};
+
+class DropEdgeAnnIndexValidator final : public Validator {
+ public:
+  DropEdgeAnnIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string indexName_;
+  bool ifExist_;
+};
+
 class DropTagIndexValidator final : public Validator {
  public:
   DropTagIndexValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
@@ -233,6 +280,34 @@ class DropEdgeIndexValidator final : public Validator {
   bool ifExist_;
 };
 
+class DescribeTagAnnIndexValidator final : public Validator {
+ public:
+  DescribeTagAnnIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string indexName_;
+};
+
+class DescribeEdgeAnnIndexValidator final : public Validator {
+ public:
+  DescribeEdgeAnnIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string indexName_;
+};
+
 class DescribeTagIndexValidator final : public Validator {
  public:
   DescribeTagIndexValidator(Sentence* sentence, QueryContext* context)
@@ -250,6 +325,20 @@ class DescribeTagIndexValidator final : public Validator {
 class DescribeEdgeIndexValidator final : public Validator {
  public:
   DescribeEdgeIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string indexName_;
+};
+
+class ShowCreateTagAnnIndexValidator final : public Validator {
+ public:
+  ShowCreateTagAnnIndexValidator(Sentence* sentence, QueryContext* context)
       : Validator(sentence, context) {}
 
  private:
@@ -289,6 +378,20 @@ class ShowCreateEdgeIndexValidator final : public Validator {
   std::string indexName_;
 };
 
+class ShowTagAnnIndexesValidator final : public Validator {
+ public:
+  ShowTagAnnIndexesValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string name_;
+};
+
 class ShowTagIndexesValidator final : public Validator {
  public:
   ShowTagIndexesValidator(Sentence* sentence, QueryContext* context)
@@ -315,6 +418,56 @@ class ShowEdgeIndexesValidator final : public Validator {
 
  private:
   std::string name_;
+};
+
+class ShowEdgeAnnIndexesValidator final : public Validator {
+ public:
+  ShowEdgeAnnIndexesValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string name_;
+};
+
+class ShowCreateEdgeAnnIndexValidator final : public Validator {
+ public:
+  ShowCreateEdgeAnnIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string indexName_;
+};
+
+class ShowTagAnnIndexStatusValidator final : public Validator {
+ public:
+  ShowTagAnnIndexStatusValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class ShowEdgeAnnIndexStatusValidator final : public Validator {
+ public:
+  ShowEdgeAnnIndexStatusValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
 };
 
 class ShowTagIndexStatusValidator final : public Validator {

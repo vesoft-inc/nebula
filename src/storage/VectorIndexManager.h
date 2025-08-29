@@ -55,10 +55,11 @@ class VectorIndexManager final {
   void notifyStop();
 
   // Create a vector index for a specific partition and index ID
-  Status createOrUpdateIndex(GraphSpaceID spaceId,
-                             PartitionID partitionId,
-                             IndexID indexId,
-                             const std::shared_ptr<meta::cpp2::AnnIndexItem>& indexItem);
+  StatusOr<std::shared_ptr<AnnIndex>> createOrUpdateIndex(
+      GraphSpaceID spaceId,
+      PartitionID partitionId,
+      IndexID indexId,
+      const std::shared_ptr<meta::cpp2::AnnIndexItem>& indexItem);
 
   // Get an existing vector index
   StatusOr<std::shared_ptr<AnnIndex>> getIndex(GraphSpaceID spaceId,
@@ -67,18 +68,6 @@ class VectorIndexManager final {
 
   // Remove a vector index
   Status removeIndex(GraphSpaceID spaceId, PartitionID partitionId, IndexID indexId);
-
-  // Add vectors to an index
-  Status addVectors(GraphSpaceID spaceId,
-                    PartitionID partitionId,
-                    IndexID indexId,
-                    const VecData& vecData);
-
-  // Search vectors in an index
-  StatusOr<SearchResult> searchVectors(GraphSpaceID spaceId,
-                                       PartitionID partitionId,
-                                       IndexID indexId,
-                                       const SearchParams& searchParams);
 
   // Get all managed indexes for a partition
   std::vector<std::shared_ptr<AnnIndex>> getIndexesByPartition(GraphSpaceID spaceId,
@@ -134,8 +123,6 @@ class VectorIndexManager final {
       indexMap_;
 
   // Dependencies
-  // kvstore::KVStore* kvstore_{nullptr};
-  // meta::SchemaManager* schemaManager_{nullptr};
   meta::IndexManager* indexManager_{nullptr};
   std::string annIndexPath_;
 

@@ -7,8 +7,6 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include <string>
-
 #include "common/base/Base.h"
 
 namespace nebula {
@@ -435,8 +433,24 @@ std::string DescribeTagIndexSentence::toString() const {
   return folly::stringPrintf("DESCRIBE TAG INDEX %s", indexName_.get()->c_str());
 }
 
+std::string DescribeTagAnnIndexSentence::toString() const {
+  return folly::stringPrintf("DESCRIBE TAG ANNINDEX %s", indexName_.get()->c_str());
+}
+
 std::string DescribeEdgeIndexSentence::toString() const {
   return folly::stringPrintf("DESCRIBE EDGE INDEX %s", indexName_.get()->c_str());
+}
+
+std::string DescribeEdgeAnnIndexSentence::toString() const {
+  return folly::stringPrintf("DESCRIBE EDGE ANNINDEX %s", indexName_.get()->c_str());
+}
+
+std::string DropTagAnnIndexSentence::toString() const {
+  return folly::stringPrintf("DROP TAG ANNINDEX %s", indexName_.get()->c_str());
+}
+
+std::string DropEdgeAnnIndexSentence::toString() const {
+  return folly::stringPrintf("DROP EDGE ANNINDEX %s", indexName_.get()->c_str());
 }
 
 std::string DropTagIndexSentence::toString() const {
@@ -461,6 +475,28 @@ std::string ShowCreateTagSentence::toString() const {
 
 std::string ShowCreateEdgeSentence::toString() const {
   return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
+}
+
+std::string ShowTagAnnIndexesSentence::toString() const {
+  std::string buf;
+  buf.reserve(64);
+  buf += "SHOW TAG ANNINDEXES";
+  if (!name()->empty()) {
+    buf += " BY ";
+    buf += *name_;
+  }
+  return buf;
+}
+
+std::string ShowEdgeAnnIndexesSentence::toString() const {
+  std::string buf;
+  buf.reserve(64);
+  buf += "SHOW EDGE ANNINDEXES";
+  if (!name()->empty()) {
+    buf += " BY ";
+    buf += *name_;
+  }
+  return buf;
 }
 
 std::string ShowTagIndexesSentence::toString() const {
@@ -604,6 +640,80 @@ std::string DropFTIndexSentence::toString() const {
 
 std::string ShowFTIndexesSentence::toString() const {
   return "SHOW FULLTEXT INDEXES";
+}
+
+std::string CreateEdgeAnnIndexSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "CREATE VECTOR INDEX ";
+  if (isIfNotExist()) {
+    buf += "IF NOT EXISTS ";
+  }
+  buf += "`";
+  buf += *indexName_;
+  buf += "` ON ";
+
+  // Edge names
+  for (size_t i = 0; i < edgeNames_.size(); ++i) {
+    if (i > 0) {
+      buf += ", ";
+    }
+    buf += "`";
+    buf += edgeNames_[i];
+    buf += "`";
+  }
+
+  buf += "(";
+  if (field_ != nullptr) {
+    buf += field_->get_name();
+  }
+  buf += ")";
+
+  if (annIndexParam_ != nullptr) {
+    buf += " WITH (";
+    buf += annIndexParam_->toString();
+    buf += ")";
+  }
+
+  if (comment_ != nullptr) {
+    buf += " COMMENT = \"";
+    buf += *comment_;
+    buf += "\"";
+  }
+
+  return buf;
+}
+
+std::string ShowTagAnnIndexStatusSentence::toString() const {
+  return "SHOW TAG ANN INDEX STATUS";
+}
+
+std::string ShowEdgeAnnIndexStatusSentence::toString() const {
+  return "SHOW EDGE ANN INDEX STATUS";
+}
+
+std::string ShowCreateTagAnnIndexSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "SHOW CREATE TAG ANN INDEX ";
+  if (indexName_ != nullptr) {
+    buf += "`";
+    buf += *indexName_;
+    buf += "`";
+  }
+  return buf;
+}
+
+std::string ShowCreateEdgeAnnIndexSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "SHOW CREATE EDGE ANN INDEX ";
+  if (indexName_ != nullptr) {
+    buf += "`";
+    buf += *indexName_;
+    buf += "`";
+  }
+  return buf;
 }
 
 }  // namespace nebula

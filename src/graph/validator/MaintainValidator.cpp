@@ -373,6 +373,54 @@ Status CreateTagAnnIndexValidator::toPlan() {
   return Status::OK();
 }
 
+Status CreateEdgeAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<CreateEdgeAnnIndexSentence *>(sentence_);
+  names_ = sentence->edgeNames();
+  index_ = *sentence->indexName();
+  field_ = *sentence->field();
+  ifNotExist_ = sentence->isIfNotExist();
+  auto *annIndexParam = sentence->getAnnIndexParam();
+  if (annIndexParam) {
+    NG_RETURN_IF_ERROR(IndexUtil::validateAnnIndexParam(annIndexParam, annIndexParam_));
+  }
+  return Status::OK();
+}
+
+Status CreateEdgeAnnIndexValidator::toPlan() {
+  auto sentence = static_cast<CreateEdgeAnnIndexSentence *>(sentence_);
+  auto indexParam = annIndexParam_;
+  auto isTag = true;
+  auto propName = sentence->field()->get_name();
+  auto edgeNums = sentence->edgeNames().size();
+  auto edgeNameList = sentence->edgeNames();
+  // First, create the TagAnnIndex
+  auto *createNode = CreateEdgeAnnIndex::make(qctx_,
+                                              nullptr,
+                                              sentence->edgeNames(),
+                                              *sentence->indexName(),
+                                              *sentence->field(),
+                                              sentence->isIfNotExist(),
+                                              annIndexParam_,
+                                              sentence->comment());
+
+  // [index_name, is_tag, prop_name, tag nums, tag_name_list, ann_params...]
+  std::vector<std::string> params{*sentence->indexName()};
+
+  params.emplace_back(std::to_string(isTag));
+  params.emplace_back(std::move(propName));
+  params.emplace_back(std::to_string(edgeNums));
+  params.insert(params.end(), edgeNameList.begin(), edgeNameList.end());
+  params.insert(params.end(), annIndexParam_.begin(), annIndexParam_.end());
+  auto *submitJobNode = SubmitJob::make(qctx_,
+                                        createNode,
+                                        meta::cpp2::JobOp::ADD,
+                                        meta::cpp2::JobType::BUILD_EDGE_VECTOR_INDEX,
+                                        params);
+  root_ = submitJobNode;
+  tail_ = createNode;
+  return Status::OK();
+}
+
 Status CreateTagIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateTagIndexSentence *>(sentence_);
   name_ = *sentence->tagName();
@@ -434,6 +482,34 @@ Status CreateEdgeIndexValidator::toPlan() {
   return Status::OK();
 }
 
+Status DropTagAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<DropTagAnnIndexSentence *>(sentence_);
+  indexName_ = *sentence->indexName();
+  ifExist_ = sentence->isIfExists();
+  return Status::OK();
+}
+
+Status DropTagAnnIndexValidator::toPlan() {
+  auto *doNode = DropTagAnnIndex::make(qctx_, nullptr, indexName_, ifExist_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DropEdgeAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<DropEdgeAnnIndexSentence *>(sentence_);
+  indexName_ = *sentence->indexName();
+  ifExist_ = sentence->isIfExists();
+  return Status::OK();
+}
+
+Status DropEdgeAnnIndexValidator::toPlan() {
+  auto *doNode = DropEdgeAnnIndex::make(qctx_, nullptr, indexName_, ifExist_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
 Status DropTagIndexValidator::validateImpl() {
   auto sentence = static_cast<DropTagIndexSentence *>(sentence_);
   indexName_ = *sentence->indexName();
@@ -457,6 +533,32 @@ Status DropEdgeIndexValidator::validateImpl() {
 
 Status DropEdgeIndexValidator::toPlan() {
   auto *doNode = DropEdgeIndex::make(qctx_, nullptr, indexName_, ifExist_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DescribeTagAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<DescribeTagAnnIndexSentence *>(sentence_);
+  indexName_ = *sentence->indexName();
+  return Status::OK();
+}
+
+Status DescribeTagAnnIndexValidator::toPlan() {
+  auto *doNode = DescTagAnnIndex::make(qctx_, nullptr, indexName_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DescribeEdgeAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<DescribeEdgeAnnIndexSentence *>(sentence_);
+  indexName_ = *sentence->indexName();
+  return Status::OK();
+}
+
+Status DescribeEdgeAnnIndexValidator::toPlan() {
+  auto *doNode = DescEdgeAnnIndex::make(qctx_, nullptr, indexName_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -488,6 +590,19 @@ Status DescribeEdgeIndexValidator::toPlan() {
   return Status::OK();
 }
 
+Status ShowCreateTagAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<ShowCreateTagAnnIndexSentence *>(sentence_);
+  indexName_ = *sentence->indexName();
+  return Status::OK();
+}
+
+Status ShowCreateTagAnnIndexValidator::toPlan() {
+  auto *doNode = ShowCreateTagAnnIndex::make(qctx_, nullptr, indexName_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
 Status ShowCreateTagIndexValidator::validateImpl() {
   auto sentence = static_cast<ShowCreateTagIndexSentence *>(sentence_);
   indexName_ = *sentence->indexName();
@@ -514,6 +629,32 @@ Status ShowCreateEdgeIndexValidator::toPlan() {
   return Status::OK();
 }
 
+Status ShowTagAnnIndexesValidator::validateImpl() {
+  auto sentence = static_cast<ShowTagAnnIndexesSentence *>(sentence_);
+  name_ = *sentence->name();
+  return Status::OK();
+}
+
+Status ShowTagAnnIndexesValidator::toPlan() {
+  auto *doNode = ShowTagAnnIndexes::make(qctx_, nullptr, name_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status ShowEdgeAnnIndexesValidator::validateImpl() {
+  auto sentence = static_cast<ShowEdgeAnnIndexesSentence *>(sentence_);
+  name_ = *sentence->name();
+  return Status::OK();
+}
+
+Status ShowEdgeAnnIndexesValidator::toPlan() {
+  auto *doNode = ShowEdgeAnnIndexes::make(qctx_, nullptr, name_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
 Status ShowTagIndexesValidator::validateImpl() {
   auto sentence = static_cast<ShowTagIndexesSentence *>(sentence_);
   name_ = *sentence->name();
@@ -535,6 +676,28 @@ Status ShowEdgeIndexesValidator::validateImpl() {
 
 Status ShowEdgeIndexesValidator::toPlan() {
   auto *doNode = ShowEdgeIndexes::make(qctx_, nullptr, name_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status ShowTagAnnIndexStatusValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status ShowTagAnnIndexStatusValidator::toPlan() {
+  auto *doNode = ShowTagAnnIndexStatus::make(qctx_, nullptr);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status ShowEdgeAnnIndexStatusValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status ShowEdgeAnnIndexStatusValidator::toPlan() {
+  auto *doNode = ShowEdgeAnnIndexStatus::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -727,5 +890,19 @@ Status ShowFTIndexesValidator::toPlan() {
   tail_ = root_;
   return Status::OK();
 }
+
+Status ShowCreateEdgeAnnIndexValidator::validateImpl() {
+  auto sentence = static_cast<ShowCreateEdgeAnnIndexSentence *>(sentence_);
+  indexName_ = *sentence->indexName();
+  return Status::OK();
+}
+
+Status ShowCreateEdgeAnnIndexValidator::toPlan() {
+  auto *doNode = ShowCreateEdgeAnnIndex::make(qctx_, nullptr, indexName_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula

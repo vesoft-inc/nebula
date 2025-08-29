@@ -31,12 +31,17 @@ nebula_add_library(
     processors/index/CreateTagIndexProcessor.cpp
     processors/index/CreateTagAnnIndexProcessor.cpp
     processors/index/DropTagIndexProcessor.cpp
+    processors/index/DropTagAnnIndexProcessor.cpp
     processors/index/GetTagIndexProcessor.cpp
+    processors/index/GetTagAnnIndexProcessor.cpp
     processors/index/ListTagIndexesProcessor.cpp
     processors/index/ListTagAnnIndexesProcessor.cpp
     processors/index/CreateEdgeIndexProcessor.cpp
+    processors/index/CreateEdgeAnnIndexProcessor.cpp
     processors/index/DropEdgeIndexProcessor.cpp
+    processors/index/DropEdgeAnnIndexProcessor.cpp
     processors/index/GetEdgeIndexProcessor.cpp
+    processors/index/GetEdgeAnnIndexProcessor.cpp
     processors/index/ListEdgeIndexesProcessor.cpp
     processors/index/ListEdgeAnnIndexesProcessor.cpp
     processors/service/ServiceProcessor.cpp
@@ -86,10 +91,13 @@ nebula_add_library(
     processors/job/RebuildFTJobExecutor.cpp
     processors/job/BuildVectorIndexJobExecutor.cpp
     processors/job/BuildTagVectorIndexJobExecutor.cpp
+    processors/job/BuildEdgeVectorIndexJobExecutor.cpp
     processors/job/StatsJobExecutor.cpp
     processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
+    processors/job/ListTagAnnIndexStatusProcessor.cpp
+    processors/job/ListEdgeAnnIndexStatusProcessor.cpp
     processors/zone/AddHostsProcessor.cpp
     processors/zone/AddHostsIntoZoneProcessor.cpp
     processors/zone/DropHostsProcessor.cpp

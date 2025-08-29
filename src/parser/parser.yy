@@ -181,7 +181,8 @@ using namespace nebula;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
 %token KW_ATOMIC_EDGE
 %token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
-%token KW_DROP KW_CLEAR KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES KW_ANNINDEX
+%token KW_L2 KW_INNERPRODUCT
+%token KW_DROP KW_CLEAR KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES KW_ANNINDEX KW_ANNINDEXES
 %token KW_ANNINDEXTYPE KW_DIM KW_METRICTYPE KW_NLIST KW_TRAINSIZE KW_MAXDEGREE KW_EFCONSTRUCTION KW_MAXELEMENTS
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
@@ -596,13 +597,16 @@ unreserved_keyword
     | KW_ANALYZER           { $$ = new std::string("analyzer"); }
     | KW_VECTOR             { $$ = new std::string("vector"); }
     | KW_ANNINDEXTYPE       { $$ = new std::string("annindex_type"); }
+    | KW_ANNINDEXES         { $$ = new std::string("annindexes"); }
     | KW_DIM                { $$ = new std::string("dim"); }
     | KW_METRICTYPE         { $$ = new std::string("metric_type"); }
+    | KW_L2                 { $$ = new std::string("l2"); }
+    | KW_INNERPRODUCT       { $$ = new std::string("inner_product"); }
     | KW_NLIST              { $$ = new std::string("nlist"); }
-    | KW_TRAINSIZE          { $$ = new std::string("trainsize"); }
-    | KW_MAXDEGREE          { $$ = new std::string("maxdegree"); }
+    | KW_TRAINSIZE          { $$ = new std::string("train_size"); }
+    | KW_MAXDEGREE          { $$ = new std::string("max_degree"); }
     | KW_EFCONSTRUCTION     { $$ = new std::string("efconstruction"); }
-    | KW_MAXELEMENTS        { $$ = new std::string("maxelements"); }
+    | KW_MAXELEMENTS        { $$ = new std::string("max_elements"); }
     ;
 
 expression
@@ -2777,43 +2781,45 @@ opt_annindex_field
     ;
 
 annindex_param 
-    : L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON STRING COMMA KW_NLIST COLON legal_integer COMMA KW_TRAINSIZE COLON legal_integer R_BRACE {
+    : L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_L2 COMMA KW_NLIST COLON legal_integer COMMA KW_TRAINSIZE COLON legal_integer R_BRACE {
         // IVF format: {ANNINDEX_TYPE:"IVF", DIM:128, METRIC_TYPE:"l2", NLIST:8, TRAINSIZE:3}
         if (*$4 == "IVF") {
-            if (*$12 == "L2" || *$12 == "l2") {
-                $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20));
-            } else if (*$12 == "INNER_PRODUCT") {
-                $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20));
-            } else {
-                delete $4;
-                delete $12;
-                throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVFparameters");
-            }
+            $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20));
         } else {
             delete $4;
-            delete $12;
             throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVF parameters");
         }
         delete $4;
-        delete $12;
     }
-    // TODO(LZY): L2 and inner product maybe need to as KEYWORD
-    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON STRING COMMA KW_MAXDEGREE COLON legal_integer COMMA KW_EFCONSTRUCTION COLON legal_integer COMMA KW_MAXELEMENTS COLON legal_integer R_BRACE {
-        // HNSW format: {ANNINDEX_TYPE:"HNSW", DIM:128, METRIC_TYPE:"l2", MAXDEGREE:16, EFCONSTRUCTION:200, MAXELEMENTS:1000}
-        if (*$4 == "HNSW") {
-            if (*$12 == "L2" || *$12 == "l2") {
-                $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20), Value($24));
-            } else if (*$12 == "INNER_PRODUCT") {
-                $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20), Value($24));
-            }
-
+    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_INNERPRODUCT COMMA KW_NLIST COLON legal_integer COMMA KW_TRAINSIZE COLON legal_integer R_BRACE {
+        // IVF format: {ANNINDEX_TYPE:"IVF", DIM:128, METRIC_TYPE:"inner_product", NLIST:8, TRAINSIZE:3}
+        if (*$4 == "IVF") {
+            $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20)); 
         } else {
             delete $4;
-            delete $12;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVF parameters");
+        }
+        delete $4;
+    }
+    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_L2 COMMA KW_MAXDEGREE COLON legal_integer COMMA KW_EFCONSTRUCTION COLON legal_integer COMMA KW_MAXELEMENTS COLON legal_integer R_BRACE {
+        // HNSW format: {ANNINDEX_TYPE:"HNSW", DIM:128, METRIC_TYPE:"l2", MAXDEGREE:16, EFCONSTRUCTION:200, MAXELEMENTS:1000}
+        if (*$4 == "HNSW") {
+            $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20), Value($24));
+        } else {
+            delete $4;
             throw nebula::GraphParser::syntax_error(@4, "Invalid index type for HNSW parameters");
         }
         delete $4;
-        delete $12;
+    }
+    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_INNERPRODUCT COMMA KW_MAXDEGREE COLON legal_integer COMMA KW_EFCONSTRUCTION COLON legal_integer COMMA KW_MAXELEMENTS COLON legal_integer R_BRACE{
+        // HNSW format: {ANNINDEX_TYPE:"HNSW", DIM:128, METRIC_TYPE:"inner_product", MAXDEGREE:16, EFCONSTRUCTION:200, MAXELEMENTS:1000}
+        if (*$4 == "HNSW") {
+            $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20), Value($24));
+        } else {
+            delete $4;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for HNSW parameters");
+        }
+        delete $4;
     }
     ;
 
@@ -2839,6 +2845,10 @@ create_tag_index_sentence
 create_edge_index_sentence
     : KW_CREATE KW_EDGE KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
         $$ = new CreateEdgeIndexSentence($5, $7, $9, $4, $11, $12);
+    }
+    | KW_CREATE KW_EDGE KW_ANNINDEX opt_if_not_exists name_label KW_ON name_label_list COLON COLON L_PAREN opt_annindex_field R_PAREN opt_annindex_param opt_comment_prop {
+        // For ANN index, we need to create a CreateEdgegAnnIndexSentence
+        $$ = new CreateEdgeAnnIndexSentence($5, $7, $11, $4, $13, $14);
     }
     ;
 
@@ -2948,11 +2958,17 @@ drop_tag_index_sentence
     : KW_DROP KW_TAG KW_INDEX opt_if_exists name_label {
         $$ = new DropTagIndexSentence($5, $4);
     }
+    | KW_DROP KW_TAG KW_ANNINDEX opt_if_exists name_label {
+        $$ = new DropTagAnnIndexSentence($5, $4);
+    }
     ;
 
 drop_edge_index_sentence
     : KW_DROP KW_EDGE KW_INDEX opt_if_exists name_label {
         $$ = new DropEdgeIndexSentence($5, $4);
+    }
+    | KW_DROP KW_EDGE KW_ANNINDEX opt_if_exists name_label {
+        $$ = new DropEdgeAnnIndexSentence($5, $4);
     }
     ;
 
@@ -2963,6 +2979,12 @@ describe_tag_index_sentence
     | KW_DESC KW_TAG KW_INDEX name_label {
         $$ = new DescribeTagIndexSentence($4);
     }
+    | KW_DESCRIBE KW_TAG KW_ANNINDEX name_label {
+        $$ = new DescribeTagAnnIndexSentence($4);
+    }
+    | KW_DESC KW_TAG KW_ANNINDEX name_label {
+        $$ = new DescribeTagAnnIndexSentence($4);
+    }
     ;
 
 describe_edge_index_sentence
@@ -2971,6 +2993,12 @@ describe_edge_index_sentence
     }
     | KW_DESC KW_EDGE KW_INDEX name_label {
         $$ = new DescribeEdgeIndexSentence($4);
+    }
+    | KW_DESCRIBE KW_EDGE KW_ANNINDEX name_label {
+        $$ = new DescribeEdgeAnnIndexSentence($4);
+    }
+    | KW_DESC KW_EDGE KW_ANNINDEX name_label {
+        $$ = new DescribeEdgeAnnIndexSentence($4);
     }
     ;
 
@@ -3598,11 +3626,23 @@ show_sentence
     | KW_SHOW KW_TAG KW_INDEXES KW_BY name_label {
          $$ = new ShowTagIndexesSentence($5);
     }
+    | KW_SHOW KW_TAG KW_ANNINDEXES {
+         $$ = new ShowTagAnnIndexesSentence(new std::string(""));
+    }
+    | KW_SHOW KW_TAG KW_ANNINDEXES KW_BY name_label {
+         $$ = new ShowTagAnnIndexesSentence($5);
+    }
     | KW_SHOW KW_EDGE KW_INDEXES {
          $$ = new ShowEdgeIndexesSentence(new std::string(""));
     }
     | KW_SHOW KW_EDGE KW_INDEXES KW_BY name_label {
          $$ = new ShowEdgeIndexesSentence($5);
+    }
+    | KW_SHOW KW_EDGE KW_ANNINDEXES {
+         $$ = new ShowEdgeAnnIndexesSentence(new std::string(""));
+    }
+    | KW_SHOW KW_EDGE KW_ANNINDEXES KW_BY name_label {
+         $$ = new ShowEdgeAnnIndexesSentence($5);
     }
     | KW_SHOW KW_USERS {
         $$ = new ShowUsersSentence();
@@ -3622,18 +3662,32 @@ show_sentence
     | KW_SHOW KW_CREATE KW_TAG KW_INDEX name_label {
         $$ = new ShowCreateTagIndexSentence($5);
     }
+    | KW_SHOW KW_CREATE KW_TAG KW_ANNINDEX name_label {
+        $$ = new ShowCreateTagAnnIndexSentence($5);
+    }
     | KW_SHOW KW_CREATE KW_EDGE name_label {
         $$ = new ShowCreateEdgeSentence($4);
     }
     | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
         $$ = new ShowCreateEdgeIndexSentence($5);
     }
+    | KW_SHOW KW_CREATE KW_EDGE KW_ANNINDEX name_label {
+        $$ = new ShowCreateEdgeAnnIndexSentence($5);
+    }
     | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
         auto sentence = new ShowTagIndexStatusSentence();
         $$ = sentence;
     }
+    | KW_SHOW KW_TAG KW_ANNINDEX KW_STATUS {
+        auto sentence = new ShowTagAnnIndexStatusSentence();
+        $$ = sentence;
+    }
     | KW_SHOW KW_EDGE KW_INDEX KW_STATUS  {
         auto sentence = new ShowEdgeIndexStatusSentence();
+        $$ = sentence;
+    }
+    | KW_SHOW KW_EDGE KW_ANNINDEX KW_STATUS  {
+        auto sentence = new ShowEdgeAnnIndexStatusSentence();
         $$ = sentence;
     }
     | KW_SHOW KW_SNAPSHOTS {

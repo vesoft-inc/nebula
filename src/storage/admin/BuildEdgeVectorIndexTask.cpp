@@ -27,7 +27,6 @@ const int32_t kReserveNum = 1024 * 4;
 
 StatusOr<std::shared_ptr<AnnIndexItem>> BuildEdgeVectorIndexTask::getIndex(GraphSpaceID space,
                                                                            IndexID index) {
-  // 使用可配置的重试参数
   const int maxRetries = FLAGS_vector_index_cache_retry_times;
   const int retryIntervalMs = FLAGS_vector_index_cache_retry_interval_ms;
 
@@ -36,26 +35,22 @@ StatusOr<std::shared_ptr<AnnIndexItem>> BuildEdgeVectorIndexTask::getIndex(Graph
     if (indexRet.ok()) {
       return indexRet.value();
     }
-
-    // 如果是IndexNotFound且不是最后一次重试，则刷新缓存并重试
+    // try at most 3 times
     if (indexRet.status().code() == Status::Code::kIndexNotFound && retry < maxRetries - 1) {
       LOG(INFO) << "Edge Index " << index << " not found in cache, refreshing meta cache. Retry "
                 << (retry + 1) << "/" << maxRetries;
-
-      // 强制刷新meta client缓存
+      // force refresh meta client cache
       if (auto* metaClient = env_->metaClient_) {
         auto refreshStatus = metaClient->refreshCache();
         if (!refreshStatus.ok()) {
           LOG(WARNING) << "Failed to refresh meta cache: " << refreshStatus;
         }
       }
-
-      // 等待一段时间再重试
       std::this_thread::sleep_for(std::chrono::milliseconds(retryIntervalMs));
       continue;
     }
-
-    // 最后一次重试：尝试直接从Meta服务获取所有Ann索引，然后查找目标索引
+    // Last retry: Attempting to directly fetch all Ann indices from the Meta service and then find
+    // the target index
     if (indexRet.status().code() == Status::Code::kIndexNotFound && retry == maxRetries - 1) {
       LOG(INFO) << "Last retry: attempting to fetch edge index directly from meta service";
 
@@ -75,11 +70,8 @@ StatusOr<std::shared_ptr<AnnIndexItem>> BuildEdgeVectorIndexTask::getIndex(Graph
         }
       }
     }
-
-    // 其他错误直接返回
     return Status::Error("Get Edge Ann Index Failed: %s", indexRet.status().toString().c_str());
   }
-
   return Status::Error("Get Edge Ann Index Failed after %d retries: IndexNotFound", maxRetries);
 }
 
@@ -235,8 +227,8 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
 
     vidData.emplace_back(std::move(idVidKey), std::to_string(vectorId));
     batchSize += vidData.back().first.size() + sizeof(vectorId);
-    vidData.emplace_back(std::move(vidIdKey), std::move(edgeId));
     batchSize += vidData.back().first.size() + edgeId.size();
+    vidData.emplace_back(std::move(vidIdKey), std::move(edgeId));
     iter->next();
   }
 
@@ -248,33 +240,37 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
   vecData.ids = vectorIds.data();
   vecData.cnt = static_cast<int32_t>(vectorIds.size());
   vecData.dim = folly::to<size_t>(dim);
-  return buildAnnIndex(space, part, item, vecData);
+  return buildAnnIndex(space, part, item, &vecData);
 }
 
 nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildAnnIndex(
     GraphSpaceID space,
     PartitionID part,
     const std::shared_ptr<AnnIndexItem>& item,
-    const VecData& data) {
+    const VecData* data) {
   // Build ANN index
   auto& vecIdxMgr = VectorIndexManager::getInstance();
-  Status ret = Status::OK();
+  std::shared_ptr<AnnIndex> annIndex;
   IndexID indexId = item->get_index_id();
-  if (!vecIdxMgr.getIndex(space, part, indexId).ok()) {
-    ret = vecIdxMgr.createOrUpdateIndex(space, part, indexId, item);
+
+  auto indexResult = vecIdxMgr.getIndex(space, part, indexId);
+  if (!indexResult.ok()) {
+    auto ret = vecIdxMgr.createOrUpdateIndex(space, part, indexId, item);
     if (!ret.ok()) {
       LOG(ERROR) << "Failed to create or update ANN index: " << ret;
       return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
+    annIndex = ret.value();
+  } else {
+    annIndex = indexResult.value();
   }
-
+  CHECK(annIndex != nullptr) << "Failed to get ANN index";
   // Add vectors to the index
-  ret = vecIdxMgr.addVectors(space, part, indexId, data);
+  auto ret = annIndex->add(data, false);
   if (!ret.ok()) {
-    LOG(ERROR) << "Failed to add vectors to ANN index: " << ret;
+    LOG(ERROR) << "Part: " << part << ", Failed to add vectors to ANN index: " << ret;
     return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
   }
-
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

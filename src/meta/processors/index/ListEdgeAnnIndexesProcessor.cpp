@@ -48,7 +48,8 @@ void ListEdgeAnnIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
 
     auto val = nebula::value(indexSchemaRet);
     auto item = MetaKeyUtils::parseAnnIndex(val);
-    if (item.get_schema_ids().at(0).getType() == nebula::cpp2::SchemaID::Type::edge_type) {
+    if (!item.get_schema_ids().empty() &&
+        item.get_schema_ids().at(0).getType() == nebula::cpp2::SchemaID::Type::edge_type) {
       items.emplace_back(std::move(item));
     }
     indexIndexIter->next();

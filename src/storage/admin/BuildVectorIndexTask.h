@@ -51,9 +51,15 @@ class BuildVectorIndexTask : public AdminTask {
                                                    const std::shared_ptr<AnnIndexItem>& item,
                                                    kvstore::RateLimiter* rateLimiter) = 0;
 
+  virtual nebula::cpp2::ErrorCode buildAnnIndex(GraphSpaceID space,
+                                                PartitionID part,
+                                                const std::shared_ptr<AnnIndexItem>& items,
+                                                const VecData* data) = 0;
+
   nebula::cpp2::ErrorCode invoke(GraphSpaceID space,
                                  PartitionID part,
                                  const std::shared_ptr<AnnIndexItem>& item);
+
   nebula::cpp2::ErrorCode writeData(GraphSpaceID space,
                                     PartitionID part,
                                     std::vector<kvstore::KV> data,

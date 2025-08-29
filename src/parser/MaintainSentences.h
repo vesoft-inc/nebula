@@ -762,21 +762,6 @@ class HNSWIndexParamItem final : public AnnIndexParamItem {
   Value efConstruction_;
   Value capacity_;
 };
-
-// class AnnIndexField final {
-//  public:
-//   explicit AnnIndexField(std::unique_ptr<meta::cpp2::IndexFieldDef> field) {
-//     field_ = std::move(field);
-//   }
-
-//   meta::cpp2::IndexFieldDef *field() const {
-//     return field_ != nullptr ? field_.get() : nullptr;
-//   }
-
-//  private:
-//   std::unique_ptr<meta::cpp2::IndexFieldDef> field_;
-// };
-
 class CreateTagAnnIndexSentence final : public CreateSentence {
  public:
   CreateTagAnnIndexSentence(std::string *indexName,
@@ -830,6 +815,58 @@ class CreateTagAnnIndexSentence final : public CreateSentence {
   std::unique_ptr<std::string> comment_;
 };
 
+class CreateEdgeAnnIndexSentence final : public CreateSentence {
+ public:
+  CreateEdgeAnnIndexSentence(std::string *indexName,
+                             NameLabelList *edgeNames,
+                             meta::cpp2::IndexFieldDef *field,
+                             bool ifNotExists,
+                             AnnIndexParamItem *annIndexParam,
+                             std::string *comment)
+      : CreateSentence(ifNotExists) {
+    indexName_.reset(indexName);
+    for (auto &f : edgeNames->labels()) {
+      edgeNames_.push_back(*f);
+    }
+    if (field == nullptr) {
+      field_.reset(nullptr);
+    } else {
+      field_.reset(field);
+    }
+    annIndexParam_.reset(annIndexParam);
+    comment_.reset(comment);
+    kind_ = Kind::kCreateEdgeAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+  std::vector<std::string> edgeNames() const {
+    return edgeNames_;
+  }
+
+  const meta::cpp2::IndexFieldDef *field() const {
+    return field_.get();
+  }
+
+  const AnnIndexParamItem *getAnnIndexParam() const {
+    return annIndexParam_.get();
+  }
+
+  const std::string *comment() const {
+    return comment_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+  std::vector<std::string> edgeNames_;
+  std::unique_ptr<meta::cpp2::IndexFieldDef> field_;
+  std::unique_ptr<AnnIndexParamItem> annIndexParam_;
+  std::unique_ptr<std::string> comment_;
+};
 class CreateEdgeIndexSentence final : public CreateSentence {
  public:
   CreateEdgeIndexSentence(std::string *indexName,
@@ -886,6 +923,40 @@ class CreateEdgeIndexSentence final : public CreateSentence {
   std::unique_ptr<std::string> comment_;
 };
 
+class DescribeTagAnnIndexSentence final : public Sentence {
+ public:
+  explicit DescribeTagAnnIndexSentence(std::string *indexName) {
+    indexName_.reset(indexName);
+    kind_ = Kind::kDescribeTagAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+};
+
+class DescribeEdgeAnnIndexSentence final : public Sentence {
+ public:
+  explicit DescribeEdgeAnnIndexSentence(std::string *indexName) {
+    indexName_.reset(indexName);
+    kind_ = Kind::kDescribeEdgeAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+};
+
 class DescribeTagIndexSentence final : public Sentence {
  public:
   explicit DescribeTagIndexSentence(std::string *indexName) {
@@ -920,6 +991,40 @@ class DescribeEdgeIndexSentence final : public Sentence {
   std::unique_ptr<std::string> indexName_;
 };
 
+class DropTagAnnIndexSentence final : public DropSentence {
+ public:
+  DropTagAnnIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
+    indexName_.reset(indexName);
+    kind_ = Kind::kDropTagAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+};
+
+class DropEdgeAnnIndexSentence final : public DropSentence {
+ public:
+  explicit DropEdgeAnnIndexSentence(std::string *indexName, bool ifExists)
+      : DropSentence(ifExists) {
+    indexName_.reset(indexName);
+    kind_ = Kind::kDropEdgeAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+};
 class DropTagIndexSentence final : public DropSentence {
  public:
   DropTagIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
@@ -1004,6 +1109,92 @@ class ShowCreateEdgeSentence : public Sentence {
 
  private:
   std::unique_ptr<std::string> name_;
+};
+
+class ShowTagAnnIndexesSentence : public Sentence {
+ public:
+  explicit ShowTagAnnIndexesSentence(std::string *name) {
+    name_.reset(name);
+    kind_ = Kind::kShowTagAnnIndexes;
+  }
+
+  std::string toString() const override;
+
+  const std::string *name() const {
+    return name_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> name_;
+};
+
+class ShowEdgeAnnIndexesSentence : public Sentence {
+ public:
+  explicit ShowEdgeAnnIndexesSentence(std::string *name) {
+    name_.reset(name);
+    kind_ = Kind::kShowEdgeAnnIndexes;
+  }
+
+  std::string toString() const override;
+
+  const std::string *name() const {
+    return name_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> name_;
+};
+
+class ShowTagAnnIndexStatusSentence : public Sentence {
+ public:
+  ShowTagAnnIndexStatusSentence() {
+    kind_ = Kind::kShowTagAnnIndexStatus;
+  }
+
+  std::string toString() const override;
+};
+
+class ShowEdgeAnnIndexStatusSentence : public Sentence {
+ public:
+  ShowEdgeAnnIndexStatusSentence() {
+    kind_ = Kind::kShowEdgeAnnIndexStatus;
+  }
+
+  std::string toString() const override;
+};
+
+class ShowCreateTagAnnIndexSentence : public Sentence {
+ public:
+  explicit ShowCreateTagAnnIndexSentence(std::string *indexName) {
+    indexName_.reset(indexName);
+    kind_ = Kind::kShowCreateTagAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+};
+
+class ShowCreateEdgeAnnIndexSentence : public Sentence {
+ public:
+  explicit ShowCreateEdgeAnnIndexSentence(std::string *indexName) {
+    indexName_.reset(indexName);
+    kind_ = Kind::kShowCreateEdgeAnnIndex;
+  }
+
+  std::string toString() const override;
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> indexName_;
 };
 
 class ShowTagIndexesSentence : public Sentence {

@@ -156,17 +156,6 @@ struct IndexItem {
     7: optional IndexParams index_params,
 }
 
-struct AnnIndexItem {
-    1: common.IndexID           index_id,
-    2: binary                   index_name,
-    3: binary                   prop_name,
-    4: list<common.SchemaID>    schema_ids,
-    5: list<binary>             schema_names,
-    6: list<ColumnDef>          fields,
-    7: optional binary          comment,
-    8: optional list<binary>    ann_params,         // ANN specific parameters
-}
-
 enum HostStatus {
     ONLINE  = 0x00,
     OFFLINE = 0x01,
@@ -632,16 +621,6 @@ struct CreateTagIndexReq {
     7: optional IndexParams index_params,
 }
 
-struct CreateTagAnnIndexReq {
-    1: common.GraphSpaceID      space_id,
-    2: binary                   index_name,
-    3: list<binary>             tag_names,
-    4: IndexFieldDef            field,
-    5: bool                     if_not_exists,
-    6: optional binary          comment,
-    7: optional list<binary>    ann_params,
-}
-
 struct DropTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: binary              index_name,
@@ -659,6 +638,12 @@ struct GetTagIndexResp {
     3: IndexItem           	item,
 }
 
+struct GetTagAnnIndexResp {
+    1: common.ErrorCode		code,
+    2: common.HostAddr      leader,
+    3: AnnIndexItem         item,
+}
+
 struct ListTagIndexesReq {
     1: common.GraphSpaceID space_id,
 }
@@ -667,12 +652,6 @@ struct ListTagIndexesResp {
     1: common.ErrorCode     code,
     2: common.HostAddr      leader,
     3: list<IndexItem>		items,
-}
-
-struct ListTagAnnIndexesResp {
-    1: common.ErrorCode         code,
-    2: common.HostAddr          leader,
-    3: list<AnnIndexItem>	items,
 }
 
 struct CreateEdgeIndexReq {
@@ -702,6 +681,12 @@ struct GetEdgeIndexResp {
     3: IndexItem          	item,
 }
 
+struct GetEdgeAnnIndexResp {
+    1: common.ErrorCode     code,
+    2: common.HostAddr      leader,
+    3: AnnIndexItem         item,
+}
+
 struct ListEdgeIndexesReq {
     1: common.GraphSpaceID space_id,
 }
@@ -710,6 +695,44 @@ struct ListEdgeIndexesResp {
     1: common.ErrorCode     code,
     2: common.HostAddr      leader,
     3: list<IndexItem>    	items,
+}
+
+// Ann index needed
+struct AnnIndexItem {
+    1: common.IndexID           index_id,
+    2: binary                   index_name,
+    3: binary                   prop_name,
+    4: list<common.SchemaID>    schema_ids,
+    5: list<binary>             schema_names,
+    6: list<ColumnDef>          fields,
+    7: optional binary          comment,
+    8: optional list<binary>    ann_params,         // ANN specific parameters
+}
+
+struct CreateEdgeAnnIndexReq {
+    1: common.GraphSpaceID      space_id,
+    2: binary                   index_name,
+    3: list<binary>             edge_names,
+    4: IndexFieldDef            field,
+    5: bool                     if_not_exists,
+    6: optional binary          comment,
+    7: optional list<binary>    ann_params,
+}
+
+struct CreateTagAnnIndexReq {
+    1: common.GraphSpaceID      space_id,
+    2: binary                   index_name,
+    3: list<binary>             tag_names,
+    4: IndexFieldDef            field,
+    5: bool                     if_not_exists,
+    6: optional binary          comment,
+    7: optional list<binary>    ann_params,
+}
+
+struct ListTagAnnIndexesResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: list<AnnIndexItem>	items,
 }
 
 struct ListEdgeAnnIndexesResp {
@@ -1277,17 +1300,25 @@ service MetaService {
     ExecResp             dropTagIndex(1: DropTagIndexReq req );
     GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
-    ExecResp             createTagAnnIndex(1: CreateTagAnnIndexReq req);
-    ListTagAnnIndexesResp   listTagAnnIndexes(1:ListTagIndexesReq req);
     ExecResp             rebuildTagIndex(1: RebuildIndexReq req);
     ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
     ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
     ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
     GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
     ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
-    ListEdgeAnnIndexesResp  listEdgeAnnIndexes(1: ListEdgeIndexesReq req);
     ExecResp             rebuildEdgeIndex(1: RebuildIndexReq req);
     ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req);
+
+    ExecResp             createTagAnnIndex(1: CreateTagAnnIndexReq req);
+    ExecResp             dropTagAnnIndex(1: DropTagIndexReq req );
+    GetTagAnnIndexResp      getTagAnnIndex(1: GetTagIndexReq req);
+    ListTagAnnIndexesResp   listTagAnnIndexes(1:ListTagIndexesReq req);
+    ListIndexStatusResp  listTagAnnIndexStatus(1: ListIndexStatusReq req);
+    ExecResp             createEdgeAnnIndex(1: CreateEdgeAnnIndexReq req);
+    ExecResp             dropEdgeAnnIndex(1: DropEdgeIndexReq req );
+    GetEdgeAnnIndexResp     getEdgeAnnIndex(1: GetEdgeIndexReq req);
+    ListEdgeAnnIndexesResp  listEdgeAnnIndexes(1: ListEdgeIndexesReq req);
+    ListIndexStatusResp  listEdgeAnnIndexStatus(1: ListIndexStatusReq req);
 
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);

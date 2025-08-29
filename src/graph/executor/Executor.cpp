@@ -56,6 +56,7 @@
 #include "graph/executor/logic/PassThroughExecutor.h"
 #include "graph/executor/logic/SelectExecutor.h"
 #include "graph/executor/logic/StartExecutor.h"
+#include "graph/executor/maintain/EdgeAnnIndexExecutor.h"
 #include "graph/executor/maintain/EdgeExecutor.h"
 #include "graph/executor/maintain/EdgeIndexExecutor.h"
 #include "graph/executor/maintain/FTIndexExecutor.h"
@@ -337,7 +338,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->makeAndAdd<CreateTagAnnIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateEdgeAnnIndex: {
-      return nullptr;
+      return pool->makeAndAdd<CreateEdgeAnnIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateEdgeIndex: {
       return pool->makeAndAdd<CreateEdgeIndexExecutor>(node, qctx);
@@ -351,14 +352,26 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kDropEdgeIndex: {
       return pool->makeAndAdd<DropEdgeIndexExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kDropTagAnnIndex: {
+      return pool->makeAndAdd<DropTagAnnIndexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kDropEdgeAnnIndex: {
+      return pool->makeAndAdd<DropEdgeAnnIndexExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kDropFTIndex: {
       return pool->makeAndAdd<DropFTIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescTagIndex: {
       return pool->makeAndAdd<DescTagIndexExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kDescTagAnnIndex: {
+      return pool->makeAndAdd<DescTagAnnIndexExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kDescEdgeIndex: {
       return pool->makeAndAdd<DescEdgeIndexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kDescEdgeAnnIndex: {
+      return pool->makeAndAdd<DescEdgeAnnIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCreateTagIndex: {
       return pool->makeAndAdd<ShowCreateTagIndexExecutor>(node, qctx);
@@ -366,17 +379,35 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kShowCreateEdgeIndex: {
       return pool->makeAndAdd<ShowCreateEdgeIndexExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kShowCreateTagAnnIndex: {
+      return pool->makeAndAdd<ShowCreateTagAnnIndexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kShowCreateEdgeAnnIndex: {
+      return pool->makeAndAdd<ShowCreateEdgeAnnIndexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kShowEdgeAnnIndexStatus: {
+      return pool->makeAndAdd<ShowEdgeAnnIndexStatusExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kShowTagIndexes: {
       return pool->makeAndAdd<ShowTagIndexesExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kShowTagAnnIndexes: {
+      return pool->makeAndAdd<ShowTagAnnIndexesExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kShowEdgeIndexes: {
       return pool->makeAndAdd<ShowEdgeIndexesExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kShowEdgeAnnIndexes: {
+      return pool->makeAndAdd<ShowEdgeAnnIndexesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowTagIndexStatus: {
       return pool->makeAndAdd<ShowTagIndexStatusExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowEdgeIndexStatus: {
       return pool->makeAndAdd<ShowEdgeIndexStatusExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kShowTagAnnIndexStatus: {
+      return pool->makeAndAdd<ShowTagAnnIndexStatusExecutor>(node, qctx);
     }
     case PlanNode::Kind::kInsertVertices: {
       return pool->makeAndAdd<InsertVerticesExecutor>(node, qctx);

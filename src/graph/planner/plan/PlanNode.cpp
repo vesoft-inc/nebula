@@ -136,12 +136,20 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropTagIndex";
     case Kind::kDropEdgeIndex:
       return "DropEdgeIndex";
+    case Kind::kDropTagAnnIndex:
+      return "DropTagAnnIndex";
+    case Kind::kDropEdgeAnnIndex:
+      return "DropEdgeAnnIndex";
     case Kind::kDropFTIndex:
       return "DropFTIndex";
     case Kind::kDescTagIndex:
       return "DescTagIndex";
+    case Kind::kDescTagAnnIndex:
+      return "DescTagAnnIndex";
     case Kind::kDescEdgeIndex:
       return "DescEdgeIndex";
+    case Kind::kDescEdgeAnnIndex:
+      return "DescEdgeAnnIndex";
     case Kind::kInsertVertices:
       return "InsertVertices";
     case Kind::kInsertEdges:
@@ -177,6 +185,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowCreateEdge";
     case Kind::kShowCreateTagIndex:
       return "ShowCreateTagIndex";
+    case Kind::kShowCreateTagAnnIndex:
+      return "ShowCreateTagAnnIndex";
     case Kind::kShowCreateEdgeIndex:
       return "ShowCreateEdgeIndex";
     case Kind::kDropSpace:
@@ -197,12 +207,22 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowEdges";
     case Kind::kShowTagIndexes:
       return "ShowTagIndexes";
+    case Kind::kShowTagAnnIndexes:
+      return "ShowTagAnnIndexes";
     case Kind::kShowEdgeIndexes:
       return "ShowEdgeIndexes";
     case Kind::kShowTagIndexStatus:
       return "ShowTagIndexStatus";
+    case Kind::kShowTagAnnIndexStatus:
+      return "ShowTagAnnIndexStatus";
     case Kind::kShowEdgeIndexStatus:
       return "ShowEdgeIndexStatus";
+    case Kind::kShowEdgeAnnIndexes:
+      return "ShowEdgeAnnIndexes";
+    case Kind::kShowEdgeAnnIndexStatus:
+      return "ShowEdgeAnnIndexStatus";
+    case Kind::kShowCreateEdgeAnnIndex:
+      return "ShowCreateEdgeAnnIndex";
     case Kind::kCreateSnapshot:
       return "CreateSnapshot";
     case Kind::kDropSnapshot:

@@ -198,6 +198,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "SEMI"                      { return TokenType::KW_SEMI; }
 "ANTI"                      { return TokenType::KW_ANTI; }
 "ANNINDEX"                  { return TokenType::KW_ANNINDEX; }
+"ANNINDEXES"                { return TokenType::KW_ANNINDEXES; }
 "ANNINDEX_TYPE"             { return TokenType::KW_ANNINDEXTYPE; }
 "DIM"                       { return TokenType::KW_DIM; }
 "METRIC_TYPE"               { return TokenType::KW_METRICTYPE; }
@@ -206,6 +207,8 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "MAXDEGREE"                 { return TokenType::KW_MAXDEGREE; }
 "EFCONSTRUCTION"            { return TokenType::KW_EFCONSTRUCTION; }
 "MAXELEMENTS"               { return TokenType::KW_MAXELEMENTS; }
+"L2"                        { return TokenType::KW_L2; }
+"INNER_PRODUCT"             { return TokenType::KW_INNERPRODUCT; }
 
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,

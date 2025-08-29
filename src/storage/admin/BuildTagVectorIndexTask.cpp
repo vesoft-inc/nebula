@@ -16,6 +16,7 @@
 #include "interface/gen-cpp2/meta_types.h"
 #include "storage/StorageFlags.h"
 #include "storage/VectorIndexManager.h"
+#include "storage/admin/BuildVectorIndexTask.h"
 
 namespace nebula {
 namespace storage {
@@ -24,7 +25,6 @@ const int32_t kReserveNum = 1024 * 4;
 
 StatusOr<std::shared_ptr<AnnIndexItem>> BuildTagVectorIndexTask::getIndex(GraphSpaceID space,
                                                                           IndexID index) {
-  // 使用可配置的重试参数
   const int maxRetries = FLAGS_vector_index_cache_retry_times;
   const int retryIntervalMs = FLAGS_vector_index_cache_retry_interval_ms;
 
@@ -34,25 +34,18 @@ StatusOr<std::shared_ptr<AnnIndexItem>> BuildTagVectorIndexTask::getIndex(GraphS
       return indexRet.value();
     }
 
-    // 如果是IndexNotFound且不是最后一次重试，则刷新缓存并重试
     if (indexRet.status().code() == Status::Code::kIndexNotFound && retry < maxRetries - 1) {
       LOG(ERROR) << "Index " << index << " not found in cache, refreshing meta cache. Retry "
                  << (retry + 1) << "/" << maxRetries;
-
-      // 强制刷新meta client缓存
       if (auto* metaClient = env_->metaClient_) {
         auto refreshStatus = metaClient->refreshCache();
         if (!refreshStatus.ok()) {
           LOG(WARNING) << "Failed to refresh meta cache: " << refreshStatus;
         }
       }
-
-      // 等待一段时间再重试
       std::this_thread::sleep_for(std::chrono::milliseconds(retryIntervalMs));
       continue;
     }
-
-    // 最后一次重试：尝试直接从Meta服务获取所有Ann索引，然后查找目标索引
     if (indexRet.status().code() == Status::Code::kIndexNotFound && retry == maxRetries - 1) {
       LOG(ERROR) << "Last retry: attempting to fetch index directly from meta service";
 
@@ -71,8 +64,6 @@ StatusOr<std::shared_ptr<AnnIndexItem>> BuildTagVectorIndexTask::getIndex(GraphS
         }
       }
     }
-
-    // 其他错误直接返回
     return Status::Error("Get Tag Ann Index Failed: %s", indexRet.status().toString().c_str());
   }
 
@@ -232,32 +223,37 @@ nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildIndexGlobal(
   vecData.ids = vectorIds.data();
   vecData.cnt = static_cast<int32_t>(vectorIds.size());
   vecData.dim = folly::to<size_t>(dim);
-  return buildAnnIndex(space, part, item, vecData);
+  return buildAnnIndex(space, part, item, &vecData);
 }
 
 nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildAnnIndex(
     GraphSpaceID space,
     PartitionID part,
     const std::shared_ptr<AnnIndexItem>& item,
-    const VecData& data) {
-  if (data.cnt == 0) {
+    const VecData* data) {
+  if (data->cnt == 0) {
     LOG(ERROR) << "Part: " << part << ", No vectors to add to the index, skipping.";
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   // Build ANN index
-  auto& vecIdxMgr = VectorIndexManager::getInstance();
-  Status ret = Status::OK();
+  auto vecIdxMgr = env_->annIndexMan_;
+  std::shared_ptr<AnnIndex> annIndex;
   IndexID indexId = item->get_index_id();
 
-  if (!vecIdxMgr.getIndex(space, part, indexId).ok()) {
-    ret = vecIdxMgr.createOrUpdateIndex(space, part, indexId, item);
+  auto indexResult = vecIdxMgr->getIndex(space, part, indexId);
+  if (!indexResult.ok()) {
+    auto ret = vecIdxMgr->createOrUpdateIndex(space, part, indexId, item);
     if (!ret.ok()) {
       LOG(ERROR) << "Failed to create or update ANN index: " << ret;
       return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
+    annIndex = ret.value();
+  } else {
+    annIndex = indexResult.value();
   }
+  CHECK(annIndex != nullptr) << "Failed to get ANN index";
   // Add vectors to the index
-  ret = vecIdxMgr.addVectors(space, part, indexId, data);
+  auto ret = annIndex->add(data, false);
   if (!ret.ok()) {
     LOG(ERROR) << "Part: " << part << ", Failed to add vectors to ANN index: " << ret;
     return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;

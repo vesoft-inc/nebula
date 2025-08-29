@@ -97,8 +97,21 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ExecResp> future_createTagAnnIndex(
       const cpp2::CreateTagAnnIndexReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_dropTagAnnIndex(const cpp2::DropTagIndexReq& req) override;
+
+  folly::Future<cpp2::GetTagAnnIndexResp> future_getTagAnnIndex(
+      const cpp2::GetTagIndexReq& req) override;
+
   folly::Future<cpp2::ListTagAnnIndexesResp> future_listTagAnnIndexes(
       const cpp2::ListTagIndexesReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_createEdgeAnnIndex(
+      const cpp2::CreateEdgeAnnIndexReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_dropEdgeAnnIndex(const cpp2::DropEdgeIndexReq& req) override;
+
+  folly::Future<cpp2::GetEdgeAnnIndexResp> future_getEdgeAnnIndex(
+      const cpp2::GetEdgeIndexReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_createEdgeIndex(
       const cpp2::CreateEdgeIndexReq& req) override;
@@ -113,6 +126,12 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ListEdgeAnnIndexesResp> future_listEdgeAnnIndexes(
       const cpp2::ListEdgeIndexesReq& req) override;
+
+  folly::Future<cpp2::ListIndexStatusResp> future_listTagAnnIndexStatus(
+      const cpp2::ListIndexStatusReq& req) override;
+
+  folly::Future<cpp2::ListIndexStatusResp> future_listEdgeAnnIndexStatus(
+      const cpp2::ListIndexStatusReq& req) override;
 
   folly::Future<cpp2::ListIndexStatusResp> future_listTagIndexStatus(
       const cpp2::ListIndexStatusReq& req) override;

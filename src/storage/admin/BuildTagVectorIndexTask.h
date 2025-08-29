@@ -49,7 +49,7 @@ class BuildTagVectorIndexTask : public BuildVectorIndexTask {
   nebula::cpp2::ErrorCode buildAnnIndex(GraphSpaceID space,
                                         PartitionID part,
                                         const std::shared_ptr<AnnIndexItem>& items,
-                                        const VecData& data);
+                                        const VecData* data) override;
 };
 
 }  // namespace storage

@@ -26,12 +26,15 @@ class IndexUtil final {
   // TODO(Aiee) no status will be returned. Change the interface
   // Extracts the field and type from the indexItem and returns a Dataset to depscribe the index
   static StatusOr<DataSet> toDescIndex(const meta::cpp2::IndexItem &indexItem);
-
+  static StatusOr<DataSet> toDescIndex(const meta::cpp2::AnnIndexItem &indexItem);
   // TODO(Aiee) no status will be returned. Change the interface
   // Returns the information of the given index
   static StatusOr<DataSet> toShowCreateIndex(bool isTagIndex,
                                              const std::string &indexName,
                                              const meta::cpp2::IndexItem &indexItem);
+  static StatusOr<DataSet> toShowCreateIndex(bool isTagIndex,
+                                             const std::string &indexName,
+                                             const meta::cpp2::AnnIndexItem &indexItem);
 
   // TODO(Aiee) Replace with ExpressionUtils::getNegatedRelExprKind()
   static Expression::Kind reverseRelationalExprKind(Expression::Kind kind);
