@@ -452,6 +452,50 @@ class TagIndexFullScan final : public TagIndexScan {
 
 // class TagFullTextIndexScan : public TagIndexScan {};
 
+// class TagAnnIndexScan : public AnnIndexScan {
+//  public:
+//   const std::vector<std::string>& tagNames() const {
+//     return tagNames_;
+//   }
+
+//  protected:
+//   TagAnnIndexScan(QueryContext* qctx,
+//                   PlanNode* input,
+//                   const std::vector<std::string>& tagNames,
+//                   GraphSpaceID space,
+//                   std::vector<IndexQueryContext>&& scalarContexts,
+//                   IndexQueryContext&& vectorContext,
+//                   std::vector<std::string> returnCols,
+//                   int32_t schemaId,
+//                   std::vector<int32_t> vectorSchemaIds,
+//                   bool dedup,
+//                   std::vector<storage::cpp2::OrderBy> orderBy,
+//                   int64_t limit,
+//                   Expression* filter,
+//                   Value queryVector)
+//       : AnnIndexScan(qctx,
+//                      input,
+//                      space,
+//                      std::move(scalarContexts),
+//                      std::move(vectorContext),
+//                      std::move(returnCols),
+//                      false,
+//                      schemaId,
+//                      std::move(vectorSchemaIds),
+//                      dedup,
+//                      std::move(orderBy),
+//                      limit,
+//                      filter,
+//                      queryVector),
+//         tagNames_(tagNames) {}
+
+//   void cloneMembers(const TagAnnIndexScan& ts) {
+//     AnnIndexScan::cloneMembers(ts);
+//     tagNames_ = ts.tagNames_;
+//   }
+
+//   std::vector<std::string> tagNames_;
+// };
 }  // namespace graph
 }  // namespace nebula
 

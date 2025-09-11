@@ -107,6 +107,8 @@ class Expression {
     kSubscriptRange,
 
     kMatchPathPattern,
+
+    kApproximateLimit,
   };
 
   Expression(ObjectPool* pool, Kind kind);

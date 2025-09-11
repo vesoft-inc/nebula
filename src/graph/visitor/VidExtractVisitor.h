@@ -106,6 +106,7 @@ class VidExtractVisitor final : public ExprVisitor {
   void visit(SubscriptRangeExpression *expr) override;
   // match path pattern expression
   void visit(MatchPathPatternExpression *expr) override;
+  void visit(ApproximateLimitExpression *expr) override;
 
  private:
   void visitBinaryExpr(BinaryExpression *expr);

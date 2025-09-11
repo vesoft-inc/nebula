@@ -10,6 +10,7 @@
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/PathBuildExpression.h"
+#include "common/vectorIndex/VectorIndexUtils.h"
 #include "graph/context/ast/AstContext.h"
 #include "parser/MatchSentence.h"
 
@@ -140,6 +141,8 @@ struct OrderByClauseContext final : CypherClauseContextBase {
   OrderByClauseContext() : CypherClauseContextBase(CypherClauseKind::kOrderBy) {}
 
   std::vector<std::pair<size_t, OrderFactor::OrderType>> indexedOrderFactors;
+  bool hasVectorDis{false};
+  Expression* vectorFunc{nullptr};
 };
 
 struct PaginationContext final : CypherClauseContextBase {
@@ -147,6 +150,10 @@ struct PaginationContext final : CypherClauseContextBase {
 
   int64_t skip{0};
   int64_t limit{std::numeric_limits<int64_t>::max()};
+  bool isApproximateLimit{false};
+  AnnIndexType annIndexType{AnnIndexType::ANN_INVALID};
+  MetricType metricType{MetricType::METRIC_INVALID};
+  int64_t param{0};
 };
 
 // Used to handle implicit groupBy

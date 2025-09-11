@@ -171,6 +171,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
                                                          *edgeKey.ranking_ref(),
                                                          edgeKey.dst_ref()->getStr(),
                                                          static_cast<int32_t>(vectorFieldIndex));
+          LOG(ERROR) << "vectorKey: " << folly::hexlify(vectorKey);
           auto vectorValue = encodeVectorRowVal(
               schema, vectorProps_[i], static_cast<size_t>(vectorFieldIndex), wRet);
 
@@ -208,7 +209,9 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
 void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
   const auto& partEdges = req.get_parts();
   const auto& propNames = req.get_prop_names();
+  int32_t totalVecNums = 0;
   for (const auto& part : partEdges) {
+    int32_t vecNums = 0;
     auto partId = part.first;
     const auto& edges = part.second;
     // cache edgeKey
@@ -262,6 +265,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       }
       kvs.emplace_back(std::move(key), std::move(encode.value()));
       if (existVectorProps) {
+        vecNums++;
         bool vectorPropNamesEmpty = vectorPropNames_.empty();
         for (size_t i = 0; i < vectorProps_.size(); ++i) {
           int64_t vectorFieldIndex = vectorPropNamesEmpty
@@ -286,7 +290,8 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         }
       }
     }
-
+    totalVecNums += vecNums;
+    LOG(ERROR) << "part: " << partId << ", edge vec nums: " << vecNums;
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
@@ -300,6 +305,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       env_->kvstore_->asyncAtomicOp(spaceId_, partId, std::move(atomicOp), std::move(cb));
     }
   }
+  LOG(ERROR) << "total edge vec nums: " << totalVecNums;
 }
 
 kvstore::MergeableAtomicOpResult AddEdgesProcessor::addEdgesWithIndex(

@@ -71,6 +71,24 @@ class MockIndexManager final : public nebula::meta::IndexManager {
     return fd->second;
   }
 
+  StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getTagAnnIndexes(
+      GraphSpaceID space) override {
+    auto fd = tagAnnIndexes_.find(space);
+    if (fd == tagAnnIndexes_.end()) {
+      return Status::Error("No space for index");
+    }
+    return fd->second;
+  }
+
+  StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getEdgeAnnIndexes(
+      GraphSpaceID space) override {
+    auto fd = edgeAnnIndexes_.find(space);
+    if (fd == edgeAnnIndexes_.end()) {
+      return Status::Error("No space for index");
+    }
+    return fd->second;
+  }
+
   StatusOr<IndexID> toTagIndexID(GraphSpaceID space, std::string tagName) override {
     UNUSED(space);
     UNUSED(tagName);
@@ -99,6 +117,8 @@ class MockIndexManager final : public nebula::meta::IndexManager {
   // index related
   std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> tagIndexes_;
   std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> edgeIndexes_;
+  std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<AnnIndexItem>>> tagAnnIndexes_;
+  std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<AnnIndexItem>>> edgeAnnIndexes_;
 };
 
 }  // namespace graph

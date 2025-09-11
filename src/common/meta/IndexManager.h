@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2025 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -32,6 +32,12 @@ class IndexManager {
   virtual StatusOr<std::vector<std::shared_ptr<IndexItem>>> getTagIndexes(GraphSpaceID space) = 0;
 
   virtual StatusOr<std::vector<std::shared_ptr<IndexItem>>> getEdgeIndexes(GraphSpaceID space) = 0;
+
+  virtual StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getTagAnnIndexes(
+      GraphSpaceID space) = 0;
+
+  virtual StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getEdgeAnnIndexes(
+      GraphSpaceID space) = 0;
 
   virtual StatusOr<IndexID> toTagIndexID(GraphSpaceID space, std::string tagName) = 0;
 

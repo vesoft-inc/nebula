@@ -29,7 +29,8 @@ class AdHocIndexManager final : public nebula::meta::IndexManager {
   void addTagAnnIndex(GraphSpaceID space,
                       const std::vector<TagID>& tagID,
                       IndexID indexID,
-                      nebula::meta::cpp2::ColumnDef&& field);
+                      nebula::meta::cpp2::ColumnDef&& field,
+                      bool isIVF = true);
 
   void addEdgeIndex(GraphSpaceID space,
                     EdgeType edgeType,
@@ -39,7 +40,8 @@ class AdHocIndexManager final : public nebula::meta::IndexManager {
   void addEdgeAnnIndex(GraphSpaceID space,
                        const std::vector<EdgeType>& edgeTypes,
                        IndexID indexID,
-                       nebula::meta::cpp2::ColumnDef&& field);
+                       nebula::meta::cpp2::ColumnDef&& field,
+                       bool isIVF = true);
 
   StatusOr<std::shared_ptr<IndexItem>> getTagIndex(GraphSpaceID space, IndexID index) override;
 
@@ -62,6 +64,12 @@ class AdHocIndexManager final : public nebula::meta::IndexManager {
 
   StatusOr<std::shared_ptr<AnnIndexItem>> getEdgeAnnIndex(GraphSpaceID space,
                                                           IndexID index) override;
+
+  StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getTagAnnIndexes(
+      GraphSpaceID space) override;
+
+  StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getEdgeAnnIndexes(
+      GraphSpaceID space) override;
 
   void init(nebula::meta::MetaClient*) {}
 

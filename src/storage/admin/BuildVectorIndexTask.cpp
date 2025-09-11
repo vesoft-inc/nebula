@@ -20,7 +20,7 @@ bool BuildVectorIndexTask::check() {
 }
 
 void BuildVectorIndexTask::finish(nebula::cpp2::ErrorCode rc) {
-  LOG(INFO) << "Finish rebuild index task in space " << *ctx_.parameters_.space_id_ref();
+  LOG(INFO) << "Finish build tag ann index task in space " << *ctx_.parameters_.space_id_ref();
   if (changedSpaceGuard_) {
     auto space = *ctx_.parameters_.space_id_ref();
     for (auto it = env_->rebuildIndexGuard_->begin(); it != env_->rebuildIndexGuard_->end(); ++it) {

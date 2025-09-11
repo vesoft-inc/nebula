@@ -38,6 +38,7 @@ class QueryUtils final {
     kType,
     kRank,
     kDst,
+    kDis,
     kOther,
   };
   /**
@@ -60,6 +61,8 @@ class QueryUtils final {
       return ReturnColType::kRank;
     } else if (name == kDst) {
       return ReturnColType::kDst;
+    } else if (name == kDis) {
+      return ReturnColType::kDis;
     } else {
       return ReturnColType::kOther;
     }
@@ -251,11 +254,12 @@ class QueryUtils final {
                                    StorageExpressionContext* expCtx = nullptr,
                                    const std::string& tagName = "") {
     for (const auto& prop : *props) {
-      if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr))) {
+      if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr)) || prop.isVector()) {
         continue;
       }
       auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
       NG_RETURN_IF_ERROR(value);
+      LOG(ERROR) << "Query Collect Prop: " << value.value().toString();
       if (prop.returned_) {
         VLOG(2) << "Collect prop " << prop.name_;
         list.emplace_back(value.value());
@@ -263,6 +267,31 @@ class QueryUtils final {
       if (prop.filtered_ && expCtx != nullptr) {
         expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
       }
+    }
+    return Status::OK();
+  }
+
+  static Status collectVertexVectorProp(folly::StringPiece key,
+                                        size_t vIdLen,
+                                        bool isIntId,
+                                        RowReaderWrapper* reader,
+                                        PropContext prop,
+                                        nebula::List& list,
+                                        StorageExpressionContext* expCtx = nullptr,
+                                        const std::string& tagName = "") {
+    LOG(ERROR) << "collect vector prop: " << prop.name_;
+    if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr))) {
+      return Status::OK();
+    }
+    auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
+    NG_RETURN_IF_ERROR(value);
+    LOG(ERROR) << "Query Collect Vector Prop: " << value.value().toString();
+    if (prop.returned_) {
+      VLOG(2) << "Collect prop " << prop.name_;
+      list.emplace_back(value.value());
+    }
+    if (prop.filtered_ && expCtx != nullptr) {
+      expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
     }
     return Status::OK();
   }

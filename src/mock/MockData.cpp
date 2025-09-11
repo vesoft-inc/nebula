@@ -1111,9 +1111,9 @@ nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVectorVerticesReq(int
   for (auto& rec : retRecs) {
     nebula::storage::cpp2::NewVertex newVertex;
     nebula::storage::cpp2::NewTag newTag;
-    auto partId = std::stoul(rec.vId_) % parts + 1;
-    LOG(INFO) << "partId: " << partId << ", vId: " << rec.vId_;
-
+    std::hash<std::string> hash;
+    auto partId = (hash(rec.vId_)) % parts + 1;
+    LOG(ERROR) << "partId: " << partId << ", vId_: " << rec.vId_;
     newTag.tag_id_ref() = rec.tId_;
     newTag.props_ref() = std::move(rec.props_);
 

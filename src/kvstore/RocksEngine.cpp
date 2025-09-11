@@ -219,6 +219,10 @@ nebula::cpp2::ErrorCode RocksEngine::get(const std::string& key,
     auto it = cfHandleMap_.find(NebulaKeyUtils::kVectorColumnFamilyName);
     DCHECK(it != cfHandleMap_.end()) << "vector column family not existed";
     status = db_->Get(options, it->second, rocksdb::Slice(key), value);
+  } else if (NebulaKeyUtils::isIdVidCf(key)) {
+    auto it = cfHandleMap_.find(NebulaKeyUtils::kIdVidTagColumnFamilyName);
+    DCHECK(it != cfHandleMap_.end()) << "id_vid_tag column family not existed";
+    status = db_->Get(options, it->second, rocksdb::Slice(key), value);
   } else {
     status = db_->Get(options, rocksdb::Slice(key), value);
   }

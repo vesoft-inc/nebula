@@ -4,6 +4,10 @@
  */
 #include "storage/exec/IndexScanNode.h"
 
+#include "common/graph/Response.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/vectorIndex/VectorIndexUtils.h"
+
 namespace nebula {
 namespace storage {
 // Define of Path
@@ -563,5 +567,104 @@ std::string IndexScanNode::identify() {
 }
 
 // End of IndexScan
+// Define of AnnIndexScan
+
+AnnIndexScanNode::AnnIndexScanNode(const AnnIndexScanNode& node)
+    : IndexNode(node),
+      partId_(node.partId_),
+      indexId_(node.indexId_),
+      kvstore_(node.kvstore_),
+      indexNullable_(node.indexNullable_),
+      requiredColumns_(node.requiredColumns_),
+      searchResults_(node.searchResults_),
+      currentResultIndex_(node.currentResultIndex_),
+      k_(node.k_),
+      param_(node.param_),
+      query_(node.query_) {}
+
+::nebula::cpp2::ErrorCode AnnIndexScanNode::init(InitContext& ctx) {
+  if (query_.empty()) {
+    LOG(ERROR) << "Query vector must be not empty";
+    return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  }
+  vidLen_ = context_->vIdLen();
+  DCHECK(requiredColumns_.empty());
+  for (auto& col : ctx.requiredColumns) {
+    requiredColumns_.emplace_back(col);
+  }
+  ctx.returnColumns = requiredColumns_;
+  for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
+    ctx.retColMap[ctx.returnColumns[i]] = i;
+  }
+  return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode AnnIndexScanNode::doExecute(PartitionID partId) {
+  partId_ = partId;
+  auto ret = resetIter(partId_);
+  return ret;
+}
+
+IndexNode::Result AnnIndexScanNode::doNext() {
+  // Check if we have more results from the previous ANN search
+  while (currentResultIndex_ < searchResults_.IDs.size()) {
+    auto vectorId = searchResults_.IDs[currentResultIndex_++];
+    // Get vid
+    auto rowDataRet = getVidByVectorId(vectorId);
+    if (!rowDataRet.ok()) {
+      LOG(ERROR) << "Failed to get vid for vectorId " << vectorId;
+      continue;  // Skip this result and move to the next
+    }
+    auto rowData = rowDataRet.value();
+    // Build result row with required columns
+    Row row;
+    for (auto& col : requiredColumns_) {
+      auto it = rowData.find(col);
+      if (it != rowData.end()) {
+        row.emplace_back(std::move(it->second));
+      }
+    }
+    return Result(std::move(row));
+  }
+  // No more results
+  return Result();
+}
+
+nebula::cpp2::ErrorCode AnnIndexScanNode::resetIter(PartitionID partId) {
+  // Reset search results for new partition
+  searchResults_.clear();
+  currentResultIndex_ = 0;
+
+  auto indexVal = context_->env()->annIndexMan_->getIndex(this->spaceId_, partId, this->indexId_);
+  if (!indexVal.ok()) {
+    return ::nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+  }
+  annIndex_ = indexVal.value();
+  if (query_.empty()) {
+    LOG(ERROR) << "Query vector must be not empty";
+    return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  }
+  // Perform ANN search if we have an index
+  nebula::Status status;
+  if (annIndex_->indexType() == AnnIndexType::IVF) {
+    SearchParamsIVF paramsIVF(k_, query_.data(), query_.size(), param_);
+    status = annIndex_->search(&paramsIVF, &searchResults_);
+  } else if (annIndex_->indexType() == AnnIndexType::HNSW) {
+    SearchParamsHNSW paramsHNSW(k_, query_.data(), query_.size(), param_);
+    status = annIndex_->search(&paramsHNSW, &searchResults_);
+  } else {
+    LOG(ERROR) << "Unknown Ann Index Type";
+    return nebula::cpp2::ErrorCode::E_UNKNOWN;
+  }
+  if (!status.ok()) {
+    return nebula::cpp2::ErrorCode::E_EXECUTION_ERROR;
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+std::string AnnIndexScanNode::identify() {
+  return fmt::format("{}(IndexID={}, Ann Search)", name_, indexId_);
+}
+
 }  // namespace storage
 }  // namespace nebula

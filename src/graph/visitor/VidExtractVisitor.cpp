@@ -61,6 +61,11 @@ void VidExtractVisitor::visit(ConstantExpression *expr) {
   vidPattern_ = VidPattern{};
 }
 
+void VidExtractVisitor::visit(ApproximateLimitExpression *expr) {
+  UNUSED(expr);
+  vidPattern_ = VidPattern{};
+}
+
 void VidExtractVisitor::visit(UnaryExpression *expr) {
   if (expr->kind() == Expression::Kind::kUnaryNot) {
     expr->operand()->accept(this);

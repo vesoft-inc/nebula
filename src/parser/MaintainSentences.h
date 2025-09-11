@@ -684,9 +684,6 @@ class CreateTagIndexSentence final : public CreateSentence {
 };
 class AnnIndexParamItem {
  public:
-  enum AnnIndexType : int8_t { IVF, HNSW };
-  enum MetricType : int8_t { L2, INNER_PRODUCT };
-
   AnnIndexParamItem(AnnIndexType type, Value dim, MetricType metric) {
     indexType_ = type;
     dim_ = dim;
@@ -718,7 +715,7 @@ class AnnIndexParamItem {
 class IVFIndexParamItem final : public AnnIndexParamItem {
  public:
   IVFIndexParamItem(Value dim, MetricType metric, Value nlist, Value trainSz)
-      : AnnIndexParamItem(AnnIndexParamItem::IVF, dim, metric), nlist_(nlist), trainSz_(trainSz) {}
+      : AnnIndexParamItem(AnnIndexType::IVF, dim, metric), nlist_(nlist), trainSz_(trainSz) {}
   int getNList() const {
     return nlist_.getInt();
   }
@@ -738,7 +735,7 @@ class HNSWIndexParamItem final : public AnnIndexParamItem {
  public:
   HNSWIndexParamItem(
       Value dim, MetricType metric, Value maxDegree, Value efConstruction, Value capacity)
-      : AnnIndexParamItem(AnnIndexParamItem::HNSW, dim, metric),
+      : AnnIndexParamItem(AnnIndexType::HNSW, dim, metric),
         maxDegree_(maxDegree),
         efConstruction_(efConstruction),
         capacity_(capacity) {}
@@ -761,6 +758,31 @@ class HNSWIndexParamItem final : public AnnIndexParamItem {
   Value maxDegree_;
   Value efConstruction_;
   Value capacity_;
+};
+
+class AnnIndexQueryParamItem {
+ public:
+  AnnIndexQueryParamItem(MetricType metricType, AnnIndexType annIndexType, Value param)
+      : metricType_(metricType), annIndexType_(annIndexType), param_(param) {}
+
+  MetricType getMetricType() const {
+    return metricType_;
+  }
+
+  AnnIndexType getAnnIndexType() const {
+    return annIndexType_;
+  }
+
+  Value getParam() const {
+    return param_;
+  }
+
+  std::string toString() const;
+
+ private:
+  MetricType metricType_;
+  AnnIndexType annIndexType_;
+  Value param_;
 };
 class CreateTagAnnIndexSentence final : public CreateSentence {
  public:

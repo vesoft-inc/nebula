@@ -77,6 +77,8 @@ class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
   void visit(SubscriptRangeExpression *expr) override;
   // match path pattern expression
   void visit(MatchPathPatternExpression *expr) override;
+  // approximate limit expression
+  void visit(ApproximateLimitExpression *expr) override;
 
  private:
   template <typename T>

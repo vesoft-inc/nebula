@@ -47,6 +47,8 @@ class GraphStorageLocalServer final : public boost::noncopyable, public nebula::
   folly::Future<cpp2::UpdateResponse> future_updateEdge(const cpp2::UpdateEdgeRequest& request);
   folly::Future<cpp2::GetUUIDResp> future_getUUID(const cpp2::GetUUIDReq& request);
   folly::Future<cpp2::LookupIndexResp> future_lookupIndex(const cpp2::LookupIndexRequest& request);
+  folly::Future<cpp2::LookupIndexResp> future_lookupAnnIndex(
+      const cpp2::LookupAnnIndexRequest& request);
   folly::Future<cpp2::GetNeighborsResponse> future_lookupAndTraverse(
       const cpp2::LookupAndTraverseRequest& request);
   folly::Future<cpp2::ScanResponse> future_scanVertex(const cpp2::ScanVertexRequest& request);

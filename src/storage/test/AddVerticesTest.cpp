@@ -37,8 +37,8 @@ TEST(AddVerticesTest, SimpleVectorTest) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   LOG(INFO) << "Check vector data in kv store...";
-  // The number of vertices is 12
-  checkAddVerticesData(req, env, 12, 0);
+  // The number of vertices is 84
+  checkAddVerticesData(req, env, 84, 0);
 }
 
 TEST(AddVerticesTest, SpecifyPropertyNameVectorTest) {
@@ -60,8 +60,8 @@ TEST(AddVerticesTest, SpecifyPropertyNameVectorTest) {
   }
 
   LOG(INFO) << "Check data in kv store...";
-  // The number of vertices  is 12
-  checkAddVerticesData(req, env, 12, 1);
+  // The number of vertices  is 84
+  checkAddVerticesData(req, env, 84, 1);
 }
 
 TEST(AddVerticesTest, MultiVersionVectorTest) {
@@ -93,8 +93,8 @@ TEST(AddVerticesTest, MultiVersionVectorTest) {
   }
 
   LOG(INFO) << "Check data in kv store...";
-  // The number of vertices is 12
-  checkAddVerticesData(req, env, 12, 2);
+  // The number of vertices is 84
+  checkAddVerticesData(req, env, 84, 2);
 }
 
 TEST(AddVerticesTest, SimpleTest) {

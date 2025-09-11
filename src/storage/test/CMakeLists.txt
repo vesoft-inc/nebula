@@ -492,6 +492,23 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        lookup_ann_processor_test
+    SOURCES
+        LookupAnnProcessorTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        ${VECTOR_INDEX_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
         storage_http_stats_test
     SOURCES
         StorageHttpStatsHandlerTest.cpp

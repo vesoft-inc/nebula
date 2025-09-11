@@ -6,9 +6,12 @@
 #ifndef GRAPH_PLANNER_PLAN_QUERY_H_
 #define GRAPH_PLANNER_PLAN_QUERY_H_
 
+#include <bits/stdint-intn.h>
 #include <glog/logging.h>
 
 #include "common/expression/AggregateExpression.h"
+#include "common/expression/Expression.h"
+#include "common/vectorIndex/VectorIndexUtils.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "interface/gen-cpp2/storage_types.h"
@@ -809,6 +812,153 @@ class FulltextIndexScan : public Explore {
   int32_t schemaId_;
 };
 
+/**
+ * @brief Hybrid Index Scan that supports both scalar and vector queries
+ *
+ * Extends IndexScan to support ANN (Approximate Nearest Neighbor) queries
+ * while maintaining full compatibility with traditional scalar index queries.
+ *
+ * Examples:
+ * 1. Pure vector query: ORDER BY euclidean($query_vector, p.embedding) LIMIT 10
+ * 2. Hybrid query: WHERE p.category = "scientist" ORDER BY euclidean($query_vector, p.embedding)
+ * LIMIT 10
+ */
+class AnnIndexScan : public IndexScan {
+ public:
+  using IndexQueryContext = storage::cpp2::IndexQueryContext;
+
+  static AnnIndexScan* make(QueryContext* qctx,
+                            PlanNode* input,
+                            GraphSpaceID space = -1,
+                            std::vector<IndexQueryContext>&& scalarContexts = {},
+                            IndexQueryContext&& vectorContext = {},
+                            std::vector<std::string> returnCols = {},
+                            bool isEdge = false,
+                            int32_t schemaId = -1,
+                            std::vector<int32_t> vectorSchemaIds = {},
+                            bool dedup = false,
+                            std::vector<storage::cpp2::OrderBy> orderBy = {},
+                            int64_t limit = std::numeric_limits<int64_t>::max(),
+                            Expression* filter = nullptr,
+                            Value queryVector = Value(),
+                            int64_t queryParam = DEFAULT_SEARCH) {
+    return qctx->objPool()->makeAndAdd<AnnIndexScan>(qctx,
+                                                     input,
+                                                     space,
+                                                     std::move(scalarContexts),
+                                                     std::move(vectorContext),
+                                                     std::move(returnCols),
+                                                     isEdge,
+                                                     schemaId,
+                                                     std::move(vectorSchemaIds),
+                                                     dedup,
+                                                     std::move(orderBy),
+                                                     limit,
+                                                     filter,
+                                                     queryVector,
+                                                     queryParam);
+  }
+
+  int64_t queryParam() const {
+    return queryParam_;
+  }
+
+  Value queryVector() const {
+    return queryVector_;
+  }
+
+  // Vector-specific methods
+  const IndexQueryContext& vectorContext() const {
+    return vectorContext_;
+  }
+
+  void setVectorContext(IndexQueryContext context) {
+    vectorContext_ = std::move(context);
+  }
+
+  bool hasVectorContext() const {
+    return vectorContext_.index_id_ref().is_set();
+  }
+
+  // Multi-schema support
+  const std::vector<int32_t>& vectorSchemaIds() const {
+    return vectorSchemaIds_;
+  }
+
+  void setSchemaIds(std::vector<int32_t> schemas) {
+    vectorSchemaIds_ = std::move(schemas);
+  }
+
+  // Check if this is a pure vector scan (no scalar contexts)
+  bool isPureVectorScan() const {
+    return queryContext().empty() && hasVectorContext();
+  }
+
+  // Check if this is a hybrid scan (both scalar and vector contexts)
+  bool isHybridScan() const {
+    return !queryContext().empty() && hasVectorContext();
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  friend ObjectPool;
+  AnnIndexScan(QueryContext* qctx,
+               PlanNode* input,
+               GraphSpaceID space,
+               std::vector<IndexQueryContext>&& scalarContexts,
+               IndexQueryContext&& vectorContext,
+               std::vector<std::string>&& returnCols,
+               bool isEdge,
+               int32_t schemaId,
+               std::vector<int32_t> schemaIds,
+               bool dedup,
+               std::vector<storage::cpp2::OrderBy> orderBy,
+               int64_t limit,
+               Expression* filter,
+               Value queryVector,
+               int64_t queryParam)
+      : IndexScan(qctx,
+                  input,
+                  space,
+                  std::move(scalarContexts),
+                  std::move(returnCols),
+                  isEdge,
+                  schemaId,
+                  dedup,
+                  std::move(orderBy),
+                  limit,
+                  filter,
+                  Kind::kAnnIndexScan) {
+    vectorContext_ = std::move(vectorContext);
+    vectorSchemaIds_ = std::move(schemaIds);
+    queryVector_ = std::move(queryVector);
+    queryParam_ = queryParam;
+    // Ensure AnnIndexScan exposes its return columns as output variable names
+    // If no explicit returnCols were provided, default to [kVid, kDis]
+    if (returnColumns().empty()) {
+      setColNames({kVid, kDis});
+    } else {
+      setColNames(returnColumns());
+    }
+  }
+
+  void cloneMembers(const AnnIndexScan&);
+
+ private:
+  // Vector index query context for ANN search
+  IndexQueryContext vectorContext_;
+
+  // Multiple schema support for vector queries
+  // Allows searching across multiple schemas with same-named vector properties
+  std::vector<int32_t> vectorSchemaIds_;
+  // query vector
+  Value queryVector_;
+  int64_t queryParam_;  // ann parameter K, default to 500
+  static constexpr int64_t DEFAULT_SEARCH = 500;
+};
+
 // Scan vertices
 class ScanVertices final : public Explore {
  public:
@@ -1123,12 +1273,23 @@ class Sort final : public SingleInputNode {
  public:
   static Sort* make(QueryContext* qctx,
                     PlanNode* input,
-                    std::vector<std::pair<size_t, OrderFactor::OrderType>> factors = {}) {
-    return qctx->objPool()->makeAndAdd<Sort>(qctx, input, std::move(factors));
+                    std::vector<std::pair<size_t, OrderFactor::OrderType>> factors = {},
+                    bool hasVectorDis = false,
+                    Expression* vectorFunc = nullptr) {
+    return qctx->objPool()->makeAndAdd<Sort>(
+        qctx, input, std::move(factors), hasVectorDis, vectorFunc);
   }
 
   const std::vector<std::pair<size_t, OrderFactor::OrderType>>& factors() const {
     return factors_;
+  }
+
+  bool hasVectorDis() const {
+    return hasVectorDis_;
+  }
+
+  Expression* vectorFunc() const {
+    return vectorFunc_;
   }
 
   PlanNode* clone() const override;
@@ -1138,9 +1299,13 @@ class Sort final : public SingleInputNode {
   friend ObjectPool;
   Sort(QueryContext* qctx,
        PlanNode* input,
-       std::vector<std::pair<size_t, OrderFactor::OrderType>> factors)
+       std::vector<std::pair<size_t, OrderFactor::OrderType>> factors,
+       bool hasVectorDis,
+       Expression* vectorFunc = nullptr)
       : SingleInputNode(qctx, Kind::kSort, input) {
     factors_ = std::move(factors);
+    hasVectorDis_ = hasVectorDis;
+    vectorFunc_ = vectorFunc;
   }
 
   std::vector<std::pair<std::string, std::string>> factorsString() const {
@@ -1161,6 +1326,8 @@ class Sort final : public SingleInputNode {
 
  private:
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors_;
+  bool hasVectorDis_{false};
+  Expression* vectorFunc_{nullptr};
 };
 
 // Output the records with the given limitation.
@@ -1220,6 +1387,109 @@ class Limit final : public SingleInputNode {
  private:
   int64_t offset_{-1};
   Expression* count_{nullptr};
+};
+
+// ApproximateLimit node for vector similarity search
+class ApproximateLimit final : public SingleInputNode {
+ public:
+  static ApproximateLimit* make(QueryContext* qctx,
+                                PlanNode* input,
+                                int64_t offset = -1,
+                                int64_t count = -1,
+                                AnnIndexType annIndexType = AnnIndexType::IVF,
+                                MetricType metricType = MetricType::L2,
+                                int64_t param = 100) {
+    return qctx->objPool()->makeAndAdd<ApproximateLimit>(
+        qctx, input, offset, count, param, metricType, annIndexType);
+  }
+
+  static ApproximateLimit* make(QueryContext* qctx,
+                                PlanNode* input,
+                                int64_t offset = -1,
+                                Expression* count = nullptr,
+                                AnnIndexType annIndexType = AnnIndexType::IVF,
+                                MetricType metricType = MetricType::L2,
+                                int64_t param = 100) {
+    return qctx->objPool()->makeAndAdd<ApproximateLimit>(
+        qctx, input, offset, count, param, metricType, annIndexType);
+  }
+
+  int64_t offset() const {
+    return offset_;
+  }
+
+  int64_t param() const {
+    return param_;
+  }
+
+  AnnIndexType annIndexType() const {
+    return annIndexType_;
+  }
+
+  MetricType metricType() const {
+    return metricType_;
+  }
+
+  // Get constant count value
+  int64_t count(QueryContext* qctx = nullptr) const;
+  // Get count in runtime
+  int64_t count(QueryExpressionContext& ctx) const {
+    if (count_ == nullptr) {
+      return -1;
+    }
+    auto v = count_->eval(ctx);
+    auto s = v.getInt();
+    DCHECK_GE(s, 0);
+    return s;
+  }
+
+  const Expression* countExpr() const {
+    return count_;
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  friend ObjectPool;
+  ApproximateLimit(QueryContext* qctx,
+                   PlanNode* input,
+                   int64_t offset,
+                   int64_t count,
+                   int64_t params,
+                   MetricType metricType,
+                   AnnIndexType annIndexType)
+      : SingleInputNode(qctx, Kind::kApproximateLimit, input) {
+    offset_ = offset;
+    count_ = ConstantExpression::make(qctx_->objPool(), count);
+    param_ = params;
+    metricType_ = metricType;
+    annIndexType_ = annIndexType;
+  }
+
+  ApproximateLimit(QueryContext* qctx,
+                   PlanNode* input,
+                   int64_t offset,
+                   Expression* count,
+                   int64_t param,
+                   MetricType metricType,
+                   AnnIndexType annIndexType)
+      : SingleInputNode(qctx, Kind::kApproximateLimit, input) {
+    offset_ = offset;
+    count_ = count;
+    param_ = param;
+    metricType_ = metricType;
+    annIndexType_ = annIndexType;
+  }
+
+  void cloneMembers(const ApproximateLimit&);
+
+ private:
+  int64_t offset_{-1};
+  Expression* count_{nullptr};
+  int64_t param_;
+  MetricType metricType_;
+  AnnIndexType annIndexType_;
 };
 
 // Get the Top N record set.

@@ -154,19 +154,25 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 // ann search
 [[nodiscard]] Status IVFIndex::search(const SearchParams *params, SearchResult *res) {
   if (params == nullptr || res == nullptr) {
+    LOG(ERROR) << "IVFIndex::search failed: params or res is null";
     return Status::Error("SearchParams or SearchResult is null");
   }
   if (ivfIndex_ == nullptr) {
+    LOG(ERROR) << "IVF index is not initialized";
     return Status::Error("IVF index is not initialized");
   }
   if (params->topK < 1 || params->query == nullptr || params->queryDim != dim_) {
+    LOG(ERROR) << "Invalid SearchParams: topK=" << params->topK << ", queryDim=" << params->queryDim
+               << ", expectedDim=" << dim_ << ", query is null: " << (params->query == nullptr);
     return Status::Error("Invalid SearchParams");
   }
   const auto *ivfParams = dynamic_cast<const SearchParamsIVF *>(params);
   if (ivfParams == nullptr) {
+    LOG(ERROR) << "SearchParams is not SearchParamsIVF";
     return Status::Error("SearchParams is not SearchParamsIVF");
   }
   if (ivfParams->nprobe < 1) {
+    LOG(ERROR) << "Invalid nprobe: " << ivfParams->nprobe;
     return Status::Error("Invalid nprobe");
   }
 
@@ -179,15 +185,32 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
   try {
     std::shared_lock lock(latch_);
     ivfIndex_->search(1, params->query, k, res->distances.data(), res->IDs.data());
-    // FAISS may return -1 for missing results
+    LOG(ERROR) << "IVF search found " << res->IDs.size() << " results"
+               << " for query vector";
+    for (size_t i = 0; i < res->IDs.size(); i++)
+      LOG(ERROR) << "Result " << i << ": ID=" << res->IDs[i] << ", Distance=" << res->distances[i];
+
+    // Filter out invalid IDs and reconstruct only valid ones
     res->vectors.resize(k * dim_);
-    ivfIndex_->reconstruct_batch(k, res->IDs.data(), res->vectors.data());
+    std::fill(res->vectors.begin(), res->vectors.end(), 0.0f);  // Initialize with zeros
+
+    for (size_t i = 0; i < k; ++i) {
+      if (res->IDs[i] >= 0) {  // Valid ID
+        try {
+          ivfIndex_->reconstruct(res->IDs[i], res->vectors.data() + i * dim_);
+        } catch (const std::exception &e) {
+          LOG(WARNING) << "Failed to reconstruct vector for ID " << res->IDs[i] << ": " << e.what();
+          // Keep the vector as zeros for this invalid ID
+          res->IDs[i] = -1;  // Mark as invalid
+        }
+      }
+    }
   } catch (const std::exception &e) {
     LOG(ERROR) << "Failed to search IVF index: " << e.what();
     return Status::Error("Failed to search IVF index");
   }
   return Status::OK();
-}
+}  // namespace nebula
 
 // reconstruct vector by id
 [[nodiscard]] StatusOr<Vector> IVFIndex::reconstruct(VectorID id) {

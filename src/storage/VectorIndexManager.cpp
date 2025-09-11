@@ -135,25 +135,50 @@ StatusOr<std::shared_ptr<AnnIndex>> VectorIndexManager::createOrUpdateIndex(
 StatusOr<std::shared_ptr<AnnIndex>> VectorIndexManager::getIndex(GraphSpaceID spaceId,
                                                                  PartitionID partitionId,
                                                                  IndexID indexId) {
+  // Add defensive check for the manager state
+  if (!running_.load()) {
+    LOG(ERROR) << "VectorIndexManager is not running";
+    return Status::Error("VectorIndexManager is not running");
+  }
+
   VectorIndexKey key{partitionId, indexId};
 
-  std::shared_lock<std::shared_mutex> readLock(indexMapMutex_);
-  if (indexMap_.empty()) {
-    LOG(ERROR) << "No vector indexes found";
-    return Status::Error("No vector indexes found");
-  }
-  auto it = indexMap_.find(spaceId);
-  if (it == indexMap_.end()) {
-    LOG(ERROR) << "Vector index not found for partition " << partitionId << ", index " << indexId;
-    return Status::Error("Vector index not found for partition %d, index %d", partitionId, indexId);
-  }
-  auto index = it->second.find(key);
-  if (index == it->second.end()) {
-    LOG(ERROR) << "Vector index not found for partition " << partitionId << ", index " << indexId;
-    return Status::Error("Vector index not found for partition %d, index %d", partitionId, indexId);
-  }
+  try {
+    std::shared_lock<std::shared_mutex> readLock(indexMapMutex_);
+    if (indexMap_.empty()) {
+      return Status::Error("No vector indexes found");
+    }
+    auto it = indexMap_.find(spaceId);
+    if (it == indexMap_.end()) {
+      LOG(ERROR) << "Vector index not found for space " << spaceId << ", partition " << partitionId
+                 << ", index " << indexId;
+      return Status::Error("Vector index not found for space %d, partition %d, index %d",
+                           spaceId,
+                           partitionId,
+                           indexId);
+    }
+    auto index = it->second.find(key);
+    if (index == it->second.end()) {
+      if (VLOG_IS_ON(1)) {
+        std::string keysStr;
+        for (const auto& kv : it->second) {
+          keysStr += fmt::format("(part={},index={}) ", kv.first.first, kv.first.second);
+        }
+        LOG(INFO) << "VectorIndexManager available keys in space " << spaceId << ": " << keysStr;
+      }
+      LOG(ERROR) << "Vector index not found for space " << spaceId << ", partition " << partitionId
+                 << ", index " << indexId;
+      return Status::Error("Vector index not found for space %d, partition %d, index %d",
+                           spaceId,
+                           partitionId,
+                           indexId);
+    }
 
-  return index->second;
+    return index->second;
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Exception in VectorIndexManager::getIndex: " << e.what();
+    return Status::Error("Exception in VectorIndexManager::getIndex: %s", e.what());
+  }
 }
 
 Status VectorIndexManager::removeIndex(GraphSpaceID spaceId,
@@ -412,7 +437,16 @@ Status VectorIndexManager::loadExistingIndexes() {
       }
     }
 
-    LOG(INFO) << "Finished loading existing indexes from " << annIndexPath_;
+    if (VLOG_IS_ON(1)) {
+      size_t count = 0;
+      for (const auto& s : indexMap_) {
+        count += s.second.size();
+      }
+      LOG(INFO) << "Finished loading existing indexes from " << annIndexPath_
+                << ", total loaded indexes: " << count;
+    } else {
+      LOG(INFO) << "Finished loading existing indexes from " << annIndexPath_;
+    }
     return Status::OK();
   } catch (const std::exception& e) {
     LOG(ERROR) << "Error while loading existing indexes: " << e.what();

@@ -2751,6 +2751,56 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getEdgeIndex
   }
 }
 
+StatusOr<std::vector<std::shared_ptr<cpp2::AnnIndexItem>>> MetaClient::getTagAnnIndexesFromCache(
+    GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  auto spaceIt = metadata.localCache_.find(spaceId);
+  if (spaceIt == metadata.localCache_.end()) {
+    VLOG(3) << "Space " << spaceId << " not found!";
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
+  } else {
+    auto tagAnnIndexes = spaceIt->second->tagAnnIndexes_;
+    auto iter = tagAnnIndexes.begin();
+    std::vector<std::shared_ptr<cpp2::AnnIndexItem>> items;
+    while (iter != tagAnnIndexes.end()) {
+      items.emplace_back(iter->second);
+      iter++;
+    }
+    return items;
+  }
+}
+
+StatusOr<std::vector<std::shared_ptr<cpp2::AnnIndexItem>>> MetaClient::getEdgeAnnIndexesFromCache(
+    GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  auto spaceIt = metadata.localCache_.find(spaceId);
+  if (spaceIt == metadata.localCache_.end()) {
+    VLOG(3) << "Space " << spaceId << " not found!";
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
+  } else {
+    auto edgeAnnIndexes = spaceIt->second->edgeAnnIndexes_;
+    auto iter = edgeAnnIndexes.begin();
+    std::vector<std::shared_ptr<cpp2::AnnIndexItem>> items;
+    while (iter != edgeAnnIndexes.end()) {
+      items.emplace_back(iter->second);
+      iter++;
+    }
+    return items;
+  }
+}
+
 StatusOr<HostAddr> MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId) {
   memory::MemoryCheckOffGuard g;
   if (!ready_) {
@@ -2975,6 +3025,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       options_.role_ == cpp2::HostRole::STORAGE_LISTENER) {
     if (options_.clusterId_.load() == 0) {
       options_.clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
+      LOG(ERROR) << "Load the cluster Id from file " << FLAGS_cluster_id_path << " : "
+                 << options_.clusterId_.load();
     }
     req.cluster_id_ref() = options_.clusterId_.load();
     std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds;

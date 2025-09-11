@@ -163,6 +163,8 @@ Status OptGroup::explore(const OptRule *rule) {
 
     // Find more equivalents
     std::vector<OptGroup *> leaves;
+    LOG(ERROR) << "Applying rule: " << rule->toString()
+               << " on groupNode: " << groupNode->node()->toString();
     auto status = rule->match(ctx_, groupNode);
     if (!status.ok()) {
       ++iter;

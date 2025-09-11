@@ -8,6 +8,7 @@
 
 #include "common/base/ObjectPool.h"
 #include "common/expression/AggregateExpression.h"
+#include "common/expression/ApproximateLimitExpression.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/CaseExpression.h"
@@ -92,6 +93,8 @@ class ExprVisitor {
   virtual void visit(SubscriptRangeExpression *expr) = 0;
   // match path pattern expression
   virtual void visit(MatchPathPatternExpression *expr) = 0;
+  // approximate limit expression
+  virtual void visit(ApproximateLimitExpression *expr) = 0;
 };
 
 }  // namespace nebula

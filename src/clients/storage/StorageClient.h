@@ -149,6 +149,16 @@ class StorageClient
       std::vector<storage::cpp2::OrderBy> orderBy,
       int64_t limit);
 
+  StorageRpcRespFuture<cpp2::LookupIndexResp> lookupAnnIndex(
+      const CommonRequestParam& param,
+      const storage::cpp2::IndexQueryContext& context,
+      bool isEdge,
+      const std::vector<int32_t>& tagOrEdge,
+      const std::vector<std::string>& returnCols,
+      int64_t limit,
+      const Value& queryVector,
+      int64_t queryParam);
+
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
       const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec);
 

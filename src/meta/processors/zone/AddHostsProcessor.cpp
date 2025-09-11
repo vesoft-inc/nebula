@@ -68,6 +68,7 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
 
     // Ensure that the node is not registered.
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
+    LOG(ERROR) << "Add host: " << machineKey;
     if (machineExist(machineKey) == nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "The host " << host << " have existed!";
       code = nebula::cpp2::ErrorCode::E_EXISTED;

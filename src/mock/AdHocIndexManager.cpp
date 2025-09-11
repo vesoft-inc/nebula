@@ -43,7 +43,8 @@ void AdHocIndexManager::addTagIndex(GraphSpaceID space,
 void AdHocIndexManager::addTagAnnIndex(GraphSpaceID space,
                                        const std::vector<TagID> &tagIDs,
                                        IndexID indexID,
-                                       nebula::meta::cpp2::ColumnDef &&field) {
+                                       nebula::meta::cpp2::ColumnDef &&field,
+                                       bool isIVF) {
   folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
   AnnIndexItem item;
   item.index_id_ref() = indexID;
@@ -65,7 +66,15 @@ void AdHocIndexManager::addTagAnnIndex(GraphSpaceID space,
   fields.emplace_back(std::move(field));
   item.fields_ref() = std::move(fields);
   item.ann_params_ref() =
-      std::vector<std::string>{"IVF", "3", "l2", "3", "3"};  // [type, dim, METRIC, nlist, trainsz]
+      isIVF ? std::vector<std::string>{"IVF", "3", "l2", "3", "3"}
+            // [type, dim, METRIC, nlist, trainsz]
+            : std::vector<std::string>{
+                  "HNSW",
+                  "3",
+                  "l2",
+                  "10",
+                  "80",
+                  "1000"};  // [type, dim, METRIC, maxdegreee, efConstruction, maxElements]
   std::shared_ptr<AnnIndexItem> itemPtr = std::make_shared<AnnIndexItem>(item);
 
   // Convert schema_ids to strings for logging
@@ -133,7 +142,8 @@ void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
 void AdHocIndexManager::addEdgeAnnIndex(GraphSpaceID space,
                                         const std::vector<EdgeType> &edgeTypes,
                                         IndexID indexID,
-                                        nebula::meta::cpp2::ColumnDef &&field) {
+                                        nebula::meta::cpp2::ColumnDef &&field,
+                                        bool isIVF) {
   folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
   AnnIndexItem item;
   item.index_id_ref() = indexID;
@@ -154,7 +164,16 @@ void AdHocIndexManager::addEdgeAnnIndex(GraphSpaceID space,
   std::vector<nebula::meta::cpp2::ColumnDef> fields;
   fields.emplace_back(std::move(field));
   item.fields_ref() = std::move(fields);
-  item.ann_params_ref() = std::vector<std::string>{"IVF", "3", "l2", "3", "3"};
+  item.ann_params_ref() =
+      isIVF ? std::vector<std::string>{"IVF", "3", "l2", "3", "3"}
+            // [type, dim, METRIC, nlist, trainsz]
+            : std::vector<std::string>{
+                  "HNSW",
+                  "3",
+                  "l2",
+                  "10",
+                  "80",
+                  "1000"};  // [type, dim, METRIC, maxdegreee, efConstruction, maxElements]
   std::shared_ptr<AnnIndexItem> itemPtr = std::make_shared<AnnIndexItem>(item);
 
   // Convert schema_ids to strings for logging
@@ -218,6 +237,26 @@ StatusOr<std::vector<std::shared_ptr<IndexItem>>> AdHocIndexManager::getEdgeInde
   folly::RWSpinLock::ReadHolder rh(edgeIndexLock_);
   auto iter = edgeIndexes_.find(space);
   if (iter == edgeIndexes_.end()) {
+    return Status::SpaceNotFound();
+  }
+  return iter->second;
+}
+
+StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> AdHocIndexManager::getTagAnnIndexes(
+    GraphSpaceID space) {
+  folly::RWSpinLock::ReadHolder rh(tagIndexLock_);
+  auto iter = tagAnnIndexes_.find(space);
+  if (iter == tagAnnIndexes_.end()) {
+    return Status::SpaceNotFound();
+  }
+  return iter->second;
+}
+
+StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> AdHocIndexManager::getEdgeAnnIndexes(
+    GraphSpaceID space) {
+  folly::RWSpinLock::ReadHolder rh(edgeIndexLock_);
+  auto iter = edgeAnnIndexes_.find(space);
+  if (iter == edgeAnnIndexes_.end()) {
     return Status::SpaceNotFound();
   }
   return iter->second;

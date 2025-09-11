@@ -73,11 +73,12 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
           onFinished();
           return;
         }
-
+        LOG(ERROR) << "part id: " << partId << ", vId: " << vId;
         auto ret = plan.go(partId, vId);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED &&
             failedParts.find(partId) == failedParts.end()) {
           failedParts.emplace(partId);
+          LOG(ERROR) << "Get vertex props failed, partId: " << partId << ", vertexId: " << vId;
           handleErrorCode(ret, spaceId_, partId);
         }
       }

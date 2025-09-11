@@ -209,4 +209,9 @@ void ExprVisitorImpl::visit(MatchPathPatternExpression *expr) {
   }
 }
 
+void ExprVisitorImpl::visit(ApproximateLimitExpression *expr) {
+  DCHECK(ok()) << expr->toString();
+  expr->limitExpr()->accept(this);
+}
+
 }  // namespace nebula

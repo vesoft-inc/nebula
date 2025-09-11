@@ -114,6 +114,11 @@ folly::Future<cpp2::LookupIndexResp> GraphStorageLocalServer::future_lookupIndex
   LOCAL_RETURN_FUTURE(cpp2::LookupIndexResp, future_lookupIndex);
 }
 
+folly::Future<cpp2::LookupIndexResp> GraphStorageLocalServer::future_lookupAnnIndex(
+    const cpp2::LookupAnnIndexRequest& request) {
+  LOCAL_RETURN_FUTURE(cpp2::LookupIndexResp, future_lookupAnnIndex);
+}
+
 folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_lookupAndTraverse(
     const cpp2::LookupAndTraverseRequest& request) {
   LOCAL_RETURN_FUTURE(cpp2::GetNeighborsResponse, future_lookupAndTraverse);

@@ -56,6 +56,10 @@ class TagNode final : public IterateNode<VertexID> {
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
     valid_ = false;
+    vectorKeys_.clear();
+    vectorValues_.clear();
+    vectorIndexes_.clear();
+    vecPropsIndexMap_.clear();
     auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
@@ -69,11 +73,13 @@ class TagNode final : public IterateNode<VertexID> {
         ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       return ret;
     }
-
-    if (context_->tagSchema_ != nullptr && context_->tagSchema_->hasVectorCol()) {
-      for (auto& prop : *props_) {
+    LOG(ERROR) << "partId: " << partId << ", vId: " << vId << ", tagId: " << tagId_;
+    if (schemas_->back()->hasVectorCol()) {
+      auto vecIndex = 0;
+      for (int32_t i = 0; i < static_cast<int32_t>(props_->size()); i++) {
+        auto prop = props_->at(i);
         if (prop.isVector()) {
-          auto index = context_->tagSchema_->getVectorFieldIndex(prop.name());
+          auto index = schemas_->back()->getVectorFieldIndex(prop.name());
           auto vecKey = NebulaKeyUtils::vectorTagKey(
               context_->vIdLen(), partId, vId, tagId_, static_cast<int32_t>(index));
           std::string vecVal;
@@ -82,10 +88,12 @@ class TagNode final : public IterateNode<VertexID> {
             vectorKeys_.emplace_back(std::move(vecKey));
             vectorValues_.emplace_back(std::move(vecVal));
             vectorIndexes_.emplace_back(index);
+            vecPropsIndexMap_.insert({vecIndex++, i});
           } else if (ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
             vectorKeys_.clear();
             vectorValues_.clear();
             vectorIndexes_.clear();
+            vecPropsIndexMap_.clear();
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           } else {
             return ret;
@@ -94,6 +102,7 @@ class TagNode final : public IterateNode<VertexID> {
       }
     }
     if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND && vectorValues_.empty()) {
+      LOG(ERROR) << "Part " << partId << " not found";
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     } else if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
       doExecute(key_, value_, vectorKeys_, vectorValues_, vectorIndexes_);
@@ -114,6 +123,10 @@ class TagNode final : public IterateNode<VertexID> {
                                     const std::vector<std::string>& vecKeys,
                                     const std::vector<std::string>& vecValues,
                                     const std::vector<int32_t>& vecIndexes) {
+    if (vecKeys.empty() && vecValues.empty()) {
+      return doExecute(key, value);
+    }
+    LOG(ERROR) << "doExecute vector props";
     key_ = key;
     value_ = value;
     vectorKeys_ = vecKeys;
@@ -124,6 +137,7 @@ class TagNode final : public IterateNode<VertexID> {
   }
 
   nebula::cpp2::ErrorCode doExecute(const std::string& key, const std::string& value) {
+    LOG(ERROR) << "doExecute not vector props";
     key_ = key;
     value_ = value;
     resetReader();
@@ -142,6 +156,21 @@ class TagNode final : public IterateNode<VertexID> {
       return nullHandler(props_);
     }
     return valueHandler(key_, reader_.get(), props_);
+  }
+
+  nebula::cpp2::ErrorCode collectTagVectorPropsIfValid(VecNullHandler nullHandler,
+                                                       VecPropHandler valueHandler,
+                                                       int32_t vecIndex) {
+    auto propIndex = vecPropsIndexMap_.find(vecIndex);
+    if (propIndex == vecPropsIndexMap_.end()) {
+      return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+    }
+    LOG(ERROR) << "Collect Vector Prop: " << props_->at(propIndex->second).name_;
+    if (!valid()) {
+      return nullHandler(props_->at(propIndex->second));
+    }
+    return valueHandler(
+        vectorKeys_.at(vecIndex), vectorReaders_.at(vecIndex).get(), props_->at(propIndex->second));
   }
 
   bool valid() const override {
@@ -264,6 +293,7 @@ class TagNode final : public IterateNode<VertexID> {
   std::vector<std::string> vectorValues_;
   std::vector<int32_t> vectorIndexes_;
   std::vector<RowReaderWrapper> vectorReaders_;
+  std::map<int32_t, int32_t> vecPropsIndexMap_;
 };
 
 }  // namespace storage

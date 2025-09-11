@@ -48,6 +48,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "GetEdges";
     case Kind::kIndexScan:
       return "IndexScan";
+    case Kind::kAnnIndexScan:
+      return "AnnIndexScan";
     case Kind::kTagIndexFullScan:
       return "TagIndexFullScan";
     case Kind::kTagIndexRangeScan:
@@ -333,6 +335,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "RollUpApply";
     case Kind::kPatternApply:
       return "PatternApply";
+    case Kind::kApproximateLimit:
+      return "ApproximateLimit";
       // no default so the compiler will warning when lack
   }
   DLOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

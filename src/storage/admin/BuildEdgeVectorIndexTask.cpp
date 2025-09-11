@@ -5,6 +5,8 @@
 
 #include "storage/admin/BuildEdgeVectorIndexTask.h"
 
+#include <folly/String.h>
+
 #include <chrono>
 #include <cstdint>
 #include <iterator>
@@ -131,7 +133,6 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
   auto propName = item->get_prop_name();
   auto schemaIds = item->get_schema_ids();
   auto dim = (*item->get_ann_params())[1];
-
   while (iter && iter->valid()) {
     if (UNLIKELY(canceled_)) {
       LOG(INFO) << "Build Tag Ann Index is Canceled";
@@ -167,10 +168,6 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
     auto val = iter->val();
 
     auto edgeType = NebulaKeyUtils::getVectorEdgeType(vidSize, key);
-    if (edgeType < 0) {
-      iter->next();
-      continue;
-    }
     // Check whether this record contains the index of indexId
     if (edgeTypes.find(edgeType) == edgeTypes.end()) {
       VLOG(1) << "This record is not built index.";
@@ -184,11 +181,19 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
     VLOG(1) << "Source " << source << " Destination " << destination << " Ranking " << ranking
             << " Edge Type " << edgeType;
 
-    VectorID vectorId = (folly::hash::fnv64_buf(source.data(), source.size()) +
-                         folly::hash::fnv64_buf(destination.data(), destination.size()) + ranking) %
-                        INT64_MAX;
-    auto edgeId = source.toString() + std::to_string(edgeType) + destination.toString() +
-                  std::to_string(ranking);
+    std::string concat;
+    concat.reserve(source.size() + destination.size() + sizeof(ranking));
+    concat.append(source);
+    concat.append(destination);
+    concat.append(reinterpret_cast<const char*>(&ranking), sizeof(ranking));
+
+    VectorID vectorId = folly::hash::fnv64_buf(concat.data(), concat.size());
+    if (partVectorIds_[part].find(vectorId) != partVectorIds_[part].end()) {
+      LOG(ERROR) << "Skip already built vector id " << vectorId << ", part " << part;
+      iter->next();
+      continue;
+    }
+    partVectorIds_[part].emplace(vectorId);
     auto schemaIter = schemas.find(edgeType);
     if (schemaIter == schemas.end()) {
       LOG(WARNING) << "Space " << space << ", edge " << edgeType << " invalid";
@@ -224,14 +229,10 @@ nebula::cpp2::ErrorCode BuildEdgeVectorIndexTask::buildIndexGlobal(
     auto idVidKey = NebulaKeyUtils::idVidEdgeKey(
         vidSize, part, indexId, source.toString(), edgeType, ranking, destination.toString());
     auto vidIdKey = NebulaKeyUtils::vidIdEdgeKey(part, indexId, vectorId);
-
     vidData.emplace_back(std::move(idVidKey), std::to_string(vectorId));
-    batchSize += vidData.back().first.size() + sizeof(vectorId);
-    batchSize += vidData.back().first.size() + edgeId.size();
-    vidData.emplace_back(std::move(vidIdKey), std::move(edgeId));
+    vidData.emplace_back(std::move(vidIdKey), std::move(key));
     iter->next();
   }
-
   // write vid data to kvstore
   ret = writeData(space, part, std::move(vidData), batchSize, rateLimiter);
   // buildAnnIndex

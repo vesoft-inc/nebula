@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/context/ExpressionContext.h"
+#include "common/expression/ApproximateLimitExpression.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/CaseExpression.h"
 #include "common/expression/ConstantExpression.h"

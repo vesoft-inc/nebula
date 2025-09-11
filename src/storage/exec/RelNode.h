@@ -27,10 +27,10 @@ using NullHandler = std::function<nebula::cpp2::ErrorCode(const std::vector<Prop
 using PropHandler = std::function<nebula::cpp2::ErrorCode(
     folly::StringPiece, RowReaderWrapper*, const std::vector<PropContext>* props)>;
 
-using VecNullHandler = std::function<nebula::cpp2::ErrorCode(const PropContext*)>;
+using VecNullHandler = std::function<nebula::cpp2::ErrorCode(PropContext)>;
 
 using VecPropHandler =
-    std::function<nebula::cpp2::ErrorCode(RowReaderWrapper*, const PropContext* props)>;
+    std::function<nebula::cpp2::ErrorCode(folly::StringPiece, RowReaderWrapper*, PropContext prop)>;
 
 template <typename T>
 class StoragePlan;

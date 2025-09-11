@@ -67,6 +67,7 @@
 #include "graph/executor/mutate/InsertExecutor.h"
 #include "graph/executor/mutate/UpdateExecutor.h"
 #include "graph/executor/query/AggregateExecutor.h"
+#include "graph/executor/query/AnnIndexScanExecutor.h"
 #include "graph/executor/query/AppendVerticesExecutor.h"
 #include "graph/executor/query/AssignExecutor.h"
 #include "graph/executor/query/DataCollectExecutor.h"
@@ -240,6 +241,13 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
             stats::StatsManager::counterWithLabels(kNumIndexScanExecutors, {{"space", spaceName}}));
       }
       return pool->makeAndAdd<IndexScanExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kApproximateLimit: {
+      // this plan node is only used for ANN index search
+      return nullptr;
+    }
+    case PlanNode::Kind::kAnnIndexScan: {
+      return pool->makeAndAdd<AnnIndexScanExecutor>(node, qctx);
     }
     case PlanNode::Kind::kStart: {
       return pool->makeAndAdd<StartExecutor>(node, qctx);

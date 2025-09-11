@@ -6,9 +6,12 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include "common/thrift/ThriftTypes.h"
 #include "kvstore/RocksEngineConfig.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/query/GetPropProcessor.h"
 #include "storage/test/QueryTestUtils.h"
+#include "storage/test/TestUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -99,6 +102,224 @@ void verifyResult(const std::vector<nebula::Row>& expect, const nebula::DataSet&
     ASSERT_EQ(expectRow, actualRow);
   }
 }
+TEST(GetPropTest, VectorPropertyTest) {
+  fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  {
+    auto* processor = AddVerticesProcessor::instance(env, nullptr);
+    LOG(INFO) << "Build AddVectorVerticesRequest...";
+    cpp2::AddVerticesRequest req = mock::MockData::mockAddVectorVerticesReq();
+
+    LOG(INFO) << "Test AddVectorVerticesProcessor...";
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+
+    LOG(INFO) << "Check vector data in kv store...";
+    // The number of vertices is 84
+    checkAddVerticesData(req, env, 84, 0);
+  }
+  TagID player = 1;
+  TagID vec = 4;
+
+  {
+    LOG(INFO) << "GetVertexVectorPropInValue";
+    std::vector<VertexID> vertices = {"1"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(vec, std::vector<std::string>{"id", "vec"});
+    auto req = buildVertexRequest(totalParts, vertices, tags);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "4.id", "4.vec"};
+    nebula::Row row({"1", 1, Value(Vector({0.1, 0.2, 0.3}))});
+    expected.rows.emplace_back(std::move(row));
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  {
+    LOG(INFO) << "GetVertexVectorPropInKeyAndValue";
+    std::vector<VertexID> vertices = {"1"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(vec, std::vector<std::string>{kVid, kTag, "id", "vec"});
+    auto req = buildVertexRequest(totalParts, vertices, tags);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {
+        kVid, std::string("4.").append(kVid), std::string("4.").append(kTag), "4.id", "4.vec"};
+    nebula::Row row({"1", "1", 4, 1, Value(Vector({0.1, 0.2, 0.3}))});
+    expected.rows.emplace_back(std::move(row));
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  {
+    LOG(INFO) << "MultiVertexGetProps";
+    std::vector<VertexID> vertices = {"2", "3"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(vec, std::vector<std::string>{"id", "vec"});
+    auto req = buildVertexRequest(totalParts, vertices, tags);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "4.id", "4.vec"};
+    {
+      nebula::Row row({"3", 3, Value(Vector({0.3, 0.6, 0.9}))});
+      expected.rows.emplace_back(std::move(row));
+    }
+    {
+      nebula::Row row({"2", 2, Value(Vector({0.2, 0.4, 0.6}))});
+      expected.rows.emplace_back(std::move(row));
+    }
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  {
+    LOG(INFO) << "MultiVertexGetMultiTagPropsWithVector";
+    std::vector<VertexID> vertices = {"1", "2"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(vec, std::vector<std::string>{"id", "vec"});
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = buildVertexRequest(totalParts, vertices, tags);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "4.id", "4.vec", "1.name", "1.age", "1.avgScore"};
+    {
+      nebula::Row row({"2", 2, Value(Vector({0.2, 0.4, 0.6})), Value(), Value(), Value()});
+      expected.rows.emplace_back(std::move(row));
+    }
+    {
+      nebula::Row row({"1", 1, Value(Vector({0.1, 0.2, 0.3})), Value(), Value(), Value()});
+      expected.rows.emplace_back(std::move(row));
+    }
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  // {
+  //   LOG(INFO) << "GetEdgePropInValue";
+  //   std::vector<cpp2::EdgeKey> edgeKeys;
+  //   {
+  //     cpp2::EdgeKey edgeKey;
+  //     edgeKey.src_ref() = "Tim Duncan";
+  //     edgeKey.edge_type_ref() = 101;
+  //     edgeKey.ranking_ref() = 1997;
+  //     edgeKey.dst_ref() = "Spurs";
+  //     edgeKeys.emplace_back(std::move(edgeKey));
+  //   }
+  //   std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+  //   edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+  //   auto req = buildEdgeRequest(totalParts, edgeKeys, edges);
+
+  //   auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+  //   auto fut = processor->getFuture();
+  //   processor->process(req);
+  //   auto resp = std::move(fut).get();
+
+  //   ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+  //   nebula::DataSet expected;
+  //   expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+  //   nebula::Row row({"Spurs", 1997, 2016});
+  //   expected.rows.emplace_back(std::move(row));
+  //   ASSERT_EQ(expected, *resp.props_ref());
+  // }
+  // {
+  //   LOG(INFO) << "GetEdgePropInKeyAndValue";
+  //   std::vector<cpp2::EdgeKey> edgeKeys;
+  //   {
+  //     cpp2::EdgeKey edgeKey;
+  //     edgeKey.src_ref() = "Tim Duncan";
+  //     edgeKey.edge_type_ref() = 101;
+  //     edgeKey.ranking_ref() = 1997;
+  //     edgeKey.dst_ref() = "Spurs";
+  //     edgeKeys.emplace_back(std::move(edgeKey));
+  //   }
+  //   std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+  //   edges.emplace_back(
+  //       serve,
+  //       std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
+  //   auto req = buildEdgeRequest(totalParts, edgeKeys, edges);
+
+  //   auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+  //   auto fut = processor->getFuture();
+  //   processor->process(req);
+  //   auto resp = std::move(fut).get();
+
+  //   ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+  //   nebula::DataSet expected;
+  //   expected.colNames = {std::string("101.").append(kSrc),
+  //                        std::string("101.").append(kType),
+  //                        std::string("101.").append(kRank),
+  //                        std::string("101.").append(kDst),
+  //                        "101.teamName",
+  //                        "101.startYear",
+  //                        "101.endYear"};
+  //   nebula::Row row({"Tim Duncan", 101, 1997, "Spurs", "Spurs", 1997, 2016});
+  //   expected.rows.emplace_back(std::move(row));
+  //   ASSERT_EQ(expected, *resp.props_ref());
+  // }
+  // {
+  //   LOG(INFO) << "GetEdgePropInValue";
+  //   std::vector<cpp2::EdgeKey> edgeKeys;
+  //   {
+  //     cpp2::EdgeKey edgeKey;
+  //     edgeKey.src_ref() = "Tim Duncan";
+  //     edgeKey.edge_type_ref() = 101;
+  //     edgeKey.ranking_ref() = 1997;
+  //     edgeKey.dst_ref() = "Spurs";
+  //     edgeKeys.emplace_back(std::move(edgeKey));
+  //   }
+  //   {
+  //     cpp2::EdgeKey edgeKey;
+  //     edgeKey.src_ref() = "Tony Parker";
+  //     edgeKey.edge_type_ref() = 101;
+  //     edgeKey.ranking_ref() = 2001;
+  //     edgeKey.dst_ref() = "Spurs";
+  //     edgeKeys.emplace_back(std::move(edgeKey));
+  //   }
+  //   std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+  //   edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+  //   auto req = buildEdgeRequest(totalParts, edgeKeys, edges);
+
+  //   auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+  //   auto fut = processor->getFuture();
+  //   processor->process(req);
+  //   auto resp = std::move(fut).get();
+
+  //   ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+  //   nebula::DataSet expected;
+  //   expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+  //   {
+  //     nebula::Row row({"Spurs", 2001, 2018});
+  //     expected.rows.emplace_back(std::move(row));
+  //   }
+  //   {
+  //     nebula::Row row({"Spurs", 1997, 2016});
+  //     expected.rows.emplace_back(std::move(row));
+  //   }
+  //   ASSERT_EQ(expected, *resp.props_ref());
+  // }
+}  // namespace storage
 
 TEST(GetPropTest, PropertyTest) {
   fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");

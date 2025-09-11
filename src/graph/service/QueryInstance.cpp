@@ -258,6 +258,7 @@ Status QueryInstance::findBestPlan() {
   auto rootStatus = optimizer_->findBestPlan(qctx_.get());
   NG_RETURN_IF_ERROR(rootStatus);
   auto root = std::move(rootStatus).value();
+  LOG(ERROR) << "Optimized Plan:\n" << root->kind();
   plan->setRoot(const_cast<PlanNode *>(root));
   return Status::OK();
 }

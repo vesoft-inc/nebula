@@ -5,6 +5,8 @@
 
 #include "kvstore/Part.h"
 
+#include <folly/String.h>
+
 #include "common/time/ScopedTimer.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/MetaKeyUtils.h"

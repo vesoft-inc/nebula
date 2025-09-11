@@ -5,6 +5,8 @@
 
 #include "storage/mutate/AddVerticesProcessor.h"
 
+#include <folly/String.h>
+
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"

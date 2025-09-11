@@ -173,6 +173,12 @@ nebula::cpp2::ErrorCode BuildTagVectorIndexTask::buildIndexGlobal(
     auto vertex = NebulaKeyUtils::getVectorVertexId(vidSize, key);
     VLOG(1) << "Tag ID " << tagID << " Vertex ID " << vertex;
     VectorID vectorId = folly::hash::fnv64_buf(vertex.data(), vertex.size());
+    if (partVectorIds_[part].find(vectorId) != partVectorIds_[part].end()) {
+      LOG(ERROR) << "Skip already built vector id " << vectorId << ", part " << part;
+      iter->next();
+      continue;
+    }
+    partVectorIds_[part].emplace(vectorId);
     auto schemaIter = schemas.find(tagID);
     if (schemaIter == schemas.end()) {
       LOG(WARNING) << "Space " << space << ", tag " << tagID << " invalid";

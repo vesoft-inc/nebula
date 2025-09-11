@@ -462,6 +462,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
     {"score", {TypeSignature({}, Value::Type::__EMPTY__)}},
     {"md5", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
+    {"euclidean", {TypeSignature({Value::Type::VECTOR, Value::Type::VECTOR}, Value::Type::FLOAT)}},
+    {"innerproduct",
+     {TypeSignature({Value::Type::VECTOR, Value::Type::VECTOR}, Value::Type::FLOAT)}},
 };
 
 StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName,
@@ -1753,6 +1756,61 @@ FunctionManager::FunctionManager() {
       } else {
         return s1 / (std::sqrt(s2) * std::sqrt(s3));
       }
+    };
+  }
+  {
+    auto &attr = functions_["euclidean"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isVector() || !args[1].get().isVector()) {
+        LOG(ERROR) << "euclidean function only accepts VECTOR type arguments";
+        return Value::kNullBadType;
+      }
+
+      const auto &vec1 = args[0].get().getVector().data();
+      const auto &vec2 = args[1].get().getVector().data();
+
+      if (vec1.size() != vec2.size()) {
+        LOG(ERROR) << "Vector dimensions must be equal for euclidean distance: " << vec1.size()
+                   << " vs " << vec2.size();
+        return Value::kVectorDimNotMatch;
+      }
+
+      double sum = std::inner_product(
+          vec1.begin(), vec1.end(), vec2.begin(), 0.0, std::plus<>(), [](float a, float b) {
+            double diff = static_cast<double>(a) - static_cast<double>(b);
+            return diff * diff;
+          });
+
+      return std::sqrt(sum);
+    };
+  }
+  {
+    // innerproduct (dot product)
+    auto &attr = functions_["innerproduct"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isVector() || !args[1].get().isVector()) {
+        LOG(ERROR) << "innerproduct function only accepts VECTOR type arguments";
+        return Value::kNullBadType;
+      }
+
+      const auto &vec1 = args[0].get().getVector().data();
+      const auto &vec2 = args[1].get().getVector().data();
+
+      if (vec1.size() != vec2.size()) {
+        LOG(ERROR) << "Vector dimensions must be equal for inner product: " << vec1.size() << " vs "
+                   << vec2.size();
+        return Value::kVectorDimNotMatch;
+      }
+
+      double sum = std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0);
+
+      return sum;
     };
   }
   {

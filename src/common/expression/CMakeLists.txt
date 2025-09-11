@@ -32,6 +32,7 @@ nebula_add_library(
     ListComprehensionExpression.cpp
     ReduceExpression.cpp
     MatchPathPatternExpression.cpp
+    ApproximateLimitExpression.cpp
     ExprVisitorImpl.cpp
 )
 

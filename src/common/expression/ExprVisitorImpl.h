@@ -59,6 +59,8 @@ class ExprVisitorImpl : public ExprVisitor {
   void visit(SubscriptRangeExpression *expr) override;
   // match path pattern expression
   void visit(MatchPathPatternExpression *expr) override;
+  // approximate limit expression
+  void visit(ApproximateLimitExpression *expr) override;
 
  protected:
   using ExprVisitor::visit;

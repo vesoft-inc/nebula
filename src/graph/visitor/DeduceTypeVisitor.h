@@ -93,6 +93,7 @@ class DeduceTypeVisitor final : public ExprVisitor {
   void visit(SubscriptRangeExpression *expr) override;
   // match path pattern expression
   void visit(MatchPathPatternExpression *expr) override;
+  void visit(ApproximateLimitExpression *expr) override;
 
   void visitVertexPropertyExpr(PropertyExpression *expr);
 

@@ -7,6 +7,7 @@
 
 #include "common/base/Status.h"
 #include "common/expression/AggregateExpression.h"
+#include "common/expression/ApproximateLimitExpression.h"
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/FunctionCallExpression.h"

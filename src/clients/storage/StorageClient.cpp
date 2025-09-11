@@ -557,6 +557,60 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
                          });
 }
 
+StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupAnnIndex(
+    const CommonRequestParam& param,
+    const storage::cpp2::IndexQueryContext& context,
+    bool isEdge,
+    const std::vector<int32_t>& tagOrEdge,
+    const std::vector<std::string>& returnCols,
+    int64_t limit,
+    const Value& queryVector,
+    int64_t queryParam) {
+  // TODO(sky) : instead of isEdge and tagOrEdge to nebula::cpp2::SchemaID for graph layer.
+  auto space = param.space;
+  auto status = getHostParts(space);
+  if (!status.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::LookupIndexResp>>(
+        std::runtime_error(status.status().toString()));
+  }
+  std::vector<nebula::cpp2::SchemaID> schemaIds;
+  for (auto& schema : tagOrEdge) {
+    nebula::cpp2::SchemaID schemaId;
+    if (isEdge) {
+      schemaId.edge_type_ref() = schema;
+    } else {
+      schemaId.tag_id_ref() = schema;
+    }
+    schemaIds.emplace_back(std::move(schemaId));
+  }
+
+  auto& clusters = status.value();
+  std::unordered_map<HostAddr, cpp2::LookupAnnIndexRequest> requests;
+  auto common = param.toReqCommon();
+  for (auto& c : clusters) {
+    auto& host = c.first;
+    auto& req = requests[host];
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
+    req.return_columns_ref() = returnCols;
+
+    cpp2::AnnIndexSpec spec;
+    spec.context_ref() = context;
+    spec.schema_ids_ref() = schemaIds;
+    req.ann_indice_ref() = spec;
+    req.common_ref() = common;
+    req.limit_ref() = limit;
+    req.param_ref() = queryParam;
+    req.query_vector_ref() = queryVector;
+  }
+
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::LookupAnnIndexRequest& r) {
+                           return client->future_lookupAnnIndex(r);
+                         });
+}
+
 StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::lookupAndTraverse(
     const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec) {
   auto space = param.space;

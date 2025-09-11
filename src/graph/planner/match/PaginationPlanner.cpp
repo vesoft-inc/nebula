@@ -22,7 +22,21 @@ StatusOr<SubPlan> PaginationPlanner::transform(CypherClauseContextBase* clauseCt
 
 Status PaginationPlanner::buildLimit(PaginationContext* pctx, SubPlan& subplan) {
   auto* currentRoot = subplan.root;
-  auto* limit = Limit::make(pctx->qctx, currentRoot, pctx->skip, pctx->limit);
+
+  // Create ApproximateLimit or regular Limit based on context
+  PlanNode* limit = nullptr;
+  if (pctx->isApproximateLimit) {
+    limit = ApproximateLimit::make(pctx->qctx,
+                                   currentRoot,
+                                   pctx->skip,
+                                   pctx->limit,
+                                   pctx->annIndexType,
+                                   pctx->metricType,
+                                   pctx->param);
+  } else {
+    limit = Limit::make(pctx->qctx, currentRoot, pctx->skip, pctx->limit);
+  }
+
   subplan.root = limit;
   subplan.tail = limit;
   return Status::OK();

@@ -23,6 +23,7 @@
 #include "storage/BaseProcessor.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
+#include "storage/VectorIndexManager.h"
 #include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
@@ -60,6 +61,8 @@ class MockCluster {
 
   std::unique_ptr<meta::IndexManager> memIndexMan(GraphSpaceID spaceId = 1, bool hasProp = true);
 
+  storage::VectorIndexManager* memAnnIndexMan();
+
   static void waitUntilAllElected(kvstore::NebulaStore* kvstore,
                                   GraphSpaceID spaceId,
                                   const std::vector<PartitionID>& partIds);
@@ -92,6 +95,9 @@ class MockCluster {
   }
 
   void stop() {
+    if (annIndexMan_) {
+      annIndexMan_->stop();
+    }
     if (storageKV_) {
       storageKV_->stop();
     }
@@ -132,6 +138,7 @@ class MockCluster {
 
   std::unique_ptr<meta::SchemaManager> schemaMan_;
   std::unique_ptr<meta::IndexManager> indexMan_;
+  storage::VectorIndexManager* annIndexMan_{nullptr};
   nebula::ClusterID clusterId_ = 10;
   int32_t totalParts_;
   std::unique_ptr<kvstore::NebulaStore> esListener_{nullptr};

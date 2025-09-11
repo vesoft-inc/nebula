@@ -264,6 +264,26 @@ void GetEdges::cloneMembers(const GetEdges& ge) {
   }
 }
 
+std::unique_ptr<PlanNodeDescription> AnnIndexScan::explain() const {
+  auto desc = IndexScan::explain();
+  addDescription("vectorSchemaIds", folly::toJson(util::toJson(vectorSchemaIds_)), desc.get());
+  addDescription("indexCtx", folly::toJson(util::toJson(vectorContext_)), desc.get());
+  return desc;
+}
+
+PlanNode* AnnIndexScan::clone() const {
+  auto* newAnnIndexScan = AnnIndexScan::make(qctx_, nullptr);
+  newAnnIndexScan->cloneMembers(*this);
+  return newAnnIndexScan;
+}
+
+void AnnIndexScan::cloneMembers(const AnnIndexScan& g) {
+  IndexScan::cloneMembers(g);
+
+  vectorContext_ = g.vectorContext_;
+  vectorSchemaIds_ = g.vectorSchemaIds_;
+}
+
 std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
   auto desc = Explore::explain();
   addDescription("schemaId", folly::toJson(util::toJson(schemaId_)), desc.get());
@@ -531,6 +551,37 @@ PlanNode* Limit::clone() const {
 }
 
 void Limit::cloneMembers(const Limit& l) {
+  SingleInputNode::cloneMembers(l);
+
+  offset_ = l.offset_;
+  count_ = l.count_;
+}
+
+int64_t ApproximateLimit::count(QueryContext* qctx) const {
+  if (count_ == nullptr) {
+    return -1;
+  }
+  DCHECK(ExpressionUtils::isEvaluableExpr(count_, qctx));
+  auto s = count_->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)()).getInt();
+  DCHECK_GE(s, 0);
+  return s;
+}
+
+std::unique_ptr<PlanNodeDescription> ApproximateLimit::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("offset", folly::to<std::string>(offset_), desc.get());
+  addDescription("count", count_->toString(), desc.get());
+  addDescription("approximate", "true", desc.get());
+  return desc;
+}
+
+PlanNode* ApproximateLimit::clone() const {
+  auto* newApproxLimit = ApproximateLimit::make(qctx_, nullptr, -1, nullptr);
+  newApproxLimit->cloneMembers(*this);
+  return newApproxLimit;
+}
+
+void ApproximateLimit::cloneMembers(const ApproximateLimit& l) {
   SingleInputNode::cloneMembers(l);
 
   offset_ = l.offset_;

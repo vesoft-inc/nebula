@@ -19,6 +19,7 @@ using nebula::storage::cpp2::IndexQueryContext;
 
 using FilterItem = nebula::graph::OptimizerUtils::FilterItem;
 using IndexItemPtr = nebula::graph::OptimizerUtils::IndexItemPtr;
+using AnnIndexItemPtr = nebula::graph::OptimizerUtils::AnnIndexItemPtr;
 using IindexQueryContextList = nebula::graph::OptimizerUtils::IndexQueryContextList;
 using ExprKind = nebula::Expression::Kind;
 
@@ -560,6 +561,67 @@ std::vector<IndexItemPtr> OptimizerUtils::allIndexesBySchema(graph::QueryContext
   return indexes;
 }
 
+std::vector<AnnIndexItemPtr> OptimizerUtils::allTagAnnIndexesBySchema(graph::QueryContext* qctx,
+                                                                      const ScanVertices* node,
+                                                                      const std::string& vectorProp,
+                                                                      AnnIndexType annIndexType,
+                                                                      MetricType metricType) {
+  auto spaceId = node->space();
+  LOG(INFO) << "Looking for ANN indexes in space: " << spaceId << " for property: " << vectorProp
+            << " with annIndexType: " << static_cast<int>(annIndexType)
+            << " and metricType: " << static_cast<int>(metricType);
+
+  auto metaClient = qctx->getMetaClient();
+  auto ret = metaClient->getTagAnnIndexesFromCache(spaceId);
+  const auto& props = node->props();
+  auto annIndexStr = annIndexType == AnnIndexType::IVF ? "ivf" : "hnsw";
+  auto metricTypeStr = metricType == MetricType::L2 ? "l2" : "innerproduct";
+
+  LOG(INFO) << "Looking for index type: " << annIndexStr << " and metric type: " << metricTypeStr;
+  std::set<TagID> tagIds;
+  for (const auto& prop : *props) {
+    tagIds.insert(prop.get_tag());
+  }
+  LOG(INFO) << "Required tag IDs count: " << tagIds.size();
+  if (!ret.ok()) {
+    LOG(ERROR) << "Failed to get ANN indexes from cache: " << ret.status().toString();
+    return {};
+  }
+
+  LOG(INFO) << "Found " << ret.value().size() << " ANN indexes in cache";
+  std::vector<AnnIndexItemPtr> indexes;
+  for (auto& index : ret.value()) {
+    if (index->get_prop_name() != vectorProp) {
+      continue;
+    }
+    const auto& schemaIds = index->get_schema_ids();
+    for (const auto& schemaId : schemaIds) {
+      if (tagIds.find(schemaId.get_tag_id()) == tagIds.end()) {
+        LOG(ERROR) << "Index tag id " << schemaId.get_tag_id() << " not in required tag ids";
+        return indexes;
+      }
+    }
+    auto indexType = index->get_ann_params()->front();
+    auto mType = index->get_ann_params()->at(2);
+    std::transform(indexType.begin(), indexType.end(), indexType.begin(), [](unsigned char c) {
+      return std::tolower(c);
+    });
+    std::transform(
+        mType.begin(), mType.end(), mType.begin(), [](unsigned char c) { return std::tolower(c); });
+    if (indexType != annIndexStr || mType != metricTypeStr) {
+      continue;
+    }
+
+    indexes.emplace_back(index);
+  }
+
+  if (indexes.empty()) {
+    LOG(ERROR) << "No index was found";
+    return {};
+  }
+  return indexes;
+}
+
 std::vector<IndexItemPtr> OptimizerUtils::findValidIndex(graph::QueryContext* qctx,
                                                          const IndexScan* node,
                                                          const std::vector<FilterItem>& items) {
@@ -810,6 +872,13 @@ Status OptimizerUtils::appendIQCtx(const std::shared_ptr<IndexItem>& index,
   return Status::OK();
 }
 
+Status OptimizerUtils::appendAnnIQCtx(const std::shared_ptr<meta::AnnIndexItem>& index,
+                                      IndexQueryContext& iqctx) {
+  iqctx.index_id_ref() = index->get_index_id();
+  iqctx.filter_ref() = "";
+  return Status::OK();
+}
+
 Status OptimizerUtils::appendIQCtx(const IndexItemPtr& index,
                                    const std::vector<FilterItem>& items,
                                    std::vector<IndexQueryContext>& iqctx,
@@ -906,6 +975,20 @@ Status OptimizerUtils::createIndexQueryCtx(std::vector<IndexQueryContext>& iqctx
                                            const IndexScan* node) {
   return kind.isSingleScan() ? createSingleIQC(iqctx, items, qctx, node)
                              : createMultipleIQC(iqctx, items, qctx, node);
+}
+
+Status OptimizerUtils::createAnnIndexQueryCtx(QueryContext* qctx,
+                                              const ScanVertices* node,
+                                              const std::string& vectorProp,
+                                              AnnIndexType annIndexType,
+                                              MetricType metricType,
+                                              storage::cpp2::IndexQueryContext& iqctx) {
+  auto indexs = allTagAnnIndexesBySchema(qctx, node, vectorProp, annIndexType, metricType);
+  if (indexs.empty()) {
+    return Status::IndexNotFound("No valid index found");
+  }
+  CHECK_EQ(indexs.size(), 1);
+  return appendAnnIQCtx(indexs.at(0), iqctx);
 }
 
 Status OptimizerUtils::createIndexQueryCtx(Expression* filter,

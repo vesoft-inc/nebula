@@ -10,6 +10,7 @@
 #include <string>
 
 #include "common/base/Base.h"
+#include "common/vectorIndex/VectorIndexUtils.h"
 
 namespace nebula {
 
@@ -268,7 +269,7 @@ std::string IVFIndexParamItem::toString() const {
   buf.reserve(256);
   buf += "{";
   buf += "ANNINDEX_TYPE:";
-  auto type = getIndexType() == AnnIndexParamItem::IVF ? "\"IVF\"" : "\"HNSW\"";
+  auto type = getIndexType() == AnnIndexType::IVF ? "\"IVF\"" : "\"HNSW\"";
   buf += type;
   buf += ", ";
   buf += "DIM:";
@@ -293,7 +294,7 @@ std::string HNSWIndexParamItem::toString() const {
   buf.reserve(256);
   buf += "{";
   buf += "ANNINDEX_TYPE:";
-  buf += getIndexType() == AnnIndexParamItem::IVF ? "\"IVF\"" : "\"HNSW\"";
+  buf += getIndexType() == AnnIndexType::IVF ? "\"IVF\"" : "\"HNSW\"";
   buf += ", ";
   buf += "DIM:";
   buf += std::to_string(getDim());
@@ -309,6 +310,23 @@ std::string HNSWIndexParamItem::toString() const {
   buf += ", ";
   buf += "MAXELEMENTS:";
   buf += std::to_string(getCapacity());
+  buf += "}";
+  buf.reserve(buf.size());
+  return buf;
+}
+
+std::string AnnIndexQueryParamItem::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "{";
+  buf += "ANNINDEX_TYPE:";
+  buf += annIndexType_ == AnnIndexType::IVF ? "\"IVF\"" : "\"HNSW\"";
+  buf += ", ";
+  buf += "METRIC_TYPE:";
+  buf += metricType_ == MetricType::L2 ? "\"l2\"" : "\"INNER_PRODUCT\"";
+  buf += ", ";
+  buf += "param:";
+  buf += std::to_string(param_.getInt());
   buf += "}";
   buf.reserve(buf.size());
   return buf;

@@ -52,6 +52,7 @@ nebula_add_library(
     query/ScanVertexProcessor.cpp
     query/ScanEdgeProcessor.cpp
     index/LookupProcessor.cpp
+    index/LookupAnnProcessor.cpp
     exec/IndexNode.cpp
     exec/IndexDedupNode.cpp
     exec/IndexEdgeScanNode.cpp
@@ -62,6 +63,7 @@ nebula_add_library(
     exec/IndexSelectionNode.cpp
     exec/IndexVertexScanNode.cpp
     exec/IndexTopNNode.cpp
+    exec/AnnIndexVertexScanNode.cpp
     kv/PutProcessor.cpp
     kv/GetProcessor.cpp
     kv/RemoveProcessor.cpp

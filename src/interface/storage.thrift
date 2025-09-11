@@ -571,6 +571,24 @@ struct LookupIndexRequest {
     8: optional list<StatProp>              stat_columns,
 }
 
+// ANN Index Specification for multi-tag vector search
+struct AnnIndexSpec {
+    1: IndexQueryContext                    context,          // Multiple ANN contexts for different tags
+    2: list<common.SchemaID>                schema_ids, // Whether to merge results across tags
+}
+
+// Combined request for ANN index lookup
+struct LookupAnnIndexRequest {
+    1: required common.GraphSpaceID         space_id,
+    2: required list<common.PartitionID>    parts,
+    3: required AnnIndexSpec                ann_indice,       // ANN index specification
+    4: required i64                         limit,             // Limit per partition
+    5: required i64                         param,
+    6: required common.Value                query_vector,      // Query vector bytes
+    7: optional list<binary>                return_columns,    // Columns to return
+    8: optional RequestCommon               common,
+}
+
 
 // This request will make the storage lookup the index first, then traverse
 //   to the neighbor nodes from the index results. So it is the combination
@@ -704,6 +722,9 @@ service GraphStorageService {
 
     // Interfaces for edge and vertex index scan
     LookupIndexResp lookupIndex(1: LookupIndexRequest req);
+
+    // Interface for ANN (Approximate Nearest Neighbor) index scan
+    LookupIndexResp lookupAnnIndex(1: LookupAnnIndexRequest req);
 
     GetNeighborsResponse lookupAndTraverse(1: LookupAndTraverseRequest req);
 

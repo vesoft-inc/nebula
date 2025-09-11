@@ -28,6 +28,7 @@
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/AggregateExpression.h"
+#include "common/expression/ApproximateLimitExpression.h"
 #include "common/function/FunctionManager.h"
 #include "common/expression/ReduceExpression.h"
 #include "graph/util/ParserUtil.h"
@@ -119,6 +120,7 @@ using namespace nebula;
     nebula::IndexParamList                 *index_param_list;
     nebula::IndexParamItem                 *index_param_item;
     nebula::AnnIndexParamItem              *annindex_param;
+    nebula::AnnIndexQueryParamItem         *annindex_query_param;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
     nebula::meta::cpp2::ConfigModule        config_module;
@@ -183,13 +185,13 @@ using namespace nebula;
 %token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
 %token KW_L2 KW_INNERPRODUCT
 %token KW_DROP KW_CLEAR KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES KW_ANNINDEX KW_ANNINDEXES
-%token KW_ANNINDEXTYPE KW_DIM KW_METRICTYPE KW_NLIST KW_TRAINSIZE KW_MAXDEGREE KW_EFCONSTRUCTION KW_MAXELEMENTS
+%token KW_ANNINDEXTYPE KW_DIM KW_METRICTYPE KW_NLIST KW_TRAINSIZE KW_MAXDEGREE KW_EFCONSTRUCTION KW_MAXELEMENTS KW_NPROBE KW_EFSEARCH
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
-%token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
+%token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING KW_APPROXIMATE KW_OPTIONS
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
 %token KW_SHORTEST KW_PATH KW_NOLOOP KW_SHORTESTPATH KW_ALLSHORTESTPATHS
@@ -309,6 +311,7 @@ using namespace nebula;
 %type <index_param_list> opt_with_index_param_list index_param_list
 %type <index_param_item> index_param_item
 %type <annindex_param> opt_annindex_param annindex_param
+%type <annindex_query_param> annindex_query_param
 %type <order_factor> order_factor
 %type <order_factors> order_factors
 %type <config_module> config_module_enum
@@ -492,6 +495,8 @@ unreserved_keyword
     | KW_HOST               { $$ = new std::string("host"); }
     | KW_HOSTS              { $$ = new std::string("hosts"); }
     | KW_SPACES             { $$ = new std::string("spaces"); }
+    | KW_NPROBE             { $$ = new std::string("nprobe"); }
+    | KW_EFSEARCH           { $$ = new std::string("efsearch"); }
     | KW_USER               { $$ = new std::string("user"); }
     | KW_USERS              { $$ = new std::string("users"); }
     | KW_PASSWORD           { $$ = new std::string("password"); }
@@ -546,6 +551,8 @@ unreserved_keyword
     | KW_SKIP               { $$ = new std::string("skip"); }
     | KW_OPTIONAL           { $$ = new std::string("optional"); }
     | KW_OFFSET             { $$ = new std::string("offset"); }
+    | KW_APPROXIMATE        { $$ = new std::string("approximate"); }
+    | KW_OPTIONS            { $$ = new std::string("options"); }
     | KW_FORMAT             { $$ = new std::string("format"); }
     | KW_PROFILE            { $$ = new std::string("profile"); }
     | KW_BOTH               { $$ = new std::string("both"); }
@@ -2143,12 +2150,57 @@ match_skip
     }
     ;
 
+annindex_query_param 
+    : L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_METRICTYPE COLON KW_L2 COMMA KW_NPROBE COLON legal_integer R_BRACE {
+        // IVF format: {ANNINDEX_TYPE:"IVF", METRIC_TYPE:"l2", NPROBE:8}
+        if (*$4 == "IVF") {
+            $$ = new AnnIndexQueryParamItem(nebula::MetricType::L2,nebula::AnnIndexType::IVF, Value($12));
+        } else {
+            delete $4;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVF parameters");
+        }
+        delete $4;
+    }
+    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_METRICTYPE COLON KW_INNERPRODUCT COMMA KW_NPROBE COLON legal_integer R_BRACE {
+        if (*$4 == "IVF") {
+            $$ = new AnnIndexQueryParamItem(nebula::MetricType::INNER_PRODUCT,nebula::AnnIndexType::IVF, Value($12));
+        } else {
+            delete $4;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVF parameters");
+        }
+        delete $4;
+    }
+    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_METRICTYPE COLON KW_L2 COMMA KW_EFSEARCH COLON legal_integer R_BRACE {
+        // HNSW format: {ANNINDEX_TYPE:"HNSW", METRIC_TYPE:"l2", EFSEARCH:200}
+        if (*$4 == "HNSW") {
+            $$ = new AnnIndexQueryParamItem(nebula::MetricType::L2,nebula::AnnIndexType::HNSW, Value($12));
+        } else {
+            delete $4;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for HNSW parameters");
+        }
+        delete $4;
+    }
+    | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_METRICTYPE COLON KW_INNERPRODUCT COMMA KW_EFSEARCH COLON legal_integer R_BRACE {
+        // HNSW format: {ANNINDEX_TYPE:"HNSW", METRIC_TYPE:"l2", EFSEARCH:200}
+        if (*$4 == "HNSW") {
+            $$ = new AnnIndexQueryParamItem(nebula::MetricType::INNER_PRODUCT,nebula::AnnIndexType::HNSW, Value($12));
+        } else {
+            delete $4;
+            throw nebula::GraphParser::syntax_error(@4, "Invalid index type for HNSW parameters");
+        }
+        delete $4;
+    }
+    ;
+
 match_limit
     : %empty {
         $$ = nullptr;
     }
     | KW_LIMIT expression {
         $$ = $2;
+    }
+    | KW_APPROXIMATE KW_LIMIT expression KW_OPTIONS annindex_query_param {
+        $$ = ApproximateLimitExpression::make(qctx->objPool(), $3, $5);
     }
     ;
 
@@ -2784,7 +2836,7 @@ annindex_param
     : L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_L2 COMMA KW_NLIST COLON legal_integer COMMA KW_TRAINSIZE COLON legal_integer R_BRACE {
         // IVF format: {ANNINDEX_TYPE:"IVF", DIM:128, METRIC_TYPE:"l2", NLIST:8, TRAINSIZE:3}
         if (*$4 == "IVF") {
-            $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20));
+            $$ = new IVFIndexParamItem(Value($8), nebula::MetricType::L2, Value($16), Value($20));
         } else {
             delete $4;
             throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVF parameters");
@@ -2794,7 +2846,7 @@ annindex_param
     | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_INNERPRODUCT COMMA KW_NLIST COLON legal_integer COMMA KW_TRAINSIZE COLON legal_integer R_BRACE {
         // IVF format: {ANNINDEX_TYPE:"IVF", DIM:128, METRIC_TYPE:"inner_product", NLIST:8, TRAINSIZE:3}
         if (*$4 == "IVF") {
-            $$ = new IVFIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20)); 
+            $$ = new IVFIndexParamItem(Value($8), nebula::MetricType::INNER_PRODUCT, Value($16), Value($20)); 
         } else {
             delete $4;
             throw nebula::GraphParser::syntax_error(@4, "Invalid index type for IVF parameters");
@@ -2804,7 +2856,7 @@ annindex_param
     | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_L2 COMMA KW_MAXDEGREE COLON legal_integer COMMA KW_EFCONSTRUCTION COLON legal_integer COMMA KW_MAXELEMENTS COLON legal_integer R_BRACE {
         // HNSW format: {ANNINDEX_TYPE:"HNSW", DIM:128, METRIC_TYPE:"l2", MAXDEGREE:16, EFCONSTRUCTION:200, MAXELEMENTS:1000}
         if (*$4 == "HNSW") {
-            $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::L2, Value($16), Value($20), Value($24));
+            $$ = new HNSWIndexParamItem(Value($8), nebula::MetricType::L2, Value($16), Value($20), Value($24));
         } else {
             delete $4;
             throw nebula::GraphParser::syntax_error(@4, "Invalid index type for HNSW parameters");
@@ -2814,7 +2866,7 @@ annindex_param
     | L_BRACE KW_ANNINDEXTYPE COLON STRING COMMA KW_DIM COLON legal_integer COMMA KW_METRICTYPE COLON KW_INNERPRODUCT COMMA KW_MAXDEGREE COLON legal_integer COMMA KW_EFCONSTRUCTION COLON legal_integer COMMA KW_MAXELEMENTS COLON legal_integer R_BRACE{
         // HNSW format: {ANNINDEX_TYPE:"HNSW", DIM:128, METRIC_TYPE:"inner_product", MAXDEGREE:16, EFCONSTRUCTION:200, MAXELEMENTS:1000}
         if (*$4 == "HNSW") {
-            $$ = new HNSWIndexParamItem(Value($8), nebula::AnnIndexParamItem::MetricType::INNER_PRODUCT, Value($16), Value($20), Value($24));
+            $$ = new HNSWIndexParamItem(Value($8), nebula::MetricType::INNER_PRODUCT, Value($16), Value($20), Value($24));
         } else {
             delete $4;
             throw nebula::GraphParser::syntax_error(@4, "Invalid index type for HNSW parameters");

@@ -237,6 +237,13 @@ struct RuntimeContext {
   std::string edgeName_ = "";
   const meta::NebulaSchemaProvider* edgeSchema_{nullptr};
 
+  // for tag ann index scan
+  std::vector<TagID> tagIds_;
+  std::vector<std::string> tagNames_;
+  // for edge ann index scan
+  std::vector<EdgeType> edgeTypes_;
+  std::vector<std::string> edgeNames_;
+
   // used for GetNeighbors
   size_t columnIdx_ = 0;
   const std::vector<PropContext>* props_ = nullptr;

@@ -6,6 +6,7 @@
 #include "storage/GraphStorageServiceHandler.h"
 
 #include "common/memory/MemoryTracker.h"
+#include "storage/index/LookupAnnProcessor.h"
 #include "storage/index/LookupProcessor.h"
 #include "storage/kv/GetProcessor.h"
 #include "storage/kv/PutProcessor.h"
@@ -158,6 +159,12 @@ folly::Future<cpp2::GetPropResponse> GraphStorageServiceHandler::future_getProps
 folly::Future<cpp2::LookupIndexResp> GraphStorageServiceHandler::future_lookupIndex(
     const cpp2::LookupIndexRequest& req) {
   auto* processor = LookupProcessor::instance(env_, &kLookupCounters, readerPool_.get());
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::LookupIndexResp> GraphStorageServiceHandler::future_lookupAnnIndex(
+    const cpp2::LookupAnnIndexRequest& req) {
+  auto* processor = LookupAnnProcessor::instance(env_, &kLookupAnnCounters, readerPool_.get());
   RETURN_FUTURE(processor);
 }
 

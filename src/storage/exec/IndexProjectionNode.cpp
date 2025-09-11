@@ -35,6 +35,7 @@ nebula::cpp2::ErrorCode IndexProjectionNode::init(InitContext& ctx) {
   for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
     ctx.retColMap[ctx.returnColumns[i]] = i;
   }
+  LOG(ERROR) << "IndexProject Node return columns: " << folly::join(",", ctx.returnColumns);
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

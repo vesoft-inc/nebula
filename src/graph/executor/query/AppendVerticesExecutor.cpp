@@ -38,6 +38,26 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   auto res = buildRequestDataSet(av);
   NG_RETURN_IF_ERROR(res);
   auto vertices = std::move(res).value();
+  // LOG AnnIndexScan 输出 vid
+  if (qctx()->plan()->isProfileEnabled()) {
+    std::vector<std::string> vids;
+    for (const auto &row : vertices.rows) {
+      if (!row.values.empty()) {
+        vids.push_back(row.values[0].toString());
+      }
+    }
+    LOG(INFO) << "[PROFILE] AppendVertices input vids count: " << vids.size() << ", vids: ["
+              << (vids.size() > 0 ? vids[0] : "")
+              << (vids.size() > 1 ? (", ... " + vids.back()) : "") << "]";
+    // 打印 props/tagId 配置
+    std::stringstream ss;
+    for (const auto &p : *av->props()) {
+      ss << "{tagId: " << p.get_tag() << ", props: [";
+      for (const auto &prop : p.get_props()) ss << prop << ",";
+      ss << "]} ";
+    }
+    LOG(INFO) << "[PROFILE] AppendVertices props config: " << ss.str();
+  }
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }
@@ -120,6 +140,9 @@ Status AppendVerticesExecutor::handleResp(
   ds.colNames = av->colNames();
   ds.rows.reserve(inputIter->size());
 
+  size_t joinCount = 0;
+  std::vector<std::string> missedVids;
+
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
       auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
@@ -142,17 +165,32 @@ Status AppendVerticesExecutor::handleResp(
   }
 
   if (!av->trackPrevPath()) {
+    if (qctx()->plan()->isProfileEnabled()) {
+      LOG(INFO) << "[PROFILE] AppendVertices handleResp: output rows = " << ds.rows.size();
+    }
     return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());
   }
 
   auto *src = av->src();
   bool mv = movable(av->inputVars().front());
   for (; inputIter->valid(); inputIter->next()) {
-    auto dstFound = map.find(src->eval(ctx(inputIter.get())));
+    auto vid = src->eval(ctx(inputIter.get()));
+    auto dstFound = map.find(vid);
     if (dstFound != map.end()) {
       Row row = mv ? inputIter->moveRow() : *inputIter->row();
       row.values.emplace_back(dstFound->second);
       ds.rows.emplace_back(std::move(row));
+      joinCount++;
+    } else {
+      missedVids.push_back(vid.toString());
+    }
+  }
+  if (qctx()->plan()->isProfileEnabled()) {
+    LOG(INFO) << "[PROFILE] AppendVertices handleResp: input rows = " << inputIter->size()
+              << ", join success = " << joinCount << ", missed = " << missedVids.size();
+    if (!missedVids.empty()) {
+      LOG(INFO) << "[PROFILE] missed vids: [" << missedVids[0]
+                << (missedVids.size() > 1 ? (", ... " + missedVids.back()) : "") << "]";
     }
   }
   return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());

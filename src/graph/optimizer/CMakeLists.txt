@@ -67,6 +67,7 @@ nebula_add_library(
     rule/EmbedEdgeAllPredIntoTraverseRule.cpp
     rule/PushFilterThroughAppendVerticesRule.cpp
     rule/EliminateFilterRule.cpp
+    rule/TagAnnIndexScanRule.cpp
 )
 
 nebula_add_subdirectory(test)

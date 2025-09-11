@@ -10,8 +10,12 @@
 #include <functional>
 
 #include "common/base/Base.h"
+#include "common/base/StatusOr.h"
 #include "common/datatypes/DataSet.h"
+#include "common/datatypes/Value.h"
 #include "common/utils/IndexKeyUtils.h"
+#include "common/vectorIndex/VectorIndex.h"
+#include "common/vectorIndex/VectorIndexUtils.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "storage/CommonUtils.h"
@@ -174,6 +178,113 @@ class IndexScanNode : public IndexNode {
   bool fatalOnBaseNotFound_{false};
   Map<std::string, size_t> colPosMap_;
 };
+
+/**
+ * @brief `AnnIndexScanNode` is the base class of the node which need to access ann index in memory.
+ * It has two derive class `AnnIndexVertexScanNode` and `AnnIndexEdgeScanNode`.
+ *
+ * `AnnIndexScanNode` will access index data, and then access base data if necessary.
+ *
+ * @implements IndexNode
+ * @see IndexNode, AnnIndexVertexScanNode, AnnIndexEdgeScanNode
+ *
+ */
+class AnnIndexScanNode : public IndexNode {
+  FRIEND_TEST(AnnIndexScanTest, Base);
+  FRIEND_TEST(AnnIndexScanTest, Vertex);
+  FRIEND_TEST(AnnIndexScanTest, Edge);
+  // There are too many unittests, so a helper is defined to access private data
+  friend class AnnIndexScanTestHelper;
+
+ public:
+  /**
+   * @brief shallow copy.
+   * @attention This constructor will create a new Path
+   * @see IndexNode::IndexNode(const IndexNode& node)
+   */
+  AnnIndexScanNode(const AnnIndexScanNode& node);
+
+  /**
+   * @brief Construct a new Index Scan Node object
+   *
+   * @param context
+   * @param name
+   * @param indexId
+   * @param columnHints
+   * @param kvstore
+   */
+  AnnIndexScanNode(RuntimeContext* context,
+                   const std::string& name,
+                   IndexID indexId,
+                   ::nebula::kvstore::KVStore* kvstore,
+                   bool hasNullableCol,
+                   int64_t limit,
+                   int64_t param,
+                   const Value& queryVector)
+      : IndexNode(context, name),
+        indexId_(indexId),
+        kvstore_(kvstore),
+        indexNullable_(hasNullableCol),
+        k_(limit),
+        param_(param) {
+    if (queryVector.type() == Value::Type::VECTOR) {
+      query_ = queryVector.getVector().data();
+    }
+  }
+  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
+  std::string identify() override;
+
+ protected:
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) final;
+  Result doNext() final;
+
+  /**
+   * @brief start query a new part
+   *
+   * @param partId
+   * @return nebula::cpp2::ErrorCode
+   * @see Path
+   */
+  nebula::cpp2::ErrorCode resetIter(PartitionID partId);
+
+  // ANN search helper methods
+  virtual StatusOr<Map<std::string, Value>> getVidByVectorId(VectorID vectorId) = 0;
+  PartitionID partId_;
+
+  /**
+   * @brief index_ in this Node to access
+   */
+  const IndexID indexId_;
+
+  /**
+   * @brief index definition
+   */
+  std::shared_ptr<nebula::meta::cpp2::AnnIndexItem> index_;
+
+  /**
+   * @brief current kvstore iterator.It while be reset `doExecute` and iterated during `doNext`
+   */
+  std::unique_ptr<kvstore::KVIterator> iter_;
+  nebula::kvstore::KVStore* kvstore_;
+  /**
+   * @brief if index contain nullable field or not
+   */
+  bool indexNullable_ = false;
+  /**
+   * @brief row format that `doNext` needs to return
+   */
+  std::vector<std::string> requiredColumns_;
+
+  // ANN search specific members
+  SearchResult searchResults_;          // vector IDs from ANN search
+  size_t currentResultIndex_{0};        // current position in search results
+  std::shared_ptr<AnnIndex> annIndex_;  // reference to ANN index
+  int64_t k_;                           // top k in ann index
+  int64_t param_;
+  std::vector<float> query_;
+  size_t vidLen_{0};
+};
+
 class QualifiedStrategy {
  public:
   /**

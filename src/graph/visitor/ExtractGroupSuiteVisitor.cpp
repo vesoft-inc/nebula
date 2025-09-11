@@ -166,6 +166,10 @@ void ExtractGroupSuiteVisitor::visit(MatchPathPatternExpression *expr) {
   internalVisit(expr);
 }
 
+void ExtractGroupSuiteVisitor::visit(ApproximateLimitExpression *expr) {
+  internalVisit(expr);
+}
+
 template <typename T>
 void ExtractGroupSuiteVisitor::internalVisit(T *expr) {
   if (ExpressionUtils::hasAny(expr, {Expression::Kind::kAggregate})) {

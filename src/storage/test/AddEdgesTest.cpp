@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 20168 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -37,8 +37,8 @@ TEST(AddEdgesTest, SimpleVectorTest) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   LOG(INFO) << "Check data in kv store...";
-  // The number of data in serve is 334
-  checkAddVectorEdgesData(req, env, 18, 0);
+  // The number of data in serve is 168
+  checkAddVectorEdgesData(req, env, 168, 0);
 }
 
 TEST(AddEdgesTest, VectorSpecifyPropertyNameTest) {
@@ -60,7 +60,7 @@ TEST(AddEdgesTest, VectorSpecifyPropertyNameTest) {
 
   LOG(INFO) << "Check data in kv store...";
   // The number of data in serve is 334
-  checkAddVectorEdgesData(req, env, 18, 1);
+  checkAddVectorEdgesData(req, env, 168, 1);
 }
 
 TEST(AddEdgesTest, VectorMultiVersionTest) {
@@ -92,7 +92,7 @@ TEST(AddEdgesTest, VectorMultiVersionTest) {
 
   LOG(INFO) << "Check data in kv store...";
   // The number of data in serve is 668
-  checkAddVectorEdgesData(req, env, 18, 2);
+  checkAddVectorEdgesData(req, env, 168, 2);
 }
 
 TEST(AddEdgesTest, SimpleTest) {

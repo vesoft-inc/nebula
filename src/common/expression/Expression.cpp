@@ -9,6 +9,7 @@
 
 #include "common/datatypes/ValueOps-inl.h"
 #include "common/expression/AggregateExpression.h"
+#include "common/expression/ApproximateLimitExpression.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/CaseExpression.h"
@@ -184,6 +185,10 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
   Expression* exp = nullptr;
   Kind kind = decoder.readKind();
   switch (kind) {
+    case Expression::Kind::kApproximateLimit: {
+      LOG(ERROR) << "No implementation for ApproximateLimitExpression decode";
+      return exp;
+    }
     case Expression::Kind::kConstant: {
       exp = ConstantExpression::make(pool);
       exp->resetFrom(decoder);
@@ -529,6 +534,9 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
 
 std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
   switch (kind) {
+    case Expression::Kind::kApproximateLimit:
+      os << "ApproximateLimit";
+      break;
     case Expression::Kind::kConstant:
       os << "Constant";
       break;

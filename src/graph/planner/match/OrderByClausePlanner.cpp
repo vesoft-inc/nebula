@@ -22,7 +22,8 @@ StatusOr<SubPlan> OrderByClausePlanner::transform(CypherClauseContextBase* claus
 
 Status OrderByClausePlanner::buildSort(OrderByClauseContext* octx, SubPlan& subplan) {
   auto* currentRoot = subplan.root;
-  auto* sort = Sort::make(octx->qctx, currentRoot, octx->indexedOrderFactors);
+  auto* sort = Sort::make(
+      octx->qctx, currentRoot, octx->indexedOrderFactors, octx->hasVectorDis, octx->vectorFunc);
   subplan.root = sort;
   subplan.tail = sort;
   return Status::OK();

@@ -4,12 +4,16 @@
  */
 #ifndef COMMON_VECTORINDEX_VECTOR_INDEX_H_
 #define COMMON_VECTORINDEX_VECTOR_INDEX_H_
+#include <thrift/lib/cpp/Thrift.h>
+
+#include <cstring>
+
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
 namespace nebula {
 
-enum MetricType : int8_t { L2, INNER_PRODUCT };
-enum AnnIndexType : int8_t { IVF, HNSW };
+enum MetricType : int8_t { L2, INNER_PRODUCT, METRIC_INVALID };
+enum AnnIndexType : int8_t { IVF, HNSW, ANN_INVALID };
 
 struct IDSelector {
   size_t cnt;
@@ -114,6 +118,12 @@ struct SearchResult {
   // result vectors
   std::vector<float> vectors;
 
+  void clear() {
+    IDs.clear();
+    distances.clear();
+    vectors.clear();
+  }
+
   void shrinkToFit() {
     size_t sz = IDs.size();
     for (auto it = IDs.rbegin(); it != IDs.rend(); it++) {
@@ -155,4 +165,86 @@ struct AnnRaftLog {
   bool putOrRemove{true};  // true: PUT or UPSERT, PUT by default
 };
 }  // namespace nebula
+
+// Thrift enum traits specializations
+namespace apache {
+namespace thrift {
+
+template <>
+struct TEnumTraits<nebula::MetricType> {
+  static constexpr size_t kMetricTypeSize = 3;
+  static const nebula::MetricType values[kMetricTypeSize];
+  static const char* names[kMetricTypeSize];
+
+  static const char* findName(nebula::MetricType value) {
+    switch (value) {
+      case nebula::MetricType::L2:
+        return "L2";
+      case nebula::MetricType::INNER_PRODUCT:
+        return "INNER_PRODUCT";
+      case nebula::MetricType::METRIC_INVALID:
+        return "METRIC_INVALID";
+      default:
+        return nullptr;
+    }
+  }
+
+  static bool findValue(const char* name, nebula::MetricType* out) {
+    if (name == nullptr) return false;
+    if (std::strcmp(name, "L2") == 0) {
+      *out = nebula::MetricType::L2;
+      return true;
+    }
+    if (std::strcmp(name, "INNER_PRODUCT") == 0) {
+      *out = nebula::MetricType::INNER_PRODUCT;
+      return true;
+    }
+    if (std::strcmp(name, "METRIC_INVALID") == 0) {
+      *out = nebula::MetricType::METRIC_INVALID;
+      return true;
+    }
+    return false;
+  }
+};
+
+template <>
+struct TEnumTraits<nebula::AnnIndexType> {
+  static constexpr size_t kAnnIndexTypeSize = 3;
+  static const nebula::AnnIndexType values[kAnnIndexTypeSize];
+  static const char* names[kAnnIndexTypeSize];
+
+  static const char* findName(nebula::AnnIndexType value) {
+    switch (value) {
+      case nebula::AnnIndexType::IVF:
+        return "IVF";
+      case nebula::AnnIndexType::HNSW:
+        return "HNSW";
+      case nebula::AnnIndexType::ANN_INVALID:
+        return "ANN_INVALID";
+      default:
+        return nullptr;
+    }
+  }
+
+  static bool findValue(const char* name, nebula::AnnIndexType* out) {
+    if (name == nullptr) return false;
+    if (std::strcmp(name, "IVF") == 0) {
+      *out = nebula::AnnIndexType::IVF;
+      return true;
+    }
+    if (std::strcmp(name, "HNSW") == 0) {
+      *out = nebula::AnnIndexType::HNSW;
+      return true;
+    }
+    if (std::strcmp(name, "ANN_INVALID") == 0) {
+      *out = nebula::AnnIndexType::ANN_INVALID;
+      return true;
+    }
+    return false;
+  }
+};
+
+}  // namespace thrift
+}  // namespace apache
+
 #endif

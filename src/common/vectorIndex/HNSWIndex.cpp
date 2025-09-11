@@ -6,7 +6,6 @@
 
 #include <hnswlib/space_l2.h>
 
-#include <cstddef>
 #include <filesystem>
 
 #include "common/base/Base.h"
@@ -166,6 +165,7 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
   }
   efSearch_ = hnswParams->efSearch;
   size_t k = params->topK;
+
   res->IDs.resize(k);
   res->distances.resize(k);
   res->vectors.resize(k * dim_);
@@ -199,6 +199,8 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
       // reconstruct the vector
       auto vec = rawHnsw_->getDataByLabel<float>(result.second);
       res->vectors.insert(res->vectors.end(), vec.begin(), vec.end());
+      // LOG(ERROR) << "HNSW Index Internal Result " << (count - 1) << ": ID=" << result.second
+      //            << ", distance=" << result.first << ", vector=" << Vector(vec).toString();
     } else {
       break;  // stop when we have enough results
     }

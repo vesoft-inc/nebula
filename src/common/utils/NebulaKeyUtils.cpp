@@ -258,6 +258,19 @@ std::string NebulaKeyUtils::vidIdEdgePrefix(PartitionID partId, IndexID indexId)
   return key;
 }
 
+std::string NebulaKeyUtils::vidIdEdgePrefix(PartitionID partId,
+                                            IndexID indexId,
+                                            VectorID vectorId) {
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVidId) |
+                     static_cast<uint32_t>(NebulaKeyType::kEdge);
+  std::string key;
+  key.reserve(sizeof(PartitionID) + sizeof(IndexID) + sizeof(VectorID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
+      .append(reinterpret_cast<const char*>(&vectorId), sizeof(VectorID));
+  return key;
+}
+
 std::string NebulaKeyUtils::idVidTagKey(size_t vIdLen,
                                         PartitionID partId,
                                         IndexID indexId,
@@ -302,6 +315,17 @@ std::string NebulaKeyUtils::vidIdTagPrefix(PartitionID partId, IndexID indexId) 
   key.reserve(sizeof(PartitionID) + sizeof(IndexID));
   key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+  return key;
+}
+
+std::string NebulaKeyUtils::vidIdTagPrefix(PartitionID partId, IndexID indexId, VectorID vectorId) {
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVidId) |
+                     static_cast<uint32_t>(NebulaKeyType::kTag_);
+  std::string key;
+  key.reserve(sizeof(PartitionID) + sizeof(IndexID) + sizeof(VectorID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
+      .append(reinterpret_cast<const char*>(&vectorId), sizeof(VectorID));
   return key;
 }
 

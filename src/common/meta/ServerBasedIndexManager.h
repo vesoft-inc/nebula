@@ -32,6 +32,12 @@ class ServerBasedIndexManager : public IndexManager {
 
   StatusOr<std::vector<std::shared_ptr<IndexItem>>> getEdgeIndexes(GraphSpaceID space) override;
 
+  StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getTagAnnIndexes(
+      GraphSpaceID space) override;
+
+  StatusOr<std::vector<std::shared_ptr<AnnIndexItem>>> getEdgeAnnIndexes(
+      GraphSpaceID space) override;
+
   StatusOr<IndexID> toTagIndexID(GraphSpaceID space, std::string tagName) override;
 
   StatusOr<IndexID> toEdgeIndexID(GraphSpaceID space, std::string edgeName) override;

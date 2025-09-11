@@ -75,6 +75,7 @@ class DeduceAliasTypeVisitor final : public ExprVisitor {
   void visit(ListComprehensionExpression *) override {}
   void visit(ReduceExpression *) override {}
   void visit(MatchPathPatternExpression *) override {}
+  void visit(ApproximateLimitExpression *) override {}
 
   // Expression may have deducing potential
   void visit(VertexExpression *expr) override;

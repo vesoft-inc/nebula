@@ -202,10 +202,11 @@ void MockCluster::initStorageKV(const char* dataPath,
   }
   storageKV_ = initKV(std::move(options), addr);
   waitUntilAllElected(storageKV_.get(), 1, parts);
-
+  annIndexMan_ = memAnnIndexMan();
   storageEnv_ = std::make_unique<storage::StorageEnv>();
   storageEnv_->schemaMan_ = schemaMan_.get();
   storageEnv_->indexMan_ = indexMan_.get();
+  storageEnv_->annIndexMan_ = annIndexMan_;
   storageEnv_->kvstore_ = storageKV_.get();
   storageEnv_->rebuildIndexGuard_ = std::make_unique<storage::IndexGuard>();
   storageEnv_->verticesML_ = std::make_unique<storage::VerticesMemLock>();
@@ -278,9 +279,11 @@ std::unique_ptr<meta::IndexManager> MockCluster::memIndexMan(GraphSpaceID spaceI
     indexMan->addTagIndex(spaceId, 3, 3, MockData::mockGeneralTagIndexColumns());
     indexMan->addTagIndex(spaceId, 4, 4, MockData::mockVectorTagIndexColumns());
     indexMan->addTagAnnIndex(spaceId, {4}, 6, MockData::mockVectorTagAnnIndexColumn());
+    indexMan->addTagAnnIndex(spaceId, {4}, 8, MockData::mockVectorTagAnnIndexColumn(), false);
     indexMan->addEdgeIndex(spaceId, 101, 101, MockData::mockServeEdgeIndexColumns());
     indexMan->addEdgeIndex(spaceId, 102, 102, MockData::mockTeammateEdgeIndexColumns());
     indexMan->addEdgeAnnIndex(spaceId, {103}, 7, MockData::mockVectorEdgeAnnIndexColumn());
+    indexMan->addEdgeAnnIndex(spaceId, {103}, 9, MockData::mockVectorEdgeAnnIndexColumn(), false);
   }
 
   indexMan->addTagIndex(spaceId, 1, 4, {});
@@ -288,6 +291,17 @@ std::unique_ptr<meta::IndexManager> MockCluster::memIndexMan(GraphSpaceID spaceI
   indexMan->addEdgeIndex(spaceId, 101, 103, {});
   indexMan->addEdgeIndex(spaceId, 102, 104, {});
   return indexMan;
+}
+
+storage::VectorIndexManager* MockCluster::memAnnIndexMan() {
+  auto vectorIndexMgr = &nebula::storage::VectorIndexManager::getInstance();
+  auto vector_path = boost::filesystem::absolute("testvector").string();  // 关键转换
+  vectorIndexMgr->init(indexMan_.get(), vector_path);
+  if (!vectorIndexMgr->start().ok()) {
+    LOG(ERROR) << "Vector index manager start failed";
+    return nullptr;
+  }
+  return vectorIndexMgr;
 }
 
 meta::MetaClient* MockCluster::initMetaClient(meta::MetaClientOptions options) {

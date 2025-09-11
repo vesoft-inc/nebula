@@ -5,6 +5,10 @@
 #ifndef NEBULA_GRAPH_UTIL_OPTIMIZERUTILS_H_
 #define NEBULA_GRAPH_UTIL_OPTIMIZERUTILS_H_
 
+#include <string>
+
+#include "common/vectorIndex/VectorIndexUtils.h"
+#include "graph/planner/plan/Query.h"
 #include "graph/util/SchemaUtil.h"
 
 namespace nebula {
@@ -80,6 +84,7 @@ class OptimizerUtils {
   //---------------------------------------------------------------
 
   using IndexItemPtr = std::shared_ptr<meta::cpp2::IndexItem>;
+  using AnnIndexItemPtr = std::shared_ptr<meta::cpp2::AnnIndexItem>;
   using IndexQueryContextList = std::vector<storage::cpp2::IndexQueryContext>;
 
   struct ScanKind {
@@ -120,6 +125,13 @@ class OptimizerUtils {
         : col_(col), relOP_(relOP), value_(value) {}
   };
 
+  static Status createAnnIndexQueryCtx(QueryContext *qctx,
+                                       const ScanVertices *node,
+                                       const std::string &vectorProp,
+                                       AnnIndexType annIndexType,
+                                       MetricType metricType,
+                                       storage::cpp2::IndexQueryContext &iqctx);
+
   static Status createIndexQueryCtx(Expression *filter,
                                     QueryContext *qctx,
                                     const IndexScan *node,
@@ -151,6 +163,8 @@ class OptimizerUtils {
   static Status appendIQCtx(const IndexItemPtr &index,
                             IndexQueryContextList &iqctx,
                             const Expression *filter = nullptr);
+  static Status appendAnnIQCtx(const AnnIndexItemPtr &index,
+                               storage::cpp2::IndexQueryContext &iqctx);
   static Status appendColHint(std::vector<storage::cpp2::IndexColumnHint> &hints,
                               const std::vector<FilterItem> &items,
                               const meta::cpp2::ColumnDef &col);
@@ -168,6 +182,13 @@ class OptimizerUtils {
                                                   const std::vector<FilterItem> &items);
   static std::vector<IndexItemPtr> allIndexesBySchema(graph::QueryContext *qctx,
                                                       const IndexScan *node);
+  static std::vector<AnnIndexItemPtr> allTagAnnIndexesBySchema(
+      graph::QueryContext *qctx,
+      const ScanVertices *node,
+      const std::string &vectorProp = {},
+      AnnIndexType annIndexType = AnnIndexType::IVF,
+      MetricType metricType = MetricType::L2);
+
   static Status analyzeExpression(Expression *expr,
                                   std::vector<FilterItem> *items,
                                   ScanKind *kind,

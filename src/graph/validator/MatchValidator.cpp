@@ -5,6 +5,7 @@
 
 #include "graph/validator/MatchValidator.h"
 
+#include "common/expression/ApproximateLimitExpression.h"
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/MatchPathPatternExpression.h"
@@ -847,17 +848,43 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   }
 
   if (limitExpr != nullptr) {
-    if (!ExpressionUtils::isEvaluableExpr(limitExpr, qctx_)) {
-      return Status::SemanticError("SKIP should be instantly evaluable");
+    // Check if this is an ApproximateLimit expression
+    if (limitExpr->kind() == Expression::Kind::kApproximateLimit) {
+      auto *approxLimitExpr = static_cast<const ApproximateLimitExpression *>(limitExpr);
+      paginationCtx.isApproximateLimit = true;
+      paginationCtx.metricType = approxLimitExpr->metricType();
+      paginationCtx.annIndexType = approxLimitExpr->annIndexType();
+      paginationCtx.param = approxLimitExpr->param();
+
+      // Validate the inner limit expression
+      auto *innerLimitExpr = approxLimitExpr->limitExpr();
+      if (!ExpressionUtils::isEvaluableExpr(innerLimitExpr, qctx_)) {
+        return Status::SemanticError("APPROXIMATE LIMIT should be instantly evaluable");
+      }
+      auto value =
+          const_cast<Expression *>(innerLimitExpr)->eval(QueryExpressionContext(qctx_->ectx())());
+      if (!value.isInt()) {
+        return Status::SemanticError("APPROXIMATE LIMIT should be of type integer");
+      }
+      if (value.getInt() < 0) {
+        return Status::SemanticError("APPROXIMATE LIMIT should not be negative");
+      }
+      limit = value.getInt();
+    } else {
+      // Regular LIMIT expression
+      if (!ExpressionUtils::isEvaluableExpr(limitExpr, qctx_)) {
+        return Status::SemanticError("LIMIT should be instantly evaluable");
+      }
+      auto value =
+          const_cast<Expression *>(limitExpr)->eval(QueryExpressionContext(qctx_->ectx())());
+      if (!value.isInt()) {
+        return Status::SemanticError("LIMIT should be of type integer");
+      }
+      if (value.getInt() < 0) {
+        return Status::SemanticError("LIMIT should not be negative");
+      }
+      limit = value.getInt();
     }
-    auto value = const_cast<Expression *>(limitExpr)->eval(QueryExpressionContext(qctx_->ectx())());
-    if (!value.isInt()) {
-      return Status::SemanticError("LIMIT should be of type integer");
-    }
-    if (value.getInt() < 0) {
-      return Status::SemanticError("LIMIT should not be negative");
-    }
-    limit = value.getInt();
   }
   paginationCtx.skip = skip;
   paginationCtx.limit = limit;
@@ -888,14 +915,25 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
       auto factorExpr = factor->expr();
       if (ExpressionUtils::isEvaluableExpr(factorExpr, qctx_)) continue;
       if (factorExpr->kind() != Expression::Kind::kLabel) {
-        return Status::SemanticError("Only column name can be used as sort item");
+        if (factorExpr->kind() == Expression::Kind::kFunctionCall) {
+          auto *funcExpr = static_cast<const FunctionCallExpression *>(factorExpr);
+          if (funcExpr->name() != "euclidean" && funcExpr->name() != "innerproduct") {
+            return Status::SemanticError(
+                "Only euclidean and innerproduct function call can be used as sort item");
+          }
+          orderByCtx.vectorFunc = funcExpr->clone();
+          orderByCtx.hasVectorDis = true;
+        } else {
+          return Status::SemanticError("Only column name can be used as sort item");
+        }
+      } else {
+        auto &name = static_cast<const LabelExpression *>(factor->expr())->name();
+        auto iter = inputColIndices.find(name);
+        if (iter == inputColIndices.end()) {
+          return Status::SemanticError("Column `%s' not found", name.c_str());
+        }
+        orderByCtx.indexedOrderFactors.emplace_back(iter->second, factor->orderType());
       }
-      auto &name = static_cast<const LabelExpression *>(factor->expr())->name();
-      auto iter = inputColIndices.find(name);
-      if (iter == inputColIndices.end()) {
-        return Status::SemanticError("Column `%s' not found", name.c_str());
-      }
-      orderByCtx.indexedOrderFactors.emplace_back(iter->second, factor->orderType());
     }
   }
 

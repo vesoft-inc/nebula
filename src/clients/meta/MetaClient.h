@@ -642,6 +642,12 @@ class MetaClient : public BaseMetaClient {
   StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> getEdgeIndexesFromCache(
       GraphSpaceID spaceId);
 
+  StatusOr<std::vector<std::shared_ptr<cpp2::AnnIndexItem>>> getTagAnnIndexesFromCache(
+      GraphSpaceID spaceId);
+
+  StatusOr<std::vector<std::shared_ptr<cpp2::AnnIndexItem>>> getEdgeAnnIndexesFromCache(
+      GraphSpaceID spaceId);
+
   Status checkTagIndexed(GraphSpaceID space, IndexID indexID);
 
   Status checkEdgeIndexed(GraphSpaceID space, IndexID indexID);

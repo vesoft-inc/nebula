@@ -69,6 +69,7 @@ class BuildVectorIndexTask : public AdminTask {
  protected:
   GraphSpaceID space_;
   bool changedSpaceGuard_{false};
+  std::map<PartitionID, std::set<VectorID>> partVectorIds_;
 };
 
 }  // namespace storage

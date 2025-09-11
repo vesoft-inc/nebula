@@ -48,6 +48,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
     // set or check storaged's cluster id
     ClusterID peerClusterId = req.get_cluster_id();
+    LOG(ERROR) << "Heartbeat from host " << host << " with cluster Id " << peerClusterId;
     if (peerClusterId == 0) {
       LOG(INFO) << "Set clusterId for new host " << host << "!";
       resp_.cluster_id_ref() = clusterId_;

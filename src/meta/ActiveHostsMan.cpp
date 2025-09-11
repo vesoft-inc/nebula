@@ -75,6 +75,8 @@ bool ActiveHostsMan::machineRegistered(kvstore::KVStore* kv, const HostAddr& hos
   auto machineKey = MetaKeyUtils::machineKey(hostAddr.host, hostAddr.port);
   std::string machineValue;
   auto code = kv->get(kDefaultSpaceId, kDefaultPartId, machineKey, &machineValue);
+  LOG(ERROR) << "Check machine registered: " << machineKey
+             << ", code: " << apache::thrift::util::enumNameSafe(code);
   return code == nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

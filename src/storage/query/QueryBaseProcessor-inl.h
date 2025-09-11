@@ -4,6 +4,7 @@
  */
 
 #include "common/expression/SubscriptExpression.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace storage {
@@ -40,8 +41,12 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
         if (name != kVid && name != kTag) {
           auto field = tagSchema->field(name);
           if (field == nullptr) {
-            VLOG(1) << "Can't find prop " << name << " tagId " << tagId;
-            return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+            field = tagSchema->vectorField(name);
+            if (field == nullptr) {
+              VLOG(1) << "Can't find prop " << name << " tagId " << tagId;
+              return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+            }
+            LOG(ERROR) << "Vector field: " << name;
           }
           addReturnPropContext(ctxs, name.c_str(), field);
         } else {
@@ -57,6 +62,15 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
         (*vertexProp.props_ref()).emplace_back(name);
         auto field = tagSchema->field(i);
         addReturnPropContext(ctxs, name, field);
+      }
+      // add vector fields
+      if (tagSchema->getVectorNumFields()) {
+        for (size_t i = 0; i < tagSchema->getVectorNumFields(); i++) {
+          auto name = tagSchema->getVectorFieldName(i);
+          (*vertexProp.props_ref()).emplace_back(name);
+          auto field = tagSchema->vectorField(i);
+          addReturnPropContext(ctxs, name, field);
+        }
       }
     }
     tagContext_.propContexts_.emplace_back(tagId, std::move(ctxs));
@@ -163,6 +177,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(
     }
     return checkExp(filter_, false, true, false, true);
   }
+  LOG(ERROR) << "Filter builded success";
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -641,6 +656,15 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
     case Expression::Kind::kMatchPathPattern: {
       LOG(INFO) << "Unimplemented expression type! kind = " << exp->kind();
       return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
+    }
+    case Expression::Kind::kApproximateLimit: {
+      // ApproximateLimitExpression contains a limit expression that needs to be checked
+      auto* approxLimitExp = static_cast<const ApproximateLimitExpression*>(exp);
+      if (approxLimitExp->limitExpr() != nullptr) {
+        return checkExp(
+            approxLimitExp->limitExpr(), returned, filtered, updated, allowNoexistentProp);
+      }
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
   }
   return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
