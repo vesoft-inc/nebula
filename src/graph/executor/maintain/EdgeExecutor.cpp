@@ -27,7 +27,33 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
                        << "' failed: " << resp.status();
           return resp.status();
         }
-        return Status::OK();
+        
+        // Check if creation was skipped due to IF NOT EXISTS
+        if (resp.value() == -1) {
+          LOG(INFO) << "SpaceId: " << spaceId << ", Create edge `" << ceNode->getName()
+                    << "' skipped: edge already exists";
+          // Return a result with a message indicating the edge was skipped
+          DataSet result;
+          result.colNames = {"Result"};
+          Row row;
+          row.values.emplace_back("Edge '" + ceNode->getName() + "' already exists, creation skipped");
+          result.rows.emplace_back(std::move(row));
+          return finish(ResultBuilder()
+                           .value(Value(std::move(result)))
+                           .iter(Iterator::Kind::kDefault)
+                           .build());
+        }
+        
+        // Edge was successfully created
+        DataSet result;
+        result.colNames = {"Result"};
+        Row row;
+        row.values.emplace_back("Edge '" + ceNode->getName() + "' created successfully");
+        result.rows.emplace_back(std::move(row));
+        return finish(ResultBuilder()
+                         .value(Value(std::move(result)))
+                         .iter(Iterator::Kind::kDefault)
+                         .build());
       });
 }
 

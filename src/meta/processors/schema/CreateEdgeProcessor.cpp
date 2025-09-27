@@ -50,6 +50,8 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
   if (nebula::ok(ret)) {
     if (req.get_if_not_exists()) {
       handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
+      resp_.skipped_ref() = true;  // Indicate that the creation was skipped
+      LOG(INFO) << "Edge " << edgeName << " already exists, skipping creation due to IF NOT EXISTS";
     } else {
       LOG(INFO) << "Create Edge Failed :" << edgeName << " has existed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
@@ -85,6 +87,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
 
   LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
   resp_.id_ref() = to(edgeType, EntryType::EDGE);
+  resp_.skipped_ref() = false;  // Indicate that the creation was not skipped
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
   LastUpdateTimeMan::update(data, timeInMilliSec);
   auto result = doSyncPut(std::move(data));
