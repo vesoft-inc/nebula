@@ -38,7 +38,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   auto res = buildRequestDataSet(av);
   NG_RETURN_IF_ERROR(res);
   auto vertices = std::move(res).value();
-  // LOG AnnIndexScan 输出 vid
   if (qctx()->plan()->isProfileEnabled()) {
     std::vector<std::string> vids;
     for (const auto &row : vertices.rows) {
@@ -46,17 +45,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
         vids.push_back(row.values[0].toString());
       }
     }
-    LOG(INFO) << "[PROFILE] AppendVertices input vids count: " << vids.size() << ", vids: ["
-              << (vids.size() > 0 ? vids[0] : "")
-              << (vids.size() > 1 ? (", ... " + vids.back()) : "") << "]";
-    // 打印 props/tagId 配置
-    std::stringstream ss;
-    for (const auto &p : *av->props()) {
-      ss << "{tagId: " << p.get_tag() << ", props: [";
-      for (const auto &prop : p.get_props()) ss << prop << ",";
-      ss << "]} ";
-    }
-    LOG(INFO) << "[PROFILE] AppendVertices props config: " << ss.str();
   }
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());

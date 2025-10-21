@@ -71,21 +71,15 @@ Status AnnIndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcR
       state = Result::State::kPartialSuccess;
     }
   }
-  // It will appear multitag with _vid or _dis, so we set it again.
-  v.colNames = {kVid, kDis};
-  // If plan node provided expected names, align when sizes match; otherwise keep normalized
+  // It will appear multitag with _vid, so we set it again.
+  v.colNames = {kVid};
   if (!node()->colNames().empty()) {
     const auto &expected = node()->colNames();
     if (expected.size() == v.colNames.size()) {
       v.colNames = expected;
     }
   }
-  // // Fallback: if column names are still empty (storage didn't fill or plan node had none),
-  // // set to defaults so downstream can reference $-._vid and $-._dis
-  // if (v.colNames.empty()) {
-  //
-  // }
-  // LOG AnnIndexScan 输出 vid
+
   if (qctx()->plan()->isProfileEnabled()) {
     std::vector<std::string> vids;
     for (const auto &row : v.rows) {
@@ -93,13 +87,6 @@ Status AnnIndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcR
         vids.push_back(row.values[0].toString());
       }
     }
-    LOG(INFO) << "[PROFILE] AnnIndexScan output column names: ";
-    for (const auto &name : v.colNames) {
-      LOG(INFO) << name;
-    }
-    LOG(INFO) << "[PROFILE] AnnIndexScan output vids count: " << vids.size() << ", vids: ["
-              << (vids.size() > 0 ? vids[0] : "")
-              << (vids.size() > 1 ? (", ... " + vids.back()) : "") << "]";
   }
   return finish(
       ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());

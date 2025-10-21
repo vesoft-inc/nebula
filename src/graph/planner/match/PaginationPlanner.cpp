@@ -32,7 +32,7 @@ Status PaginationPlanner::buildLimit(PaginationContext* pctx, SubPlan& subplan) 
                                    pctx->limit,
                                    pctx->annIndexType,
                                    pctx->metricType,
-                                   pctx->param);
+                                   pctx->searchParam);
   } else {
     limit = Limit::make(pctx->qctx, currentRoot, pctx->skip, pctx->limit);
   }

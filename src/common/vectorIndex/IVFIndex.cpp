@@ -78,15 +78,11 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 
 // add data to index incrementally
 [[nodiscard]] Status IVFIndex::add(const VecData *data, bool isTest) {
-  if (data == nullptr) {
-    return Status::Error("VecData is null");
-  }
-  if (data->cnt < 1 || data->dim != dim_ || (isTest && data->cnt < trainsz_)) {
+  DCHECK(data != nullptr) << "VecData should never be null";
+  if (data->dim != dim_ || (isTest && data->cnt < trainsz_)) {
     return Status::Error("Invalid VecData");
   }
-  if (ivfIndex_ == nullptr) {
-    return Status::Error("IVF index is not initialized");
-  }
+  DCHECK(ivfIndex_ != nullptr) << "IVF index must be initialized before adding data";
   auto dataCnt = isTest ? data->cnt - trainsz_ : data->cnt;
   auto fData = isTest ? data->fdata + trainsz_ * dim_ : data->fdata;
   std::unique_lock lock(latch_);
@@ -109,10 +105,8 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 
 // upsert data to index
 [[nodiscard]] Status IVFIndex::upsert(const VecData *data) {
-  if (data == nullptr) {
-    return Status::Error("VecData is null");
-  }
-  if (data->cnt < 1 || data->dim != dim_) {
+  DCHECK(data != nullptr) << "VecData should never be null";
+  if (data->dim != dim_ || data->cnt < 1) {
     return Status::Error("Invalid VecData");
   }
   if (ivfIndex_ == nullptr) {
@@ -134,9 +128,7 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 
 // soft delete data from index, return number of deleted vectors
 [[nodiscard]] StatusOr<size_t> IVFIndex::remove(const IDSelector &sel) {
-  if (ivfIndex_ == nullptr) {
-    return Status::Error("IVF index is not initialized");
-  }
+  DCHECK(ivfIndex_ != nullptr) << "IVF index must be initialized before removing data";
   // remove ids from index
   // With DirectMap::Hashtable, FAISS requires IDSelectorArray for remove_ids
   faiss::IDSelectorArray idsToRemove(sel.cnt, sel.ids);
@@ -153,28 +145,14 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 
 // ann search
 [[nodiscard]] Status IVFIndex::search(const SearchParams *params, SearchResult *res) {
-  if (params == nullptr || res == nullptr) {
-    LOG(ERROR) << "IVFIndex::search failed: params or res is null";
-    return Status::Error("SearchParams or SearchResult is null");
-  }
-  if (ivfIndex_ == nullptr) {
-    LOG(ERROR) << "IVF index is not initialized";
-    return Status::Error("IVF index is not initialized");
-  }
-  if (params->topK < 1 || params->query == nullptr || params->queryDim != dim_) {
-    LOG(ERROR) << "Invalid SearchParams: topK=" << params->topK << ", queryDim=" << params->queryDim
-               << ", expectedDim=" << dim_ << ", query is null: " << (params->query == nullptr);
-    return Status::Error("Invalid SearchParams");
-  }
+  DCHECK(params != nullptr && res != nullptr && ivfIndex_ != nullptr)
+      << "SearchParams and SearchResult should never be null";
+  DCHECK(params->topK >= 1 && params->query != nullptr && params->queryDim == dim_)
+      << "Invalid SearchParams: topK=" << params->topK << ", queryDim=" << params->queryDim
+      << ", expectedDim=" << dim_ << ", query is null: " << (params->query == nullptr);
   const auto *ivfParams = dynamic_cast<const SearchParamsIVF *>(params);
-  if (ivfParams == nullptr) {
-    LOG(ERROR) << "SearchParams is not SearchParamsIVF";
-    return Status::Error("SearchParams is not SearchParamsIVF");
-  }
-  if (ivfParams->nprobe < 1) {
-    LOG(ERROR) << "Invalid nprobe: " << ivfParams->nprobe;
-    return Status::Error("Invalid nprobe");
-  }
+  DCHECK(ivfParams != nullptr) << "SearchParams is null!";
+  DCHECK(ivfParams->nprobe > 1) << "nprobe should be greater than 1";
 
   // set nprobe
   static_cast<faiss::IndexIVF *>(ivfIndex_.get())->nprobe = ivfParams->nprobe;
@@ -214,12 +192,8 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 
 // reconstruct vector by id
 [[nodiscard]] StatusOr<Vector> IVFIndex::reconstruct(VectorID id) {
-  if (ivfIndex_ == nullptr) {
-    return Status::Error("IVF index is not initialized");
-  }
-  if (id < 0) {
-    return Status::Error("Invalid vector id");
-  }
+  DCHECK(ivfIndex_ != nullptr) << "IVF index must be initialized before reconstructing vectors";
+  DCHECK(id >= 0) << "Invalid VectorID: " << id;
   std::vector<float> vec(dim_);
   try {
     std::shared_lock lock(latch_);
@@ -234,9 +208,7 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
 // load index file from disk
 // flush index to disk
 [[nodiscard]] Status IVFIndex::read(const std::string &file) {
-  if (ivfIndex_ == nullptr) {
-    return Status::Error("IVF index is not initialized");
-  }
+  DCHECK(ivfIndex_ != nullptr) << "IVF index must be initialized before reconstructing vectors";
   faiss::Index *index;
   try {
     std::unique_lock lock(latch_);
@@ -252,9 +224,7 @@ IVFIndex::IVFIndex(GraphSpaceID graphID,
   return Status::OK();
 }
 [[nodiscard]] Status IVFIndex::write(const std::string &dir, const std::string &file) {
-  if (ivfIndex_ == nullptr) {
-    return Status::Error("IVF index is not initialized");
-  }
+  DCHECK(ivfIndex_ != nullptr) << "IVF index must be initialized before reconstructing vectors";
   std::string fullPath = dir + "/" + file;
   try {
     std::unique_lock lock(latch_);

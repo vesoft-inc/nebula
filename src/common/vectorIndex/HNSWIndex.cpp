@@ -37,16 +37,10 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
       efSearch_(0) {}
 
 [[nodiscard]] Status HNSWIndex::init(const BuildParams *params) {
-  if (params == nullptr) {
-    return Status::Error("BuildParams is null");
-  }
-  if (params->indexType != AnnIndexType::HNSW) {
-    return Status::Error("BuildParams indexType is not HNSW");
-  }
+  DCHECK(params != nullptr && params->indexType == AnnIndexType::HNSW)
+      << "BuildParams should never be null and indexType must be HNSW";
   const auto *hnswParams = dynamic_cast<const BuildParamsHNSW *>(params);
-  if (hnswParams == nullptr) {
-    return Status::Error("BuildParams is not BuildParamsHNSW");
-  }
+  DCHECK(hnswParams != nullptr) << "BuildParams is not hnswparams";
   M_ = hnswParams->maxDegree;
   efConstruction_ = hnswParams->efConstruction;
   maxElements_ = hnswParams->capacity;
@@ -70,15 +64,8 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 // add data to index incrementally
 [[nodiscard]] Status HNSWIndex::add(const VecData *data, bool isTest) {
   UNUSED(isTest);
-  if (data == nullptr) {
-    return Status::Error("VecData is null");
-  }
-  if (data->cnt < 1 || data->dim != dim_) {
-    return Status::Error("Invalid VecData");
-  }
-  if (rawHnsw_ == nullptr) {
-    return Status::Error("HNSW index is not initialized");
-  }
+  DCHECK(data != nullptr && rawHnsw_ != nullptr) << "VecData and hnsw should never be null";
+  DCHECK(data->dim == dim_ && data->cnt >= 1) << "Invalid VecData dimension";
 
   size_t cnt = data->cnt;
   std::unique_lock lock(latch_);
@@ -97,19 +84,10 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 
 // upsert data to index
 [[nodiscard]] Status HNSWIndex::upsert(const VecData *data) {
-  if (data == nullptr) {
-    return Status::Error("VecData is null");
-  }
-  if (data->cnt < 1 || data->dim != dim_) {
-    return Status::Error("Invalid VecData");
-  }
-  if (rawHnsw_ == nullptr) {
-    return Status::Error("HNSW index is not initialized");
-  }
-
+  DCHECK(data != nullptr && rawHnsw_ != nullptr) << "VecData and hnsw should never be null";
+  DCHECK(data->dim == dim_ && data->cnt >= 1) << "Invalid VecData dimension";
   // upsert data to index
   std::unique_lock lock(latch_);
-
   try {
 #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < data->cnt; ++i) {
@@ -125,13 +103,9 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 
 // soft delete data from index, return number of deleted vectors
 [[nodiscard]] StatusOr<size_t> HNSWIndex::remove(const IDSelector &sel) {
-  if (rawHnsw_ == nullptr) {
-    return Status::Error("HNSW index is not initialized");
-  }
-
+  DCHECK(rawHnsw_ != nullptr) << "hnsw should never be null";
   std::atomic<size_t> removedCount = 0;
   std::unique_lock lock(latch_);
-
   try {
 #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < sel.cnt; ++i) {
@@ -150,19 +124,12 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 
 // ann search
 [[nodiscard]] Status HNSWIndex::search(const SearchParams *params, SearchResult *res) {
-  if (params == nullptr || res == nullptr) {
-    return Status::Error("SearchParams or SearchResult is null");
-  }
-  if (rawHnsw_ == nullptr) {
-    return Status::Error("HNSW index is not initialized");
-  }
-  if (params->topK < 1 || params->query == nullptr || params->queryDim != dim_) {
-    return Status::Error("Invalid SearchParams");
-  }
+  DCHECK(params != nullptr && res != nullptr && rawHnsw_ != nullptr)
+      << "Param, Res and hnsw should never be null";
+  DCHECK(params->queryDim == dim_ && params->query != nullptr) << "Invalid VecData params";
+
   const auto *hnswParams = dynamic_cast<const SearchParamsHNSW *>(params);
-  if (hnswParams == nullptr) {
-    return Status::Error("SearchParams is not SearchParamsHNSW");
-  }
+  DCHECK(hnswParams != nullptr) << "SearchParams is null!";
   efSearch_ = hnswParams->efSearch;
   size_t k = params->topK;
 
@@ -210,12 +177,8 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 
 // reconstruct vector by id
 [[nodiscard]] StatusOr<Vector> HNSWIndex::reconstruct(VectorID id) {
-  if (rawHnsw_ == nullptr) {
-    return Status::Error("HNSW index is not initialized");
-  }
-  if (id < 0) {
-    return Status::Error("Invalid vector id");
-  }
+  DCHECK(rawHnsw_ != nullptr) << "hnsw should never be null";
+  DCHECK(id >= 0) << "Invalid VectorID: " << id;
   std::vector<float> vec;
   try {
     std::shared_lock lock(latch_);
@@ -230,9 +193,7 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 // load index file from disk
 // flush index to disk
 [[nodiscard]] Status HNSWIndex::read(const std::string &file) {
-  if (rawHnsw_ == nullptr) {
-    return Status::Error("HNSW index is not initialized");
-  }
+  DCHECK(rawHnsw_ != nullptr) << "hnsw should never be null";
   if (metricType_ == MetricType::L2) {
     space_ = std::make_unique<hnswlib::L2Space>(dim_);
   } else if (metricType_ == MetricType::INNER_PRODUCT) {
@@ -254,9 +215,7 @@ HNSWIndex::HNSWIndex(GraphSpaceID graphID,
 }
 
 [[nodiscard]] Status HNSWIndex::write(const std::string &dir, const std::string &file) {
-  if (rawHnsw_ == nullptr) {
-    return Status::Error("HNSW index is not initialized");
-  }
+  DCHECK(rawHnsw_ != nullptr) << "hnsw should never be null";
   std::string fullPath = dir + "/" + file;
   try {
     std::unique_lock lock(latch_);

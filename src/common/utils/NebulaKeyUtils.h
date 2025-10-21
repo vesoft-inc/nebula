@@ -214,8 +214,6 @@ class NebulaKeyUtils final {
   static bool isTag(size_t vIdLen, const folly::StringPiece& rawKey) {
     if (rawKey.size() != kTagLen + vIdLen) {
       return false;
-    } else if (rawKey.size() != kTagLen + vIdLen) {
-      dumpBadKey(rawKey, kTagLen + vIdLen, vIdLen);
     }
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
     auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;

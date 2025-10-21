@@ -17,7 +17,7 @@ class IVFIndex : public AnnIndex {
            size_t dim,
            const std::string &rootPath,
            MetricType metricType,
-           size_t minTrainDataSize = 3);
+           size_t minTrainDataSize = 1);
 
   [[nodiscard]] Status init(const BuildParams *params) override;
   // add data to index incrementally

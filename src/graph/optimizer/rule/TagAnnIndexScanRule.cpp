@@ -54,9 +54,6 @@ StatusOr<OptRule::TransformResult> runTransform(OptContext* ctx,
   OptGroup* startGroup = nullptr;
   if (!scanVerticesGroupNode->dependencies().empty()) {
     startGroup = scanVerticesGroupNode->dependencies().front();
-    LOG(ERROR) << "Start group has nodes: " << startGroup->groupNodes().size();
-  } else {
-    LOG(ERROR) << "No dependencies found for scanVertices node";
   }
 
   auto limit = static_cast<const ApproximateLimit*>(limitGroupNode->node());
@@ -73,19 +70,14 @@ StatusOr<OptRule::TransformResult> runTransform(OptContext* ctx,
   auto* distanceExpr = sort->vectorFunc();
   auto* rewritten = graph::ExpressionUtils::rewriteParameter(distanceExpr, qctx);
   auto* funcExpr = static_cast<const FunctionCallExpression*>(rewritten);
-  if (!funcExpr) {
-    LOG(ERROR) << "Distance function is not a FunctionCallExpression: " << distanceExpr->toString();
-    return Status::Error("Distance function is not a FunctionCallExpression");
-  }
+  DCHECK(funcExpr != nullptr && funcExpr->kind() == Expression::Kind::kFunctionCall)
+      << "Invalid function expression";
   const std::string& funcName = funcExpr->name();
   static const std::unordered_set<std::string> vectorDistanceFuncs = {"euclidean", "inner_product"};
-  if (vectorDistanceFuncs.find(funcName) == vectorDistanceFuncs.end()) {
-    return Status::Error("Unsupported vector distance function: " + funcName);
-  }
+  DCHECK(vectorDistanceFuncs.count(funcName) != 0)
+      << "Only euclidean and inner_product function are supported, but got: " << funcName;
   const auto& args = funcExpr->args()->args();
-  if (args.size() != 2) {
-    return Status::Error("Vector distance function requires exactly 2 arguments");
-  }
+  DCHECK(args.size() == 2) << "Vector distance function should have two arguments";
   std::string propertyName;
   Value queryVector;
 
@@ -167,14 +159,8 @@ StatusOr<OptRule::TransformResult> runTransform(OptContext* ctx,
 
   // Create new AppendVertices node that depends on AnnIndexScan
   auto newAppendVertices = static_cast<GetVertices*>(appendVertices->clone());
-  // Ensure previous input columns (e.g., _vid, _dis) are kept along with appended vertex data
-  // so that distance score from AnnIndexScan can flow through.
-  if (newAppendVertices->kind() == graph::PlanNode::Kind::kAppendVertices) {
-    static_cast<graph::AppendVertices*>(newAppendVertices)->setTrackPrevPath(true);
-  }
   newAppendVertices->setInputVar(newAnnIndexScan->outputVar());
-  // 显式设置 AppendVertices 的输出列名包含 _dis，使其更直观
-  newAppendVertices->setColNames({std::string("v"), kDis});
+  newAppendVertices->setColNames({std::string("v")});
   auto newAppendVerticesGroup = OptGroup::create(ctx);
   auto newAppendVerticesGroupNode = newAppendVerticesGroup->makeGroupNode(newAppendVertices);
   newAppendVerticesGroupNode->dependsOn(newScanGroup);
@@ -185,25 +171,8 @@ StatusOr<OptRule::TransformResult> runTransform(OptContext* ctx,
     auto project = static_cast<const graph::Project*>(projectGroupNode->node());
     auto newProject = static_cast<graph::Project*>(project->clone());
     newProject->setInputVar(newAppendVertices->outputVar());
-    // Rewrite any vector distance function in Project yields to pass through input `_dis`
-    if (auto* yields = const_cast<YieldColumns*>(newProject->columns())) {
-      for (auto* col : yields->columns()) {
-        if (col == nullptr || col->expr() == nullptr) continue;
-        auto* expr = col->expr();
-        if (expr->kind() == Expression::Kind::kFunctionCall) {
-          auto* f = static_cast<const FunctionCallExpression*>(expr);
-          std::string fname = f->name();
-          std::transform(fname.begin(), fname.end(), fname.begin(), ::tolower);
-          if (fname == "euclidean" || fname == "inner_product") {
-            auto* ip = InputPropertyExpression::make(qctx->objPool(), kDis);
-            col->setExpr(ip);
-            if (col->alias().empty()) {
-              col->setAlias(kDis);
-            }
-          }
-        }
-      }
-    }
+    // TODO(LZY): We can optimize the dis through storaged directly
+    // Keep the original project expressions, let graphd handle vector distance functions
     auto newProjectGroup = OptGroup::create(ctx);
     auto newProjectGroupNode = newProjectGroup->makeGroupNode(newProject);
     newProjectGroupNode->dependsOn(newAppendVerticesGroup);

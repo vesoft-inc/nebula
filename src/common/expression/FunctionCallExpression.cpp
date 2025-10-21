@@ -6,6 +6,7 @@
 #include "common/expression/FunctionCallExpression.h"
 
 #include "common/expression/ExprVisitor.h"
+#include "common/expression/LabelAttributeExpression.h"
 
 namespace nebula {
 
@@ -70,11 +71,40 @@ void FunctionCallExpression::resetFrom(Decoder& decoder) {
 }
 
 const Value& FunctionCallExpression::eval(ExpressionContext& ctx) {
+  LOG(ERROR) << "FunctionCallExpression::eval() - Function: " << name_
+             << ", Args count: " << (args_ ? args_->numArgs() : 0);
+
   std::vector<std::reference_wrapper<const Value>> parameter;
+  size_t argIdx = 0;
   for (const auto& arg : DCHECK_NOTNULL(args_)->args()) {
-    parameter.emplace_back(arg->eval(ctx));
+    // Log argument details before evaluation
+    LOG(ERROR) << "  Arg[" << argIdx << "] - Kind: " << static_cast<int>(arg->kind())
+               << ", Kind name: " << arg->kind() << ", toString: " << arg->toString();
+
+    // Special handling for LabelAttributeExpression
+    if (arg->kind() == Expression::Kind::kLabelAttribute) {
+      auto* labelAttrExpr = static_cast<const LabelAttributeExpression*>(arg);
+      LOG(ERROR) << "    LabelAttributeExpression detected:";
+      LOG(ERROR) << "      Left (label): " << labelAttrExpr->left()->toString();
+      LOG(ERROR) << "      Right (attribute): " << labelAttrExpr->right()->toString();
+    }
+
+    // Evaluate the argument
+    const Value& argValue = arg->eval(ctx);
+
+    // Log argument value after evaluation
+    LOG(ERROR) << "  Arg[" << argIdx << "] evaluated - Type: " << argValue.type()
+               << ", Value: " << argValue.toString() << ", isVector: " << argValue.isVector();
+
+    parameter.emplace_back(argValue);
+    argIdx++;
   }
+
   result_ = DCHECK_NOTNULL(func_)(parameter);
+
+  LOG(ERROR) << "FunctionCallExpression::eval() - Function: " << name_
+             << ", Result type: " << result_.type() << ", Result: " << result_.toString();
+
   return result_;
 }
 

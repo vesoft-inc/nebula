@@ -854,7 +854,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
       paginationCtx.isApproximateLimit = true;
       paginationCtx.metricType = approxLimitExpr->metricType();
       paginationCtx.annIndexType = approxLimitExpr->annIndexType();
-      paginationCtx.param = approxLimitExpr->param();
+      paginationCtx.searchParam = approxLimitExpr->param();
 
       // Validate the inner limit expression
       auto *innerLimitExpr = approxLimitExpr->limitExpr();

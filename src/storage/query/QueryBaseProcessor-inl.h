@@ -72,6 +72,8 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
           addReturnPropContext(ctxs, name, field);
         }
       }
+      (*vertexProp.props_ref()).emplace_back(kTag);
+      addReturnPropContext(ctxs, kTag, nullptr);
     }
     tagContext_.propContexts_.emplace_back(tagId, std::move(ctxs));
     tagContext_.indexMap_.emplace(tagId, tagContext_.propContexts_.size() - 1);

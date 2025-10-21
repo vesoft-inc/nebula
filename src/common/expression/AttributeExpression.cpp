@@ -18,7 +18,11 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
   auto &rvalue = right()->eval(ctx);
   DCHECK(rvalue.isStr());
   auto la = [&rvalue](const Tag &t) { return t.name == rvalue.getStr(); };
-
+  auto lvec = [](const Tag &tag) {
+    return std::any_of(tag.props.begin(), tag.props.end(), [](const auto &prop) {
+      return prop.second.isVector();
+    });
+  };
   // TODO(dutor) Take care of the builtin properties, _src, _vid, _type, etc.
   switch (lvalue.type()) {
     case Value::Type::MAP: {
@@ -34,13 +38,32 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
         result_ = lvalue.getVertex().vid;
         return result_;
       }
-      const auto &tags = lvalue.getVertex().tags;
-      auto iter = std::find_if(tags.begin(), tags.end(), la);
-      if (iter == tags.end()) {
-        return Value::kNullValue;
+
+      const auto &vertex = lvalue.getVertex();
+      const std::string &propName = rvalue.getStr();
+      const auto &tags = vertex.tags;
+      // for vector props
+      // Search for the property in all tags' props
+      auto vecIter = std::find_if(tags.begin(), tags.end(), lvec);
+      if (vecIter != tags.end()) {
+        for (const auto &tag : vertex.tags) {
+          auto propIter = tag.props.find(propName);
+          if (propIter != tag.props.end()) {
+            // Found the property in this tag
+            return propIter->second;
+          }
+        }
       }
-      result_.setMap(Map(iter->props));
-      return result_;
+
+      // If not found in any tag props, try to match tag name (for backward compatibility)
+      // e.g., vertex.tagName returns all properties of that tag as a map
+      auto iter = std::find_if(tags.begin(), tags.end(), la);
+      if (iter != tags.end()) {
+        result_.setMap(Map(iter->props));
+        return result_;
+      }
+
+      return Value::kNullValue;
     }
     case Value::Type::EDGE: {
       DCHECK(!rvalue.getStr().empty());

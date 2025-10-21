@@ -259,7 +259,6 @@ class QueryUtils final {
       }
       auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
       NG_RETURN_IF_ERROR(value);
-      LOG(ERROR) << "Query Collect Prop: " << value.value().toString();
       if (prop.returned_) {
         VLOG(2) << "Collect prop " << prop.name_;
         list.emplace_back(value.value());
@@ -292,6 +291,109 @@ class QueryUtils final {
     }
     if (prop.filtered_ && expCtx != nullptr) {
       expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
+    }
+    return Status::OK();
+  }
+
+  /**
+   * @brief Unified function to collect all vertex properties including regular props,
+   *        vector props, and _tag. Handles both cases with and without vector properties.
+   *
+   * @param key The key of the vertex (for regular properties)
+   * @param vectorKeys Vector of keys for vector properties, each vector prop has its own key
+   * @param vIdLen Length of vertex ID
+   * @param isIntId Whether vertex ID is integer type
+   * @param reader Row reader for regular properties
+   * @param vectorReaders Vector of row readers for vector properties (can be empty)
+   * @param props All properties to collect (including regular, vector, and _tag)
+   * @param list Output list to append collected values
+   * @param expCtx Expression context for filters
+   * @param tagName Tag name for expression context
+   * @return Status OK if successful
+   */
+  static Status collectAllVertexProps(folly::StringPiece key,
+                                      const std::vector<folly::StringPiece>& vectorKeys,
+                                      const std::vector<int32_t>& vectorIndexes,
+                                      size_t vIdLen,
+                                      bool isIntId,
+                                      RowReaderWrapper* reader,
+                                      const std::vector<RowReaderWrapper*>& vectorReaders,
+                                      const std::vector<PropContext>* props,
+                                      nebula::List& list,
+                                      StorageExpressionContext* expCtx = nullptr,
+                                      const std::string& tagName = "") {
+    LOG(ERROR) << "collectAllVertexProps for tag: " << tagName
+               << ", vectorKeys size: " << vectorKeys.size()
+               << ", vectorReaders size: " << vectorReaders.size()
+               << ", vectorIndexes size: " << vectorIndexes.size()
+               << ", props size: " << props->size();
+
+    // Log the order of properties to collect
+    std::string propOrder = "Props order: ";
+    for (size_t i = 0; i < props->size(); i++) {
+      propOrder +=
+          props->at(i).name_ + "(isVector:" + (props->at(i).isVector() ? "true" : "false") + ") ";
+    }
+    LOG(ERROR) << propOrder;
+
+    int propIdx = 0;
+    for (const auto& prop : *props) {
+      if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr))) {
+        propIdx++;
+        continue;
+      }
+
+      LOG(ERROR) << "Processing prop[" << propIdx << "]: " << prop.name_
+                 << ", isVector: " << prop.isVector() << ", returned: " << prop.returned_;
+
+      // Determine which reader and key to use based on property type
+      RowReaderWrapper* propReader = reader;
+      folly::StringPiece propKey = key;
+
+      if (prop.isVector() && !vectorReaders.empty()) {
+        // For vector properties, we need to find the corresponding vector reader and key
+        // vectorIndexes stores the schema field index for each vector property
+        // We need to find which position in vectorReaders/vectorKeys corresponds to this prop
+        auto schema = reader->getSchema();
+        if (schema != nullptr) {
+          auto vecFieldIdx = schema->getVectorFieldIndex(prop.name_);
+          if (vecFieldIdx >= 0) {
+            // Find the position in vectorIndexes array that matches this field index
+            auto it = std::find(vectorIndexes.begin(), vectorIndexes.end(), vecFieldIdx);
+            if (it != vectorIndexes.end()) {
+              auto position = std::distance(vectorIndexes.begin(), it);
+              if (static_cast<size_t>(position) < vectorReaders.size()) {
+                propReader = vectorReaders[position];
+              }
+              if (static_cast<size_t>(position) < vectorKeys.size()) {
+                propKey = vectorKeys[position];
+              }
+              LOG(ERROR) << "Vector prop: " << prop.name_ << ", vecFieldIdx: " << vecFieldIdx
+                         << ", position in arrays: " << position << ", using vectorKey[" << position
+                         << "]";
+            }
+          }
+        }
+      }
+
+      auto value = QueryUtils::readVertexProp(propKey, vIdLen, isIntId, propReader, prop);
+      NG_RETURN_IF_ERROR(value);
+
+      LOG(ERROR) << "Collect prop[" << propIdx << "]: " << prop.name_
+                 << " (isVector: " << prop.isVector() << ")"
+                 << ", value: " << value.value().toString();
+
+      if (prop.returned_) {
+        VLOG(2) << "Collect prop " << prop.name_;
+        list.emplace_back(value.value());
+        LOG(ERROR) << "Added to list at position " << (list.size() - 1)
+                   << ", current list size: " << list.size();
+      }
+      if (prop.filtered_ && expCtx != nullptr) {
+        expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
+      }
+
+      propIdx++;
     }
     return Status::OK();
   }

@@ -128,13 +128,22 @@ Value PropIter::getVertex(const std::string& name) {
   if (!SchemaUtil::isValidVid(vidVal)) {
     return Value::kNullValue;
   }
+
+  LOG(ERROR) << "PropIter::getVertex() - Building vertex for vid: " << vidVal.toString();
+  LOG(ERROR) << "  Row size: " << iter_->size();
+  LOG(ERROR) << "  tagPropsMap size: " << dsIndex_.propsMap.size();
+
   Vertex vertex;
   vertex.vid = vidVal;
   auto& tagPropsMap = dsIndex_.propsMap;
   bool isVertexProps = true;
   auto& row = *iter_;
+
   // tagPropsMap -> <std::string, std::unordered_map<std::string, size_t> >
   for (auto& tagProp : tagPropsMap) {
+    LOG(ERROR) << "  Processing tag: " << tagProp.first << ", has " << tagProp.second.size()
+               << " properties";
+
     // propIndex -> std::unordered_map<std::string, size_t>
     for (auto& propIndex : tagProp.second) {
       if (row[propIndex.second].empty()) {
@@ -145,17 +154,25 @@ Value PropIter::getVertex(const std::string& name) {
     }
     if (!isVertexProps) {
       isVertexProps = true;
+      LOG(ERROR) << "  Skipping tag " << tagProp.first << " (not current vertex's props)";
       continue;
     }
     Tag tag;
     tag.name = tagProp.first;
     for (auto& propIndex : tagProp.second) {
       if (propIndex.first != nebula::kTag) {  // "_tag"
+        LOG(ERROR) << "    Collect Tag Prop[" << propIndex.second << "]: " << propIndex.first
+                   << ", Type: " << row[propIndex.second].type()
+                   << ", Value: " << row[propIndex.second].toString()
+                   << ", isVector: " << row[propIndex.second].isVector();
         tag.props.emplace(propIndex.first, row[propIndex.second]);
       }
     }
+    LOG(ERROR) << "  Tag " << tag.name << " final props count: " << tag.props.size();
     vertex.tags.emplace_back(std::move(tag));
   }
+
+  LOG(ERROR) << "  Final vertex has " << vertex.tags.size() << " tags";
   return Value(std::move(vertex));
 }
 

@@ -337,7 +337,7 @@ Feature: Ann Index Tests
       SHOW EDGE ANNINDEXES;
       """
     Then the result should contain:
-      | Index Name                    | By Edge            | Columns                        |
+      | Index Name                    | By Edge              | Columns                        |
       | "player_similarity_ivf_index" | ["player_relation"]  | ["player_relation.similarity"] |
       | "team_weight_hnsw_index"      | ["team_interaction"] | ["team_interaction.weight"]    |
     # Test SHOW EDGE ANN INDEXES BY edge
@@ -354,7 +354,7 @@ Feature: Ann Index Tests
       DESCRIBE EDGE ANNINDEX player_similarity_ivf_index;
       """
     Then the result should be, in any order:
-      | Field        | Type        |
+      | Field                        | Type        |
       | "player_relation.similarity" | "vector(3)" |
     # Test SHOW CREATE EDGE ANN INDEX
     When executing query:
@@ -362,7 +362,6 @@ Feature: Ann Index Tests
       SHOW CREATE EDGE ANNINDEX player_similarity_ivf_index;
       """
     Then the execution should be successful
-
     # Test Drop Edge Ann Index
     When executing query:
       """
@@ -374,7 +373,7 @@ Feature: Ann Index Tests
       SHOW EDGE ANNINDEXES;
       """
     Then the result should be, in any order:
-      | Index Name               | By Edge            | Columns                     |
+      | Index Name               | By Edge              | Columns                     |
       | "team_weight_hnsw_index" | ["team_interaction"] | ["team_interaction.weight"] |
     When executing query:
       """

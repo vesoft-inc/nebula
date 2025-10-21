@@ -368,6 +368,11 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::ge
         const auto propName = tagSchema->getFieldName(i);
         propNames.emplace_back(propName);
       }
+      // Note(lzy): add vector props
+      for (size_t i = 0; i < tagSchema->getVectorNumFields(); i++) {
+        const auto propName = tagSchema->getVectorFieldName(i);
+        propNames.emplace_back(propName);
+      }
     }
     storage::cpp2::VertexProp vProp;
     const auto tagId = tag.first;

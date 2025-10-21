@@ -327,7 +327,6 @@ void LookupAnnProcessor::runInMultipleThread(const std::vector<PartitionID>& par
 }
 
 void LookupAnnProcessor::mergeResults() {
-  LOG(INFO) << "merging results by distance";
   // combine all results of different parts and sort by distance
   std::vector<std::pair<Row, float>> scoredRows;
   scoredRows.reserve(globalLimit_ * partResults_.size());

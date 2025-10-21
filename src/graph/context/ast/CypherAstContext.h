@@ -153,7 +153,7 @@ struct PaginationContext final : CypherClauseContextBase {
   bool isApproximateLimit{false};
   AnnIndexType annIndexType{AnnIndexType::ANN_INVALID};
   MetricType metricType{MetricType::METRIC_INVALID};
-  int64_t param{0};
+  int64_t searchParam{0};
 };
 
 // Used to handle implicit groupBy

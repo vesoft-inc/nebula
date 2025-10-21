@@ -115,13 +115,11 @@ class GetTagPropNode : public QueryNode<VertexID> {
     auto isIntId = context_->isIntId();
     for (auto* tagNode : tagNodes_) {
       ret = tagNode->collectTagPropsIfValid(
-          [&row, tagNode, this](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+          [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+            // Should not reach here if tag is valid
             for (const auto& prop : *props) {
               if (prop.returned_) {
                 row.emplace_back(Value());
-              }
-              if (prop.filtered_ && expCtx_ != nullptr) {
-                expCtx_->setTagProp(tagNode->getTagName(), prop.name_, Value());
               }
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -130,8 +128,22 @@ class GetTagPropNode : public QueryNode<VertexID> {
               folly::StringPiece key,
               RowReaderWrapper* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            auto status = QueryUtils::collectVertexProps(
-                key, vIdLen, isIntId, reader, props, row, expCtx_.get(), tagNode->getTagName());
+            // Get vector keys, readers and indexes if available
+            auto vectorKeys = tagNode->vectorKeys();
+            auto vectorReaders = tagNode->vectorReaders();
+            auto vectorIndexes = tagNode->vectorIndexes();
+
+            auto status = QueryUtils::collectAllVertexProps(key,
+                                                            vectorKeys,
+                                                            vectorIndexes,
+                                                            vIdLen,
+                                                            isIntId,
+                                                            reader,
+                                                            vectorReaders,
+                                                            props,
+                                                            row,
+                                                            expCtx_.get(),
+                                                            tagNode->getTagName());
             if (!status.ok()) {
               return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
@@ -139,37 +151,6 @@ class GetTagPropNode : public QueryNode<VertexID> {
           });
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
-      }
-      auto vecSize = tagNode->vectorKeys().size();
-      if (vecSize == 0) {
-        continue;
-      }
-      // for vector properties
-      for (size_t i = 0; i < vecSize; ++i) {
-        ret = tagNode->collectTagVectorPropsIfValid(
-            [&row, tagNode, this](PropContext prop) -> nebula::cpp2::ErrorCode {
-              if (prop.returned_) {
-                row.emplace_back(Value());
-              }
-              if (prop.filtered_ && expCtx_ != nullptr) {
-                expCtx_->setTagProp(tagNode->getTagName(), prop.name_, Value());
-              }
-              return nebula::cpp2::ErrorCode::SUCCEEDED;
-            },
-            [&row, vIdLen, isIntId, tagNode, this](folly::StringPiece key,
-                                                   RowReaderWrapper* reader,
-                                                   PropContext prop) -> nebula::cpp2::ErrorCode {
-              auto status = QueryUtils::collectVertexVectorProp(
-                  key, vIdLen, isIntId, reader, prop, row, expCtx_.get(), tagNode->getTagName());
-              if (!status.ok()) {
-                return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-              }
-              return nebula::cpp2::ErrorCode::SUCCEEDED;
-            },
-            i);
-        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          return ret;
-        }
       }
     }
     if (filter_ == nullptr) {
