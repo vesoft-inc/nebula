@@ -110,6 +110,11 @@ DEFINE_int32(rocksdb_compact_target_level,
              "compacted files will be moved to the minimum level capable of "
              "holding the data.");
 
+DEFINE_bool(rocksdb_compact_exclusive_manual_compaction,
+            true,
+            "If true, no other compaction will run when manual compaction is running. "
+            "If false, automatic compactions can run concurrently with manual compaction.");
+
 DEFINE_string(rocksdb_table_format,
               "BlockBasedTable",
               "SST file format of rocksdb, only support BlockBasedTable and PlainTable");

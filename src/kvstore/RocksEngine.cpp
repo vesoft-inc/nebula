@@ -528,6 +528,7 @@ nebula::cpp2::ErrorCode RocksEngine::compact() {
   rocksdb::CompactRangeOptions options;
   options.change_level = FLAGS_rocksdb_compact_change_level;
   options.target_level = FLAGS_rocksdb_compact_target_level;
+  options.exclusive_manual_compaction = FLAGS_rocksdb_compact_exclusive_manual_compaction;
   rocksdb::Status status = db_->CompactRange(options, nullptr, nullptr);
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;

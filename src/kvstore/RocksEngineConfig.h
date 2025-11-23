@@ -58,6 +58,7 @@ DECLARE_bool(enable_rocksdb_whole_key_filtering);
 // rocksdb compact RangeOptions
 DECLARE_bool(rocksdb_compact_change_level);
 DECLARE_int32(rocksdb_compact_target_level);
+DECLARE_bool(rocksdb_compact_exclusive_manual_compaction);
 
 DECLARE_string(rocksdb_wal_dir);
 DECLARE_string(rocksdb_backup_dir);
