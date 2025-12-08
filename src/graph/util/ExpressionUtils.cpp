@@ -819,64 +819,179 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
       return simplifiedExpr;
     }
     // Move all evaluable expression to the right side
-    auto relRightOperandExpr = relExpr->right()->clone();
-    auto relLeftOperandExpr = rewriteRelExprHelper(relExpr->left(), relRightOperandExpr);
-    return RelationalExpression::makeKind(
-        pool, relExpr->kind(), relLeftOperandExpr->clone(), relRightOperandExpr->clone());
+    return rewriteRelExprHelper(pool, relExpr);
+    // auto relRightOperandExpr = relExpr->right()->clone();
+    // auto relLeftOperandExpr = rewriteRelExprHelper(relExpr->left(), relRightOperandExpr);
+    // return RelationalExpression::makeKind(
+    //     pool, relExpr->kind(), relLeftOperandExpr->clone(), relRightOperandExpr->clone());
   };
 
   return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
-Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
-                                                  Expression *&relRightOperandExpr) {
-  ObjectPool *pool = expr->getObjPool();
-  // TODO: Support rewrite mul/div expression after fixing overflow
-  auto matcher = [](const Expression *e) -> bool {
-    if (!e->isArithmeticExpr() || e->kind() == Expression::Kind::kMultiply ||
-        e->kind() == Expression::Kind::kDivision)
-      return false;
-    auto arithExpr = static_cast<const ArithmeticExpression *>(e);
+static std::optional<Expression::Kind> invertRelOp(Expression::Kind kind) {
+  switch (kind) {
+    case Expression::Kind::kRelLT:
+      return Expression::Kind::kRelGT;
+    case Expression::Kind::kRelLE:
+      return Expression::Kind::kRelGE;
+    case Expression::Kind::kRelGT:
+      return Expression::Kind::kRelLT;
+    case Expression::Kind::kRelGE:
+      return Expression::Kind::kRelLE;
+    case Expression::Kind::kRelEQ:
+      return Expression::Kind::kRelEQ;
+    case Expression::Kind::kRelNE:
+      return Expression::Kind::kRelNE;
+    default:
+      // we don't handle this cases
+      return std::nullopt;
+  }
+}
 
-    return ExpressionUtils::isEvaluableExpr(arithExpr->left()) ||
-           ExpressionUtils::isEvaluableExpr(arithExpr->right());
-  };
-
-  if (!matcher(expr)) {
+static Expression *rewriteArith(ObjectPool *pool, const Expression *expr, Expression *&rhs) {
+  if (!expr->isArithmeticExpr()) {
     return const_cast<Expression *>(expr);
   }
 
-  auto arithExpr = static_cast<const ArithmeticExpression *>(expr);
-  auto kind = getNegatedArithmeticType(arithExpr->kind());
-  auto lexpr = relRightOperandExpr->clone();
-  const Expression *root = nullptr;
-  Expression *rexpr = nullptr;
-
-  // Use left operand as root
-  if (ExpressionUtils::isEvaluableExpr(arithExpr->right())) {
-    rexpr = arithExpr->right()->clone();
-    root = arithExpr->left();
-  } else {
-    rexpr = arithExpr->left()->clone();
-    root = arithExpr->right();
-  }
-  switch (kind) {
-    case Expression::Kind::kAdd:
-      relRightOperandExpr = ArithmeticExpression::makeAdd(pool, lexpr, rexpr);
-      break;
-    case Expression::Kind::kMinus:
-      relRightOperandExpr = ArithmeticExpression::makeMinus(pool, lexpr, rexpr);
-      break;
-    // Unsupported arithmetic kind
-    // case Expression::Kind::kMultiply:
-    // case Expression::Kind::kDivision:
-    default:
-      DLOG(ERROR) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
-      break;
+  auto *arith = static_cast<const ArithmeticExpression *>(expr);
+  auto k = arith->kind();
+  // only support add and minus for now
+  if (k != Expression::Kind::kAdd && k != Expression::Kind::kMinus) {
+    return const_cast<Expression *>(expr);
   }
 
-  return rewriteRelExprHelper(root, relRightOperandExpr);
+  auto *l = arith->left();
+  auto *r = arith->right();
+  bool le = ExpressionUtils::isEvaluableExpr(l);
+  bool re = ExpressionUtils::isEvaluableExpr(r);
+
+  // finish remove if both sides are not evaluable
+  if (!le && !re) {
+    return const_cast<Expression *>(expr);
+  }
+
+  if (k == Expression::Kind::kAdd) {
+    if (le && !re) {
+      // swap to make sure r is evaluable
+      std::swap(l, r);
+      std::swap(le, re);
+    }
+    DCHECK(re && ExpressionUtils::isEvaluableExpr(r));
+    // a + C <op> rhs  -->  a <op> rhs - C
+    rhs = ArithmeticExpression::makeMinus(pool, rhs->clone(), r->clone());
+    // nested rewrite the left operand
+    return rewriteArith(pool, l, rhs);
+  }
+
+  if (k == Expression::Kind::kMinus) {
+    if (re) {
+      // a - C <op> rhs  -->  a <op> rhs + C
+      rhs = ArithmeticExpression::makeAdd(pool, rhs->clone(), r->clone());
+      // nested rewrite the left operand
+      return rewriteArith(pool, l, rhs);
+    }
+  }
+
+  return const_cast<Expression *>(expr);
 }
+
+Expression *ExpressionUtils::rewriteRelExprHelper(ObjectPool *pool, const Expression *expr) {
+  if (!expr->isRelExpr()) {
+    return const_cast<Expression *>(expr);
+  }
+
+  const RelationalExpression *relExpr = static_cast<const RelationalExpression *>(expr);
+  auto *lhs = relExpr->left();
+  auto *rhs = relExpr->right();
+  auto relKind = relExpr->kind();
+
+  // specially handle C - a <op> rhs case
+  if (lhs->isArithmeticExpr()) {
+    auto *arith = static_cast<const ArithmeticExpression *>(lhs);
+    if (arith->kind() == Expression::Kind::kMinus &&
+        ExpressionUtils::isEvaluableExpr(arith->left()) &&
+        !ExpressionUtils::isEvaluableExpr(arith->right())) {
+      // C - a <op> rhs  -->  a <invert op> C - rhs
+      auto *constantPart = arith->left()->clone();
+      auto res = invertRelOp(relKind);
+      if (!res.has_value()) {
+        return const_cast<Expression *>(expr);
+      }
+      relKind = invertRelOp(relKind).value();
+      // let the variable part be negative and move it to the left side of the relational expression
+      lhs = arith->right();
+      rhs = ArithmeticExpression::makeMinus(pool, constantPart, rhs->clone());
+    }
+  }
+
+  // swap the left and right if left is evaluable but right is not
+  if (ExpressionUtils::isEvaluableExpr(lhs) && !ExpressionUtils::isEvaluableExpr(rhs)) {
+    std::swap(lhs, rhs);
+    auto res = invertRelOp(relKind);
+    if (res.has_value()) {
+      relKind = res.value();
+    } else {
+      return const_cast<Expression *>(expr);
+    }
+  }
+
+  Expression *re = rhs->clone();
+  // move evaluable part from left to right, rewrite the right in place and return the new left
+  Expression *le = rewriteArith(pool, lhs, re);
+
+  return RelationalExpression::makeKind(pool, relKind, le->clone(), re->clone());
+}
+
+// Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
+//                                                   Expression *&relRightOperandExpr) {
+//   ObjectPool *pool = expr->getObjPool();
+//   // TODO: Support rewrite mul/div expression after fixing overflow
+//   auto matcher = [](const Expression *e) -> bool {
+//     if (!e->isArithmeticExpr() || e->kind() == Expression::Kind::kMultiply ||
+//         e->kind() == Expression::Kind::kDivision)
+//       return false;
+//     auto arithExpr = static_cast<const ArithmeticExpression *>(e);
+
+//     return ExpressionUtils::isEvaluableExpr(arithExpr->left()) ||
+//            ExpressionUtils::isEvaluableExpr(arithExpr->right());
+//   };
+
+//   if (!matcher(expr)) {
+//     return const_cast<Expression *>(expr);
+//   }
+
+//   auto arithExpr = static_cast<const ArithmeticExpression *>(expr);
+//   auto kind = getNegatedArithmeticType(arithExpr->kind());
+//   auto lexpr = relRightOperandExpr->clone();
+//   const Expression *root = nullptr;
+//   Expression *rexpr = nullptr;
+
+//   // Use left operand as root
+//   if (ExpressionUtils::isEvaluableExpr(arithExpr->right())) {
+//     rexpr = arithExpr->right()->clone();
+//     root = arithExpr->left();
+//   } else {
+//     rexpr = arithExpr->left()->clone();
+//     root = arithExpr->right();
+//   }
+//   switch (kind) {
+//     case Expression::Kind::kAdd:
+//       relRightOperandExpr = ArithmeticExpression::makeAdd(pool, lexpr, rexpr);
+//       break;
+//     case Expression::Kind::kMinus:
+//       relRightOperandExpr = ArithmeticExpression::makeMinus(pool, lexpr, rexpr);
+//       break;
+//     // Unsupported arithmetic kind
+//     // case Expression::Kind::kMultiply:
+//     // case Expression::Kind::kDivision:
+//     default:
+//       DLOG(ERROR) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
+//       break;
+//   }
+
+//   return rewriteRelExprHelper(root, relRightOperandExpr);
+// }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
   // Check if any overflow happen before filter transform
