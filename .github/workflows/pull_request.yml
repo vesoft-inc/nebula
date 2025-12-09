@@ -25,10 +25,7 @@ jobs:
       - AMD64
       - medium
     container:
-      image: reg.vesoft-inc.com/vesoft/nebula-dev:ubuntu2004
-      credentials:
-        username: ${{ secrets.HARBOR_USERNAME }}
-        password: ${{ secrets.HARBOR_PASSWORD }}
+      image: vesoft/nebula-dev:ubuntu2004
     env:
       PIP_CACHE_DIR: /tmp/pip-cache
       PYPI_MIRROR: ${{ vars.PYPI_MIRROR }}
