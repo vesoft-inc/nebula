@@ -41,7 +41,11 @@
       },
       "environment": {
         "CC": "clang",
-        "CXX": "clang++"
+        "CXX": "clang++",
+        "NEBULA_USE_LINKER": "mold",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ENABLE_MEMORY_TRACKER": "off",
+        "ENABLE_ASAN": "on"
       }
     }
   ],
@@ -72,7 +76,7 @@
       "configurePreset": "ninja-multi-vcpkg-clang",
       "displayName": "Build Clang (Release)",
       "description": "Build with Clang (Release)",
-      "configuration": "Release"
+      "configuration": "RelWithDebInfo"
     }
   ],
   "testPresets": [

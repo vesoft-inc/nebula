@@ -358,12 +358,12 @@ jobs:
         uses: lukka/run-cmake@v10
         with:
           configurePreset: 'ninja-multi-vcpkg-${{ matrix.compiler }}'
-          configurePresetAdditionalArgs: "['-DENABLE_STANDALONE_VERSION=on']"
+          configurePresetAdditionalArgs: "[`-DENABLE_STANDALONE_VERSION=on`]"
           buildPreset: '${{ matrix.compiler }}-${{ matrix.configuration }}'
           testPreset: 'test-${{ matrix.compiler }}-${{ matrix.configuration }}'
-          testPresetAdditionalArgs: "['--timeout 400' '--output-on-failure' '-LE segment_id_test'
+          testPresetAdditionalArgs: "[`--timeout 400`,`--output-on-failure`,`-LE segment_id_test`]"
           testPreset: 'test-${{ matrix.compiler }}-${{ matrix.configuration }}'
-          testPresetAdditionalArgs: "['--timeout 400' '--output-on-failure' '-L segment_id_test'
+          testPresetAdditionalArgs: "[`--timeout 400`,`--output-on-failure`,`-L segment_id_test`]"
 
         timeout-minutes: 120
       - name: ccache stats
