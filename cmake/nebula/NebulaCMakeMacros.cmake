@@ -1,3 +1,55 @@
+macro(nebula_link_libraries target)
+    target_link_libraries(
+        ${target}
+        ${ARGN}
+        robin_hood::robin_hood
+        Folly::folly
+        fmt::fmt
+        glog::glog
+        gflags::gflags
+        Boost::context
+        Boost::system
+        Boost::regex
+        Boost::filesystem
+        Boost::program_options
+        libevent::core
+        double-conversion::double-conversion
+        unofficial-s2::s2
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        ${COMPRESSION_LIBRARIES}
+        ${JEMALLOC_LIB}
+        resolv
+        dl
+        ${GETTIME_LIB}
+        ${libatomic_link_flags}
+        Threads::Threads
+        ${COVERAGES}
+        ${Breakpad_LIBRARY}
+    )
+endmacro(nebula_link_libraries)
+macro(nebula_add_library name)
+    add_library(${name} ${ARGN})
+    if (PCHSupport_FOUND)
+        add_dependencies(
+            ${name}
+            base_obj_gch
+        )
+    endif()
+    add_dependencies(
+        ${name}
+        common_thrift_generator
+        graph_thrift_generator
+        storage_thrift_generator
+        meta_thrift_generator
+        raftex_thrift_generator
+        parser_target
+        wkt_parser_target
+    )
+    target_include_directories(${name} PUBLIC ${THRIFTCPP_INCLUDES})
+    nebula_link_libraries( ${name} )
+endmacro()
+
 macro(nebula_add_executable)
     cmake_parse_arguments(
         nebula_exec                 # prefix
@@ -73,45 +125,6 @@ macro(nebula_add_test)
 endmacro()
 
 # A wrapper for target_link_libraries()
-macro(nebula_link_libraries target)
-    target_link_libraries(
-        ${target}
-        ${ARGN}
-        folly
-        fmt
-        glog
-        gflags
-        boost_context
-        boost_system
-        boost_regex
-        boost_filesystem
-        boost_program_options
-        event
-        double-conversion
-        s2
-        ${OPENSSL_SSL_LIBRARY}
-        ${OPENSSL_CRYPTO_LIBRARY}
-        ${COMPRESSION_LIBRARIES}
-        ${JEMALLOC_LIB}
-        ${LIBUNWIND_LIBRARIES}
-        resolv
-        dl
-        ${GETTIME_LIB}
-        ${libatomic_link_flags}
-        -pthread
-        z
-        ${COVERAGES}
-        ${Breakpad_LIBRARY}
-    )
-endmacro(nebula_link_libraries)
-
-function(nebula_add_subdirectory dir_name)
-    if ((NOT ENABLE_TESTING) AND (${dir_name} MATCHES test))
-        add_subdirectory(${dir_name} EXCLUDE_FROM_ALL)
-        return()
-    endif()
-    add_subdirectory(${dir_name})
-endfunction()
 
 macro(nebula_add_exe_linker_flag flag)
     string(FIND "${CMAKE_EXE_LINKER_FLAGS}" "${flag}" position)
@@ -136,6 +149,30 @@ macro(nebula_remove_shared_linker_flag flag)
     string(REPLACE "${flag}" "" output "${CMAKE_SHARED_LINKER_FLAGS}")
     set(CMAKE_SHARED_LINKER_FLAGS "${output}")
 endmacro()
+macro(print_option name)
+    get_property(helpstring CACHE ${name} PROPERTY HELPSTRING)
+    nebula_string_rpad(padded 32 " " "${name}")
+    string(FIND "${helpstring}" "No help" position)
+    if(helpstring AND ${position} EQUAL -1)
+        message(STATUS "${padded}: ${${name}} (${helpstring})")
+    else()
+        message(STATUS "${padded}: ${${name}}")
+    endif()
+endmacro()
+
+function(nebula_add_subdirectory dir_name)
+    if ((NOT ENABLE_TESTING) AND (${dir_name} MATCHES test))
+        add_subdirectory(${dir_name} EXCLUDE_FROM_ALL)
+        return()
+    endif()
+    add_subdirectory(${dir_name})
+endfunction()
+
+macro(print_config name)
+    print_option(${name})
+endmacro()
+
+
 
 function(nebula_string_rpad output width fill_char value)
     string(LENGTH ${value} length)

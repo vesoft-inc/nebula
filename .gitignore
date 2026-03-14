@@ -68,4 +68,9 @@ venv/
 
 #ctags
 .tags
-/.vs
+.vs
+vcpkg-manifest-install.log
+vcpkg_installed/*
+vcpkg_installed/vcpkg
+builds/
+vcpkg_installed/vcpkg/compiler-file-hash-cache.json

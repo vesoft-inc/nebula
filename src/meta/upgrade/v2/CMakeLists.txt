@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-set(THRIFT1 ${Fbthrift_BIN})
 
 set(meta_v2_sources
   gen-cpp2/meta_constants.cpp
@@ -13,7 +12,7 @@ set(meta_v2_sources
 
 add_custom_command(
   OUTPUT ${meta_v2_sources}
-  COMMAND "${THRIFT1}" "--strict" "--allow-neg-enum-vals" "--gen" "mstch_cpp2:include_prefix=\"meta/upgrade/v2\",process_in_event_base,stack_arguments" "-o" "." "${CMAKE_CURRENT_SOURCE_DIR}/meta.thrift"
+  COMMAND "${FBTHRIFT_COMPILER}" "--strict" "--allow-neg-enum-vals" "--gen" "mstch_cpp2:include_prefix=\"meta/upgrade/v2\",process_in_event_base,stack_arguments" "-o" "." "${CMAKE_CURRENT_SOURCE_DIR}/meta.thrift"
   DEPENDS meta.thrift
   )
 

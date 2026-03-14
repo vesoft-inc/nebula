@@ -1,64 +1,53 @@
 message(">>>> Configuring third party for '${PROJECT_NAME}' <<<<")
-# The precedence to decide NEBULA_THIRDPARTY_ROOT is:
-#   1. The path defined with CMake argument, i.e -DNEBULA_THIRDPARTY_ROOT=path
-#   2. ${CMAKE_BINARY_DIR}/third-party/install, if exists
-#   3. The path specified with environment variable NEBULA_THIRDPARTY_ROOT=path
-#   4. /opt/vesoft/third-party, if exists
-#   5. At last, one copy will be downloaded and installed to ${CMAKE_BINARY_DIR}/third-party/install
 
-set(NEBULA_THIRDPARTY_VERSION "3.3")
+# Find all required packages from vcpkg
+find_package(BISON REQUIRED)
+find_package(BZip2 REQUIRED)
+find_package(Boost REQUIRED COMPONENTS context system regex program_options filesystem)
+find_package(CURL REQUIRED)
+find_package(FBThrift CONFIG REQUIRED)
+find_package(FLEX REQUIRED)
+find_package(GTest CONFIG REQUIRED)
+find_package(Libevent REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(RocksDB CONFIG REQUIRED)
+find_package(Snappy CONFIG REQUIRED)
+find_package(Threads REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(double-conversion CONFIG REQUIRED)
+find_package(folly CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(gflags CONFIG REQUIRED)
+find_package(glog CONFIG REQUIRED)
+find_package(liblzma CONFIG REQUIRED)
+find_package(lz4 REQUIRED)
+find_package(proxygen CONFIG REQUIRED)
+find_package(unofficial-s2 CONFIG REQUIRED)
+find_package(unofficial-sodium CONFIG REQUIRED)
+find_package(wangle REQUIRED)
+find_package(zstd CONFIG REQUIRED)
+find_package(robin_hood CONFIG REQUIRED)
 
-if(${DISABLE_CXX11_ABI})
-    SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party-98/install)
-    if(NOT EXISTS ${CMAKE_BINARY_DIR}/third-party-98/install)
-        message(STATUS "Install abi 98 third-party")
-        include(InstallThirdParty)
+# Configure GTest targets
+add_library(gtest ALIAS GTest::gtest)
+add_library(gtest_main ALIAS GTest::gtest_main)
+add_library(boost_regex ALIAS Boost::regex)
+
+# Configure Folly benchmark target
+add_library(follybenchmark ALIAS Folly::follybenchmark)
+
+# Configure CURL target alias - handle case where CURL::libcurl is itself an alias
+if(TARGET CURL::libcurl)
+    get_target_property(_curl_is_alias CURL::libcurl ALIASED_TARGET)
+    if(_curl_is_alias)
+        # CURL::libcurl is an alias, create alias to the real target
+        add_library(curl ALIAS ${_curl_is_alias})
+    else()
+        # CURL::libcurl is a real target
+        add_library(curl ALIAS CURL::libcurl)
     endif()
-else()
-    if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
-        if(EXISTS ${CMAKE_BINARY_DIR}/third-party/install)
-            SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
-        elseif(NOT $ENV{NEBULA_THIRDPARTY_ROOT} STREQUAL "")
-            SET(NEBULA_THIRDPARTY_ROOT $ENV{NEBULA_THIRDPARTY_ROOT})
-        elseif(EXISTS /opt/vesoft/third-party/${NEBULA_THIRDPARTY_VERSION})
-            SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party/${NEBULA_THIRDPARTY_VERSION}")
-        else()
-            include(InstallThirdParty)
-        endif()
-    endif()
 endif()
 
-if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
-    print_config(NEBULA_THIRDPARTY_ROOT)
-    file(READ ${NEBULA_THIRDPARTY_ROOT}/version-info third_party_build_info)
-    message(STATUS "Build info of nebula third party:\n${third_party_build_info}")
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib64)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/bin)
-    include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/include)
-    link_directories(
-        ${NEBULA_THIRDPARTY_ROOT}/lib
-        ${NEBULA_THIRDPARTY_ROOT}/lib64
-    )
-endif()
-
-if(NOT ${NEBULA_OTHER_ROOT} STREQUAL "")
-    string(REPLACE ":" ";" DIR_LIST ${NEBULA_OTHER_ROOT})
-    list(LENGTH DIR_LIST len)
-    foreach(DIR IN LISTS DIR_LIST )
-        list(INSERT CMAKE_INCLUDE_PATH 0 ${DIR}/include)
-        list(INSERT CMAKE_LIBRARY_PATH 0 ${DIR}/lib)
-        list(INSERT CMAKE_PROGRAM_PATH 0 ${DIR}/bin)
-        include_directories(SYSTEM ${DIR}/include)
-        link_directories(${DIR}/lib)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${DIR}/lib")
-    endforeach()
-endif()
-
-print_config(CMAKE_INCLUDE_PATH)
-print_config(CMAKE_LIBRARY_PATH)
-print_config(CMAKE_PROGRAM_PATH)
 
 execute_process(
     COMMAND ldd --version
@@ -76,97 +65,78 @@ else()
     set(GETTIME_LIB)
 endif()
 
-# Breakpad
-if (ENABLE_BREAKPAD)
-    if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-	    MESSAGE(FATAL_ERROR "Breakpad need debug info.")
-    endif()
+message("")
+
+# All compression libraries
+
+
+message(">>>> Configuring third party for '${PROJECT_NAME}' done <<<<")
+
+
+
+if (GLIBC_VERSION VERSION_LESS "2.17")
+    set(GETTIME_LIB rt)
+else()
+    set(GETTIME_LIB)
 endif()
+
+# Breakpad configuration
 if (NOT ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
     set(ENABLE_BREAKPAD OFF)
 endif()
+
 if (ENABLE_BREAKPAD)
+    if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+      MESSAGE(FATAL_ERROR "Breakpad need debug info.")
+    endif()
+    find_package(unofficial-breakpad CONFIG REQUIRED)
+    set(Breakpad_LIBRARY unofficial-breakpad::breakpad::libbreakpad)
     add_compile_options(-DENABLE_BREAKPAD=1)
+else()
+    set(Breakpad_LIBRARY)
 endif()
 
 message("")
 
-find_package(Bzip2 REQUIRED)
-find_package(DoubleConversion REQUIRED)
-find_package(Fatal REQUIRED)
-find_package(Fbthrift REQUIRED)
-find_package(Folly REQUIRED)
-find_package(Gflags REQUIRED)
-find_package(Glog REQUIRED)
-find_package(Googletest REQUIRED)
 if(ENABLE_JEMALLOC)
-    find_package(Jemalloc REQUIRED)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)
     add_definitions(-DENABLE_JEMALLOC)
 endif()
-find_package(Libevent REQUIRED)
-find_package(Proxygen REQUIRED)
-find_package(Rocksdb REQUIRED)
-find_package(Snappy REQUIRED)
-find_package(Wangle REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(Zstd REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(Boost REQUIRED)
-find_package(Libunwind REQUIRED)
-find_package(BISON 3.0.5 REQUIRED)
-include(MakeBisonRelocatable)
-find_package(FLEX REQUIRED)
-find_package(LibLZMA REQUIRED)
-find_package(Fizz REQUIRED)
-find_package(Sodium REQUIRED)
-if (ENABLE_BREAKPAD)
-    find_package(Breakpad REQUIRED)
-endif()
-
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
 
 # All thrift libraries
 set(THRIFT_LIBRARIES
-    thriftcpp2
-    async
-    thriftprotocol
-    transport
-    concurrency
-    thriftfrozen2
-    thrift-core
-    rpcmetadata
-    thriftmetadata
-    wangle
-    fizz
-    sodium
+    FBThrift::thriftcpp2
+    FBThrift::async
+    FBThrift::thriftprotocol
+    FBThrift::transport
+    FBThrift::concurrency
+    FBThrift::thriftfrozen2
+    FBThrift::thrift-core
+    FBThrift::rpcmetadata
+    FBThrift::thriftmetadata
+    wangle::wangle
 )
 
 set(PROXYGEN_LIBRARIES
-    proxygenhttpserver
-    proxygen
-    wangle
-    fizz
-    sodium
+    proxygen::proxygenhttpserver
+    proxygen::proxygen
+    wangle::wangle
 )
 
-set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
+set(ROCKSDB_LIBRARIES RocksDB::rocksdb)
 
 # All compression libraries
-set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)
+set(COMPRESSION_LIBRARIES BZip2::BZip2 zstd::libzstd_static ZLIB::ZLIB lz4::lz4)
 if (LIBLZMA_FOUND)
-    include_directories(SYSTEM ${LIBLZMA_INCLUDE_DIRS})
-    list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
+    list(APPEND COMPRESSION_LIBRARIES liblzma::liblzma)
 endif()
 
 if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN OR ENABLE_UBSAN)
     set(JEMALLOC_LIB )
 else()
-    set(JEMALLOC_LIB jemalloc)
+    set(JEMALLOC_LIB PkgConfig::JEMALLOC)
 endif()
 
-if (Breakpad_FOUND)
-    include_directories(AFTER SYSTEM ${Breakpad_INCLUDE_DIR}/breakpad)
-endif()
 
 message(">>>> Configuring third party for '${PROJECT_NAME}' done <<<<")

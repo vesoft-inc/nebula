@@ -1,0 +1,120 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2a97232..00d6a29 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -66,15 +66,15 @@ endif()
+ #
+ # IMPORTANT: If you change this, make the analogous update in:
+ #   cmake/proxygen-config.cmake.in
+-find_package(fmt REQUIRED)
+-find_package(folly REQUIRED)
+-find_package(wangle REQUIRED)
++find_package(fmt CONFIG REQUIRED)
++find_package(folly CONFIG REQUIRED)
++find_package(wangle CONFIG REQUIRED)
+ if (BUILD_QUIC)
+-  find_package(mvfst REQUIRED)
++  find_package(mvfst CONFIG REQUIRED)
+ else()
+- find_package(Fizz REQUIRED)
++  find_package(fizz CONFIG REQUIRED)
+ endif()
+-find_package(Zstd REQUIRED)
++find_package(zstd CONFIG REQUIRED)
+ find_package(ZLIB REQUIRED)
+ find_package(OpenSSL REQUIRED)
+ find_package(Threads)
+@@ -128,27 +128,8 @@ SET(GFLAG_DEPENDENCIES "")
+ SET(PROXYGEN_EXTRA_LINK_LIBRARIES "")
+ SET(PROXYGEN_EXTRA_INCLUDE_DIRECTORIES "")
+ 
+-find_package(gflags CONFIG QUIET)
+-if (gflags_FOUND)
+-  message("module path: ${CMAKE_MODULE_PATH}")
+-  message(STATUS "Found gflags from package config")
+-  if (TARGET gflags-shared)
+-    list(APPEND GFLAG_DEPENDENCIES gflags-shared)
+-  elseif (TARGET gflags)
+-    list(APPEND GFLAG_DEPENDENCIES gflags)
+-  else()
+-    message(FATAL_ERROR
+-            "Unable to determine the target name for the GFlags package.")
+-  endif()
+-  list(APPEND CMAKE_REQUIRED_LIBRARIES ${GFLAGS_LIBRARIES})
+-  list(APPEND CMAKE_REQUIRED_INCLUDES ${GFLAGS_INCLUDE_DIR})
+-else()
+-  find_package(Gflags REQUIRED MODULE)
+-  list(APPEND PROXYGEN_EXTRA_LINK_LIBRARIES ${LIBGFLAGS_LIBRARY})
+-  list(APPEND PROXYGEN_EXTRA_INCLUDE_DIRECTORIES ${LIBGFLAGS_INCLUDE_DIR})
+-  list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBGFLAGS_LIBRARY})
+-  list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBGFLAGS_INCLUDE_DIR})
+-endif()
++find_package(gflags CONFIG REQUIRED)
++list(APPEND CMAKE_REQUIRED_LIBRARIES gflags::gflags)
+ 
+ include(ProxygenTest)
+ 
+diff --git a/cmake/proxygen-config.cmake.in b/cmake/proxygen-config.cmake.in
+index 6dd0ea1..fa6d0ba 100644
+--- a/cmake/proxygen-config.cmake.in
++++ b/cmake/proxygen-config.cmake.in
+@@ -28,9 +28,9 @@ find_dependency(mvfst)
+ # discussed on D24686032.
+ #
+ # find_dependency(Zstd)
+-find_dependency(ZLIB)
+-find_dependency(OpenSSL)
+-find_dependency(Threads)
++find_dependency(fmt CONFIG)
++find_dependency(folly CONFIG)
++find_dependency(wangle CONFIG)
+ find_dependency(Boost 1.58 REQUIRED
+   COMPONENTS
+     iostreams
+@@ -41,7 +41,8 @@ find_dependency(Boost 1.58 REQUIRED
+     system
+     thread
+ )
+-
++find_dependency(fizz CONFIG)
++find_dependency(gflags CONFIG)
+ if(NOT TARGET proxygen::proxygen)
+     include("${CMAKE_CURRENT_LIST_DIR}/proxygen-targets.cmake")
+     get_target_property(proxygen_INCLUDE_DIRS proxygen::proxygen INTERFACE_INCLUDE_DIRECTORIES)
+@@ -50,3 +51,7 @@ endif()
+ if(NOT proxygen_FIND_QUIETLY)
+     message(STATUS "Found proxygen: ${PACKAGE_PREFIX_DIR}")
+ endif()
++find_dependency(zstd CONFIG)
++find_dependency(ZLIB)
++find_dependency(OpenSSL)
++find_dependency(Threads)
+diff --git a/proxygen/lib/CMakeLists.txt b/proxygen/lib/CMakeLists.txt
+index c6cb604..83e08e3 100644
+--- a/proxygen/lib/CMakeLists.txt
++++ b/proxygen/lib/CMakeLists.txt
+@@ -236,10 +236,10 @@ target_link_libraries(
+     Folly::folly
+     fizz::fizz
+     wangle::wangle
+-    zstd
++    zstd::libzstd
+     Boost::boost
+     Boost::iostreams
+-    -lz
++    ZLIB::ZLIB
+     ${HTTP3_DEPEND_LIBS}
+ )
+ 
+diff --git a/proxygen/lib/utils/gen_perfect_hash_table.sh b/proxygen/lib/utils/gen_perfect_hash_table.sh
+index a870b2d..2dec9c5 100755
+--- a/proxygen/lib/utils/gen_perfect_hash_table.sh
++++ b/proxygen/lib/utils/gen_perfect_hash_table.sh
+@@ -35,6 +35,7 @@ function generate_perfect_hash_table {
+   LC_ALL=C sort -u ${1?} | awk "${6?}" - "${5?}" | \
+   ${8:-gperf} -m5 -D --output-file="${7?}"
+   perl -p -i -e "s/\/\*FALLTHROUGH\*\//FOLLY_FALLTHROUGH;/g" "${7?}"
++  perl -p -i -e "s/register//g" "${7?}"
+ 
+   # Here we delete one of the comment lines gperf adds to the top of the file.
+   # i.e. /* Command-line: .../gperf -m5 --output-file=...  */

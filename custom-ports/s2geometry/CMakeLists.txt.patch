@@ -1,0 +1,91 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5ecd280..8f6c7be 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -13,7 +13,7 @@ if (APPLE)
+     set(CMAKE_MACOSX_RPATH TRUE)
+ endif()
+ 
+-set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ # No compiler-specific extensions, i.e. -std=c++11, not -std=gnu++11.
+ set(CMAKE_CXX_EXTENSIONS OFF)
+@@ -29,7 +29,7 @@ cmake_dependent_option(WITH_GLOG "Use glog for logging." ON
+                        "WITH_GFLAGS" OFF)
+ add_feature_info(GLOG WITH_GLOG "provides logging configurability.")
+ 
+-option(BUILD_SHARED_LIBS "Build shared libraries instead of static." ON)
++option(BUILD_SHARED_LIBS "Build shared libraries instead of static." OFF)
+ add_feature_info(SHARED_LIBS BUILD_SHARED_LIBS
+                  "builds shared libraries instead of static.")
+ 
+@@ -198,20 +198,20 @@ add_library(s2
+             src/s2/util/math/exactfloat/exactfloat.cc
+             src/s2/util/math/mathutil.cc
+             src/s2/util/units/length-units.cc)
+-add_library(s2testing STATIC
+-            src/s2/s2builderutil_testing.cc
+-            src/s2/s2shapeutil_testing.cc
+-            src/s2/s2testing.cc)
+ target_link_libraries(
+     s2
+-    ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES} ${OPENSSL_LIBRARIES}
++    OpenSSL::SSL OpenSSL::Crypto
+     ${CMAKE_THREAD_LIBS_INIT})
+ 
+ # Allow other CMake projects to use this one with:
+ # list(APPEND CMAKE_MODULE_PATH "<path_to_s2geometry_dir>/third_party/cmake")
+ # add_subdirectory(<path_to_s2geometry_dir> s2geometry)
+ # target_link_libraries(<target_name> s2)
+-target_include_directories(s2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
++target_include_directories(s2 PUBLIC 
++  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
++  $<INSTALL_INTERFACE:include>
++)
++
+ 
+ # We don't need to install all headers, only those
+ # transitively included by s2 headers we are exporting.
+@@ -407,10 +407,21 @@ install(FILES src/s2/util/math/mathutil.h
+ install(FILES src/s2/util/units/length-units.h
+               src/s2/util/units/physical-units.h
+         DESTINATION include/s2/util/units)
+-install(TARGETS s2 s2testing DESTINATION lib)
++install(TARGETS s2
++         RUNTIME DESTINATION bin
++         ARCHIVE DESTINATION lib
++         LIBRARY DESTINATION lib)
++install(TARGETS s2 
++        EXPORT unofficial-s2Targets
++        )
++install(EXPORT unofficial-s2Targets
++  NAMESPACE unofficial-s2::
++  FILE unofficial-s2Targets.cmake
++  DESTINATION share/unofficial-s2/
++)
+ 
+ message("GTEST_ROOT: ${GTEST_ROOT}")
+-if (GTEST_ROOT)
++if (0)
+   add_subdirectory(${GTEST_ROOT} build_gtest)
+   include_directories(${GTEST_ROOT}/include)
+ 
+@@ -534,3 +545,17 @@ endif()
+ if (${SWIG_FOUND} AND ${PYTHONLIBS_FOUND})
+   add_subdirectory("src/python" python)
+ endif()
++
++
++include(CMakePackageConfigHelpers)
++# generate the config file that is includes the exports
++configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
++  "${CMAKE_CURRENT_BINARY_DIR}/unofficial-s2Config.cmake"
++  INSTALL_DESTINATION "share/unofficial-s2/"
++  NO_SET_AND_CHECK_MACRO
++  NO_CHECK_REQUIRED_COMPONENTS_MACRO
++  )
++  install(FILES
++  ${CMAKE_CURRENT_BINARY_DIR}/unofficial-s2Config.cmake
++  DESTINATION "share/unofficial-s2/"
++  )

@@ -79,7 +79,7 @@ endforeach()
 
 add_custom_command(
   OUTPUT ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
-  COMMAND ${THRIFT1}
+  COMMAND ${FBTHRIFT_COMPILER}
     --strict "--allow-neg-enum-vals"
     --gen "mstch_cpp2:include_prefix=${include_prefix},stack_arguments"
     --gen "py"
@@ -90,7 +90,7 @@ add_custom_command(
     -o "." "${file_path}/${file_name}.thrift"
   COMMAND
     mkdir -p "./gen-rust/${file_name}"
-    && ${THRIFT1}
+    && ${FBTHRIFT_COMPILER}
       --strict "--allow-neg-enum-vals"
       --gen "mstch_rust"
       -o "gen-rust/${file_name}"
@@ -121,6 +121,14 @@ set_target_properties(
 
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
+
+# Link required libraries - compile definitions (like GLOG_USE_GLOG_EXPORT) 
+# will propagate automatically from these targets
+target_link_libraries(${file_name}_thrift_obj PUBLIC 
+    glog::glog 
+    Folly::folly
+    FBThrift::thriftcpp2
+)
 
 if(NOT "${file_name}" STREQUAL "common")
     add_dependencies(

@@ -1,0 +1,54 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b0c5d31..af42490 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -335,7 +335,8 @@ if (WITH_LIBURING)
+   find_package(uring)
+   if (uring_FOUND)
+     add_definitions(-DROCKSDB_IOURING_PRESENT)
+-    list(APPEND THIRDPARTY_LIBS uring::uring)
++    list(APPEND THIRDPARTY_LIBS ${uring_LIBRARIES})
++    include_directories(${uring_INCLUDE_DIR})
+   endif()
+ endif()
+ 
+diff --git a/table/block_based/data_block_hash_index.h b/table/block_based/data_block_hash_index.h
+index f356395..f5d072a 100644
+--- a/table/block_based/data_block_hash_index.h
++++ b/table/block_based/data_block_hash_index.h
+@@ -7,10 +7,13 @@
+ 
+ #include <string>
+ #include <vector>
+-
++#include <cstdint>
+ #include "rocksdb/slice.h"
+ 
+ namespace ROCKSDB_NAMESPACE {
++  using std::uint8_t;
++  using std::uint16_t;
++  using std::uint32_t;
+ // This is an experimental feature aiming to reduce the CPU utilization of
+ // point-lookup within a data-block. It is only used in data blocks, and not
+ // in meta-data blocks or per-table index blocks.
+diff --git a/util/string_util.h b/util/string_util.h
+index 55d106f..811f5f5 100644
+--- a/util/string_util.h
++++ b/util/string_util.h
+@@ -10,10 +10,15 @@
+ #include <string>
+ #include <unordered_map>
+ #include <vector>
+-
++#include <cstdint>
+ #include "rocksdb/rocksdb_namespace.h"
+ 
+ namespace ROCKSDB_NAMESPACE {
++using std::uint64_t;
++using std::uint8_t;
++using std::uint32_t;
++using std::int32_t;
++using std::int64_t;
+ 
+ class Slice;
+ 

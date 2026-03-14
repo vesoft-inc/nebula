@@ -1,0 +1,27 @@
+diff --git a/CMake/folly-config.cmake.in b/CMake/folly-config.cmake.in
+index e5d3e22..dd4f042 100644
+--- a/CMake/folly-config.cmake.in
++++ b/CMake/folly-config.cmake.in
+@@ -49,9 +49,6 @@ if (NOT @CMAKE_DISABLE_FIND_PACKAGE_LZ4@)
+     find_dependency(lz4 CONFIG)
+ endif()
+ 
+-if (@WITH_liburing@)
+-    find_dependency(LibUring)
+-endif()
+ 
+ find_dependency(fmt CONFIG)
+ 
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index fc9f563..63341bd 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -12,7 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
++cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+ # We use the GoogleTest module if it is available (only in CMake 3.9+)
+ # It requires CMP0054 and CMP0057 to be enabled.
+ if (POLICY CMP0054)

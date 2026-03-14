@@ -1,0 +1,108 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ninja-multi-vcpkg",
+      "displayName": "Ninja Multi-Config",
+      "description": "Configure with vcpkg toolchain and generate Ninja project files for all configurations",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "Ninja Multi-Config",
+      "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "hidden": true
+    },
+    {
+      "name": "ninja-multi-vcpkg-gcc",
+      "displayName": "Ninja Multi-Config (GCC)",
+      "description": "Configure with vcpkg toolchain and GCC compiler",
+      "inherits": "ninja-multi-vcpkg",
+      "cacheVariables": {
+        "ENABLE_WERROR": "OFF",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      },
+      "environment": {
+        "CC": "gcc",
+        "CXX": "g++"
+      }
+    },
+    {
+      "name": "ninja-multi-vcpkg-clang",
+      "displayName": "Ninja Multi-Config (Clang)",
+      "description": "Configure with vcpkg toolchain and Clang compiler",
+      "inherits": "ninja-multi-vcpkg",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      },
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "gcc-debug",
+      "configurePreset": "ninja-multi-vcpkg-gcc",
+      "displayName": "Build GCC (Debug)",
+      "description": "Build with GCC (Debug)",
+      "configuration": "Debug"
+    },
+    {
+      "name": "gcc-release",
+      "configurePreset": "ninja-multi-vcpkg-gcc",
+      "displayName": "Build GCC (Release)",
+      "description": "Build with GCC (Release)",
+      "configuration": "Release"
+    },
+    {
+      "name": "clang-debug",
+      "configurePreset": "ninja-multi-vcpkg-clang",
+      "displayName": "Build Clang (Debug)",
+      "description": "Build with Clang (Debug)",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-release",
+      "configurePreset": "ninja-multi-vcpkg-clang",
+      "displayName": "Build Clang (Release)",
+      "description": "Build with Clang (Release)",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-gcc-debug",
+      "description": "Test GCC (Debug)",
+      "displayName": "Test GCC (Debug)",
+      "configurePreset": "ninja-multi-vcpkg-gcc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "test-gcc-release",
+      "description": "Test GCC (Release)",
+      "displayName": "Test GCC (Release)",
+      "configurePreset": "ninja-multi-vcpkg-gcc",
+      "configuration": "Release"
+    },
+    {
+      "name": "test-clang-debug",
+      "description": "Test Clang (Debug)",
+      "displayName": "Test Clang (Debug)",
+      "configurePreset": "ninja-multi-vcpkg-clang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "test-clang-release",
+      "description": "Test Clang (Release)",
+      "displayName": "Test Clang (Release)",
+      "configurePreset": "ninja-multi-vcpkg-clang",
+      "configuration": "Release"
+    }
+  ]
+}

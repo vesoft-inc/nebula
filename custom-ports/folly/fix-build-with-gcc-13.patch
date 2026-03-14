@@ -1,0 +1,13 @@
+diff --git a/folly/detail/AtFork.cpp b/folly/detail/AtFork.cpp
+index b3dc157..ea6c687 100644
+--- a/folly/detail/AtFork.cpp
++++ b/folly/detail/AtFork.cpp
+@@ -18,6 +18,8 @@
+ 
+ #include <list>
+ #include <mutex>
++#include <stdexcept>
++#include <system_error>
+ 
+ #include <folly/ScopeGuard.h>
+ #include <folly/lang/Exception.h>

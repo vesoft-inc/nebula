@@ -1,0 +1,21 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cf87798..83c4fa5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required (VERSION 3.0)
++cmake_minimum_required (VERSION 3.10)
+ 
+ if (POLICY CMP0042)
+   cmake_policy (SET CMP0042 NEW)
+diff --git a/cmake/GetCacheVariables.cmake b/cmake/GetCacheVariables.cmake
+index 5a9b993..180d954 100644
+--- a/cmake/GetCacheVariables.cmake
++++ b/cmake/GetCacheVariables.cmake
+@@ -1,5 +1,5 @@
+ cmake_policy (PUSH)
+-cmake_policy (VERSION 3.3)
++cmake_policy (VERSION 3.10)
+ 
+ include (CMakeParseArguments)
+ 
