@@ -24,9 +24,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha }}
+          submodules: true
       - uses: actions/checkout@v4
         with:
           clean: false
+          submodules: true
       - name: Check License Header
         uses: apache/skywalking-eyes/header@main 
       - name: Ensure clang-format-10 is available
@@ -90,91 +92,40 @@ jobs:
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: lukka/get-cmake@latest
+
       - name: Prepare environment
         id: prepare
         run: |
-          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          [ d build/ ] && rm -rf build/* || mkdir -p build
           make init -C tests
-      - name: CMake
-        id: cmake
+          if [[ "${{ matrix.configuration }}" == "debug" ]]; then
+            echo "COVERAGE_ARGS=-DENABLE_COVERAGE=ON" >> $GITHUB_ENV
+          else
+            echo "COVERAGE_ARGS=-DENABLE_COVERAGE=OFF" >> $GITHUB_ENV
+          fi
+      - name: Restore from cache and setup vcpkg executable and data files.
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+      
+      - name: Run CMake+vcpkg+Ninja+CTest to build packages and generate/build/test the code.
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: "ninja-multi-vcpkg-${{ matrix.compiler }}"
+          configurePresetAdditionalArgs: "[`-DNEBULA_USE_LINKER=mold`, `${{env.COVERAGE_ARGS}}` ]"
+          buildPreset: "${{ matrix.compiler }}-${{ matrix.configuration }}"
+          testPreset: "test-${{ matrix.compiler }}-${{ matrix.configuration }}"
+          testPresetAdditionalArgs: "[`--timeout 400`,`--output-on-failure`,`-LE segment_id_test`]"
+          testPreset: "test-${{ matrix.compiler }}-${{ matrix.configuration }}"
+          testPresetAdditionalArgs: "[`--timeout 400`,`--output-on-failure`,`-L segment_id_test`]"
+        timeout-minutes: 480
+      - name: ccache stats
         run: |
-          case ${{ matrix.compiler }} in
-          gcc-*)
-            case ${{ matrix.os }} in
-            centos7)
-              # build with Release type
-              cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
-                  -DNEBULA_USE_LINKER=mold \
-                  -DCMAKE_BUILD_TYPE=Release \
-                  -DENABLE_TESTING=on \
-                  -GNinja \
-                  -B build
-              ;;
-            ubuntu2004)
-              # build with Debug type
-              cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
-                  -DNEBULA_USE_LINKER=mold \
-                  -DCMAKE_BUILD_TYPE=Debug \
-                  -DENABLE_TESTING=on \
-                  -DENABLE_COVERAGE=on \
-                  -GNinja \
-                  -B build
-              ;;
-            esac
-            ;;
-          clang-*)
-            # build with Sanitizer
-            cmake \
-                -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
-                -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
-                -DNEBULA_USE_LINKER=mold \
-                -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-                -DENABLE_MEMORY_TRACKER=off \
-                -DENABLE_ASAN=on \
-                -DENABLE_TESTING=on \
-                -GNinja \
-                -B build
-            ;;
-          esac
-      - name: Make
-        run: |
-          case ${{ matrix.compiler }} in
-          gcc-*)
-            case ${{ matrix.os }} in
-            centos7)
-              # build with Release type
-              ccache -z
-              ninja -j $(nproc)
-              ccache -s
-              ;;
-            ubuntu2004)
-              # build with Debug type
-              ccache -z
-              ninja -j $(nproc)
-              ccache -s
-              ;;
-            esac
-            ;;
-          clang-*)
-            # build with Sanitizer
-            ccache -z
-            ninja -j $(nproc)
-            ccache -s
-            ;;
-          esac
-        working-directory: build/
-      - name: CTest
-        env:
-          ASAN_OPTIONS: fast_unwind_on_malloc=1
-        run: |
-          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -LE segment_id_test
-          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -L segment_id_test
-        working-directory: build/
-        timeout-minutes: 20
+          ccache -s
       - name: Setup cluster
         run: |
           case ${{ matrix.compiler }} in

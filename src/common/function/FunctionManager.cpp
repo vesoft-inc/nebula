@@ -607,7 +607,7 @@ FunctionManager::FunctionManager() {
               auto decimal = args[1].get().getInt();
               auto factor = pow(10.0, decimal);
 
-              string mode = "half_up";
+              std::string mode = "half_up";
               if (args.size() == 3 && args[2].get().type() == Value::Type::STRING) {
                 mode = args[2].get().getStr();
               }

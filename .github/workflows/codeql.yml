@@ -45,9 +45,9 @@ jobs:
           - ubuntu2004
         compiler:
           - gcc-9.3
-        include:
-          - language: c-cpp
-            build-mode: "manual"
+        language: c-cpp
+        configuration: [debug]
+        build-mode: "manual"
     env:
       CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       CCACHE_MAXSIZE: 8G
@@ -60,7 +60,12 @@ jobs:
       - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: lukka/get-cmake@latest
+
       - name: Prepare environment
         id: prepare
         run: |
@@ -80,23 +85,17 @@ jobs:
           # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
           # queries: security-extended,security-and-quality
 
-      - name: CMake
-        id: cmake
-        run: |
-              cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
-                  -DNEBULA_USE_LINKER=gold \
-                  -DCMAKE_BUILD_TYPE=Debug \
-                  -DENABLE_TESTING=on \
-                  -GNinja \
-                  -B build
-      - name: Make
-        run: |
-              ccache -z
-              ninja -j $(nproc)
-              ccache -s
-        working-directory: build/
+      - name: Restore from cache and setup vcpkg executable and data files.
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+      
+      - name: Run CMake+vcpkg+Ninja+CTest to build packages and generate/build/test the code.
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'ninja-multi-vcpkg-${{ matrix.compiler }}'
+          buildPreset: '${{ matrix.compiler }}-${{ matrix.configuration }}'
+          testPreset: 'test-${{ matrix.compiler }}-${{ matrix.configuration }}'
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

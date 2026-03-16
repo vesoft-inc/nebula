@@ -24,8 +24,6 @@ else()
   nebula_add_shared_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
 endif()
 
-nebula_add_exe_linker_flag(-static-libstdc++)
-nebula_add_exe_linker_flag(-static-libgcc)
 nebula_add_exe_linker_flag(-no-pie)
 nebula_add_exe_linker_flag(-rdynamic)
 

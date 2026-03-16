@@ -1,0 +1,31 @@
+diff --git a/proxygen/lib/utils/ConsistentHash.h b/proxygen/lib/utils/ConsistentHash.h
+index ea50c0f..e4f17f8 100644
+--- a/proxygen/lib/utils/ConsistentHash.h
++++ b/proxygen/lib/utils/ConsistentHash.h
+@@ -10,9 +10,9 @@
+ 
+ #include <string>
+ #include <vector>
+-
++#include <cstdint>
+ namespace proxygen {
+-
++using std::uint64_t;
+ class ConsistentHash {
+  public:
+   virtual ~ConsistentHash() {
+diff --git a/proxygen/lib/utils/RendezvousHash.h b/proxygen/lib/utils/RendezvousHash.h
+index 97f26d7..0994f28 100644
+--- a/proxygen/lib/utils/RendezvousHash.h
++++ b/proxygen/lib/utils/RendezvousHash.h
+@@ -11,8 +11,9 @@
+ #include <proxygen/lib/utils/ConsistentHash.h>
+ #include <string>
+ #include <vector>
+-
++#include <cstdint>
+ namespace proxygen {
++using std::uint64_t;
+ /*
+  * Weighted Rendezvous Hash is a way to consistently route requests to
+  * candidates.

@@ -18,10 +18,21 @@
 #   ENABLE_PACK_ONE                -- Package to one or multi packages
 
 # CMake version check
-cmake_minimum_required(VERSION 3.9.0)
+cmake_minimum_required(VERSION 3.21.0)
+set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_LIST_DIR}/custom-ports")
 
 # Set the project name
 project("Nebula Graph" C CXX)
+
+# Enable vcpkg manifest mode
+if(NOT CMAKE_TOOLCHAIN_FILE)
+    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE must be set to use vcpkg manifest mode. "
+                        "Please set it to: <vcpkg-root>/scripts/buildsystems/vcpkg.cmake")
+endif()
+
+# Prioritize vcpkg packages over system packages (e.g., Homebrew)
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+set(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH FALSE)
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
@@ -38,22 +49,19 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/nebula)
-
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 include(PlatformCheck)
 include(NebulaCMakeMacros)
+include(ThirdPartyConfig)
 include(GeneralCMakeOptions)
 include(GeneralCMakeConfig)
 include(GeneralCompilerConfig)
 include(LinkerConfig)
-include(CompilerLauncher)
-include(ThirdPartyConfig)
 include(SanitizerConfig)
-include(GitHooksConfig)
 include(GitInfoConfig)
 include(NebulaCustomTargets)
 include(IncludeWhatYouUse)
 include(TimeTrace)
-
 add_custom_target(
   clang-format
   COMMAND "find" "src/" "-type" "f" "\\(" "-iname" "\\*.h" "-o" "-iname" "\\*.cpp" "\\)" "|" "xargs" "clang-format" "-i"
@@ -65,18 +73,17 @@ if (ENABLE_NATIVE)
     add_compile_options(-fPIC)
 endif()
 
-if(ENABLE_MEMORY_TRACKER)
-    if(ENABLE_JEMALLOC)
-        if(NOT ENABLE_ASAN)
-            add_definitions(-DENABLE_MEMORY_TRACKER)
-            message(STATUS "MemoryTracker is ENABLED")
-        else()
-            message(FATAL_ERROR "MemoryTracker need -DENABLE_ASAN=off")
-        endif()
-    else()
-        message(FATAL_ERROR "MemoryTracker need -DENABLE_JEMALLOC=on")
-    endif()
+if(ENABLE_MEMORY_TRACKER AND ENABLE_JEMALLOC AND NOT ENABLE_ASAN)
+    add_definitions(-DENABLE_MEMORY_TRACKER)
+    message(STATUS "MemoryTracker is ENABLED")
 else()
+    if(ENABLE_MEMORY_TRACKER)
+        if(NOT ENABLE_JEMALLOC)
+            message(WARNING "MemoryTracker requires ENABLE_JEMALLOC=ON, disabling MemoryTracker")
+        elseif(ENABLE_ASAN)
+            message(WARNING "MemoryTracker requires ENABLE_ASAN=OFF, disabling MemoryTracker")
+        endif()
+    endif()
     message(WARNING "MemoryTracker is DISABLED")
 endif()
 
@@ -85,27 +92,6 @@ include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 # For simplicity, we make all ordinary libraries depend on the compile-time generated files,
 # including the precompiled header, a.k.a Base.h.gch, and thrift headers.
-macro(nebula_add_library name type)
-    add_library(${name} ${type} ${ARGN})
-    if (PCHSupport_FOUND)
-        add_dependencies(
-            ${name}
-            base_obj_gch
-        )
-    endif()
-    add_dependencies(
-        ${name}
-        common_thrift_generator
-        graph_thrift_generator
-        storage_thrift_generator
-        meta_thrift_generator
-        raftex_thrift_generator
-        # hbase_thrift_generator
-        parser_target
-        wkt_parser_target
-        datetime_parser_target
-    )
-endmacro()
 
 nebula_add_subdirectory(src)
 nebula_add_subdirectory(conf)

@@ -1,0 +1,59 @@
+﻿{
+  "name": "my-application",
+  "version": "0.0.1",
+  "builtin-baseline": "1e199d32ad53aab1defda61ce41c380302e3f95c",
+  "dependencies": [
+    "boost-algorithm",
+    "boost-context",
+    "boost-core",
+    "boost-date-time",
+    "boost-endian",
+    "boost-filesystem",
+    "boost-program-options",
+    "boost-regex",
+    "boost-stacktrace",
+    "boost-system",
+    "boost-thread",
+    "boost-variant",
+    "boost-uuid",
+    "breakpad",
+    "bzip2",
+    "curl",
+    "double-conversion",
+    "fizz",
+    "fbthrift",
+    "fmt",
+    {
+      "name": "folly",
+      "features": [
+        "liburing"
+      ]
+    },
+    "gflags",
+    "glog",
+    "gtest",
+    "jemalloc",
+    "libevent",
+    "liblzma",
+    "lz4",
+    "openssl",
+    "proxygen",
+    "rocksdb",
+    "robin-hood-hashing",
+    "s2geometry",
+    "snappy",
+    "wangle",
+    "zlib",
+    "zstd"
+  ],
+  "overrides": [
+    {
+      "name": "mvfst",
+      "version-date": "2022-11-03"
+    },
+    {
+      "name": "fmt",
+      "version": "8.0.1"
+    }
+  ]
+}
