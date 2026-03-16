@@ -100,7 +100,7 @@ jobs:
       - name: Prepare environment
         id: prepare
         run: |
-           d build/ ] && rm -rf build/* || mkdir -p build
+          [ d build/ ] && rm -rf build/* || mkdir -p build
           make init -C tests
           if [[ "${{ matrix.configuration }}" == "debug" ]]; then
             echo "COVERAGE_ARGS=-DENABLE_COVERAGE=ON" >> $GITHUB_ENV
