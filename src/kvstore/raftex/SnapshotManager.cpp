@@ -42,6 +42,7 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
     if (tr.second != RaftPart::Role::LEADER) {
       VLOG(1) << part->idStr_ << "leader changed, term " << tr.first << ", do not send snapshot to "
               << dst;
+      p.setValue(Status::Error("Leader changed"));
       return;
     }
     auto termId = tr.first;
