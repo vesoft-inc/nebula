@@ -373,8 +373,19 @@ folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> NebulaStore::n
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& dataPath,
                                                  const std::string& walPath) {
-  auto pair = this->newEngineAsync(spaceId, dataPath, walPath).get();
-  return std::move(pair.second);
+  std::unique_ptr<KVEngine> engine;
+  if (FLAGS_engine_type == "rocksdb") {
+    std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
+    if (options_.cffBuilder_ != nullptr) {
+      cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
+    }
+    auto vIdLen = getSpaceVidLen(spaceId);
+    engine = std::make_unique<RocksEngine>(
+        spaceId, vIdLen, dataPath, walPath, options_.mergeOp_, cfFactory);
+  } else {
+    LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
+  }
+  return engine;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, HostAddr> NebulaStore::partLeader(GraphSpaceID spaceId,
