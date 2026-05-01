@@ -31,7 +31,7 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
 
   int64_t workerId = std::stoi(std::move(nebula::value(newResult)));
   // TODO: (jackwener) limit worker, add LOG ERROR
-  auto code = doSyncPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId + 1)}});
+  auto code = doSyncPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId)}});
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Put worker ipAddr failed during get worker id";
     handleErrorCode(nebula::cpp2::ErrorCode::E_ID_FAILED);
