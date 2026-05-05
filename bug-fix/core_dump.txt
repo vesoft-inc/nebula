@@ -1,0 +1,147 @@
+Thread 153 (LWP 31833):
+#0  0x00007fb8d6d0670d in ?? () from /usr/lib64/libc.so.6
+#1  0x0006d5765e984d72 in ?? ()
+#2  0x7fffffffffffffff in ?? ()
+#3  0x00007fb8d2fe3670 in ?? ()
+#4  0x00000000034c74dd in folly::detail::MemoryIdler::futexWaitPreIdle<std::atomic<unsigned int>, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (_ret=@0x7fb88881ecfc: folly::detail::FutexResult::VALUE_CHANGED, fut=..., expected=2, deadline=..., waitMask=4294967295, idleTimeout=..., stackToRetain=1024, timeoutVariationFrac=0.5) at /home/sch/sch/3.3/include/folly/detail/MemoryIdler.h:194
+#5  0x00000000034c2646 in folly::detail::MemoryIdler::futexWaitUntil<std::atomic<unsigned int>, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (fut=..., expected=2, deadline=..., waitMask=4294967295, idleTimeout=..., stackToRetain=1024, timeoutVariationFrac=0.5) at /home/sch/sch/3.3/include/folly/detail/MemoryIdler.h:151
+#6  0x00000000034e800f in folly::SaturatingSemaphore<true, std::atomic>::tryWaitSlow<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (this=0x7fb8d2fe3670, deadline=..., opt=...) at /home/sch/sch/3.3/include/folly/synchronization/SaturatingSemaphore.h:312
+#7  0x00000000034e66d0 in folly::SaturatingSemaphore<true, std::atomic>::try_wait_until<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (opt=..., deadline=..., this=0x7fb8d2fe3670) at /home/sch/sch/3.3/include/folly/synchronization/SaturatingSemaphore.h:173
+#8  folly::detail::LifoSemBase<folly::SaturatingSemaphore<true, std::atomic>, std::atomic>::try_wait_until<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (this=0x7fb895062cc0, deadline=...) at /home/sch/sch/3.3/include/folly/synchronization/LifoSem.h:512
+#9  0x000000000542db0f in folly::UnboundedBlockingQueue<folly::CPUThreadPoolExecutor::CPUTask>::try_take_for(std::chrono::duration<long, std::ratio<1l, 1000l> >) ()
+
+Thread 152 (LWP 31758):
+#0  0x00007fb8d6d0670d in ?? () from /usr/lib64/libc.so.6
+#1  0x0006d579841bf1ee in ?? ()
+#2  0x7fffffffffffffff in ?? ()
+#3  0x0000000000000400 in ?? ()
+#4  0x00000000034c266e in folly::detail::MemoryIdler::futexWaitUntil<std::atomic<unsigned int>, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (fut=..., expected=2, deadline=..., waitMask=4294967295, idleTimeout=..., stackToRetain=1024, timeoutVariationFrac=0.5) at /home/sch/sch/3.3/include/folly/detail/MemoryIdler.h:164
+#5  0x00000000034e800f in folly::SaturatingSemaphore<true, std::atomic>::tryWaitSlow<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (this=0x7fb8d2fdb858, deadline=..., opt=...) at /home/sch/sch/3.3/include/folly/synchronization/SaturatingSemaphore.h:312
+#6  0x00000000034e66d0 in folly::SaturatingSemaphore<true, std::atomic>::try_wait_until<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (opt=..., deadline=..., this=0x7fb8d2fdb858) at /home/sch/sch/3.3/include/folly/synchronization/SaturatingSemaphore.h:173
+#7  folly::detail::LifoSemBase<folly::SaturatingSemaphore<true, std::atomic>, std::atomic>::try_wait_until<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (this=0x7fb89506f2c0, deadline=...) at /home/sch/sch/3.3/include/folly/synchronization/LifoSem.h:512
+#8  0x000000000542db0f in folly::UnboundedBlockingQueue<folly::CPUThreadPoolExecutor::CPUTask>::try_take_for(std::chrono::duration<long, std::ratio<1l, 1000l> >) ()
+#9  0x0000000005425ccf in folly::CPUThreadPoolExecutor::threadRun(std::shared_ptr<folly::ThreadPoolExecutor::Thread>) ()
+
+Thread 146 (LWP 31605):
+#0  0x00007fb8d6cf314b in getgrnam_r () from /usr/lib64/libc.so.6
+#1  0x0000000000000060 in ?? ()
+#2  0x00007fb8d6cd3ca1 in __isoc99_vswscanf () from /usr/lib64/libc.so.6
+#3  0x00007fb883015ed0 in ?? ()
+#4  0x00007fb883013980 in ?? ()
+#5  0x0000000005a99ddb in malloc_mutex_unlock (tsdn=<optimized out>, mutex=<optimized out>) at include/jemalloc/internal/mutex.h:230
+#6  tcache_bin_flush_impl (small=true, nflush=<optimized out>, ptrs=0x7fb80000683a, binind=<optimized out>, cache_bin=<optimized out>, tcache=<optimized out>, tsd=<optimized out>) at src/tcache.c:467
+#7  tcache_bin_flush_bottom (small=true, rem=<optimized out>, binind=<optimized out>, cache_bin=<optimized out>, tcache=<optimized out>, tsd=<optimized out>) at src/tcache.c:519
+#8  je_tcache_bin_flush_small (tsd=<optimized out>, tcache=<optimized out>, cache_bin=<optimized out>, binind=<optimized out>, rem=<optimized out>) at src/tcache.c:529
+Backtrace stopped: Cannot access memory at address 0x7fb800006882
+
+Thread 145 (LWP 31556):
+#0  0x00007fb8d6cf314b in getgrnam_r () from /usr/lib64/libc.so.6
+#1  0x0000000000000060 in ?? ()
+#2  0x00007fb8d6cd3ca1 in __isoc99_vswscanf () from /usr/lib64/libc.so.6
+#3  0x00007fb883816ed0 in ?? ()
+#4  0x00007fb883814d00 in ?? ()
+#5  0x0000000005a99ddb in malloc_mutex_unlock (tsdn=<optimized out>, mutex=<optimized out>) at include/jemalloc/internal/mutex.h:230
+#6  tcache_bin_flush_impl (small=true, nflush=<optimized out>, ptrs=0x7fb80000683a, binind=<optimized out>, cache_bin=<optimized out>, tcache=<optimized out>, tsd=<optimized out>) at src/tcache.c:467
+#7  tcache_bin_flush_bottom (small=true, rem=<optimized out>, binind=<optimized out>, cache_bin=<optimized out>, tcache=<optimized out>, tsd=<optimized out>) at src/tcache.c:519
+#8  je_tcache_bin_flush_small (tsd=<optimized out>, tcache=<optimized out>, cache_bin=<optimized out>, binind=<optimized out>, rem=<optimized out>) at src/tcache.c:529
+Backtrace stopped: Cannot access memory at address 0x7fb800006882
+
+Thread 116 (LWP 30805):
+#0  0x00007fb8d6d0670d in ?? () from /usr/lib64/libc.so.6
+#1  0x00007fb89d2c7010 in ?? ()
+#2  0x00007fb89d2c70b8 in ?? ()
+#3  0x00000002ffffffff in ?? ()
+#4  0x00007fb8d2fdb618 in ?? ()
+#5  0x0000000200000002 in ?? ()
+#6  0x0000000006aa7ea8 in ?? ()
+#7  0x000000000000ffff in ?? ()
+#8  0x00000000034e800f in folly::SaturatingSemaphore<true, std::atomic>::tryWaitSlow<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (this=0x7fb8d2fdb618, deadline=..., opt=...) at /home/sch/sch/3.3/include/folly/synchronization/SaturatingSemaphore.h:312
+#9  0x00000000051825f0 in apache::thrift::concurrency::ThreadManager::Impl::waitOnTask() ()
+Backtrace stopped: Cannot access memory at address 0x8000000000000007
+
+Thread 91 (LWP 30780):
+#0  0x00007fb8d6d0670d in ?? () from /usr/lib64/libc.so.6
+#1  0x0006d57532231db7 in ?? ()
+#2  0x7fffffffffffffff in ?? ()
+#3  0x0000000000000400 in ?? ()
+#4  0x00000000034c266e in folly::detail::MemoryIdler::futexWaitUntil<std::atomic<unsigned int>, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (fut=..., expected=2, deadline=..., waitMask=4294967295, idleTimeout=..., stackToRetain=1024, timeoutVariationFrac=0.5) at /home/sch/sch/3.3/include/folly/detail/MemoryIdler.h:164
+#5  0x00000000034e800f in folly::SaturatingSemaphore<true, std::atomic>::tryWaitSlow<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (this=0x7fb8d2fe37c0, deadline=..., opt=...) at /home/sch/sch/3.3/include/folly/synchronization/SaturatingSemaphore.h:312
+#6  0x00000000034e66d0 in folly::SaturatingSemaphore<true, std::atomic>::try_wait_until<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (opt=..., deadline=..., this=0x7fb8d2fe37c0) at /home/sch/sch/3.3/include/folly/synchronization/SaturatingSemaphore.h:173
+#7  folly::detail::LifoSemBase<folly::SaturatingSemaphore<true, std::atomic>, std::atomic>::try_wait_until<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > > (this=0x6a61dc0 <nebula::storage::AdminTaskManager::instance(nebula::storage::StorageEnv*)::sAdminTaskManager+2240>, deadline=...) at /home/sch/sch/3.3/include/folly/synchronization/LifoSem.h:512
+#8  0x00000000034e5e77 in folly::detail::LifoSemBase<folly::SaturatingSemaphore<true, std::atomic>, std::atomic>::try_wait_for<long, std::ratio<1l, 1000l> > (this=0x6a61dc0 <nebula::storage::AdminTaskManager::instance(nebula::storage::StorageEnv*)::sAdminTaskManager+2240>, timeout=...) at /home/sch/sch/3.3/include/folly/synchronization/LifoSem.h:489
+#9  0x00000000034e4de6 in folly::UnboundedBlockingQueue<std::pair<int, int> >::try_take_for (this=0x6a61d80 <nebula::storage::AdminTaskManager::instance(nebula::storage::StorageEnv*)::sAdminTaskManager+2176>, time=...) at /home/sch/sch/3.3/include/folly/executors/task_queue/UnboundedBlockingQueue.h:41
+
+Thread 66 (LWP 30740):
+#0  0x00007fb8d6d0d50e in ?? () from /usr/lib64/libc.so.6
+#1  0x00007fb8acbf5150 in ?? ()
+#2  0x0000000003485b06 in std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >::time_since_epoch (this=0x3485b06 <folly::detail::function::FunctionTraits<void ()>::uninitCall(folly::detail::function::Data&)>) at /usr/include/c++/10.3.1/chrono:839
+#3  0x0000000000000000 in ?? ()
+
+Thread 59 (LWP 30733):
+#0  0x00007fb8d6d0670d in ?? () from /usr/lib64/libc.so.6
+#1  0x00007fb8c43d8480 in ?? ()
+#2  0x0000000004a4ee1d in folly::futures::detail::waitImpl<folly::SemiFuture<std::pair<int, std::unique_ptr<nebula::kvstore::KVEngine, std::default_delete<nebula::kvstore::KVEngine> > > >, std::pair<int, std::unique_ptr<nebula::kvstore::KVEngine, std::default_delete<nebula::kvstore::KVEngine> > > > (f=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:2097
+#3  0x0000000004a46e6e in folly::SemiFuture<std::pair<int, std::unique_ptr<nebula::kvstore::KVEngine, std::default_delete<nebula::kvstore::KVEngine> > > >::wait() & (this=0x7fb8b24f4bb8) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:2204
+#4  0x0000000004a3fa0e in folly::SemiFuture<std::pair<int, std::unique_ptr<nebula::kvstore::KVEngine, std::default_delete<nebula::kvstore::KVEngine> > > >::getTry() && (this=0x7fb8b24f4bb8) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:2261
+#5  0x0000000004a382e4 in folly::Future<std::pair<int, std::unique_ptr<nebula::kvstore::KVEngine, std::default_delete<nebula::kvstore::KVEngine> > > >::getTry() && (this=0x7fb8b24f4c58) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:2340
+#6  0x0000000004a33095 in folly::Future<std::pair<int, std::unique_ptr<nebula::kvstore::KVEngine, std::default_delete<nebula::kvstore::KVEngine> > > >::get() && (this=0x7fb8b24f4c58) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:2330
+#7  0x0000000004a271c3 in nebula::kvstore::NebulaStore::newEngine (this=0x7fb8b24f4be0, spaceId=32696, dataPath=..., walPath=...) at /home/sch/sch/nebula-master/src/kvstore/NebulaStore.cpp:376
+Backtrace stopped: previous frame inner to this frame (corrupt stack?)
+
+Thread 58 (LWP 30732):
+#0  0x0000000004910299 in nebula::memory::trackMemory (size=22) at /home/sch/sch/nebula-master/src/common/memory/Memory.h:109
+#1  operator new (size=22) at /home/sch/sch/nebula-master/src/common/memory/NewDelete.cpp:20
+#2  0x0000000004853356 in std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*> (this=0x7fb8b3af57d0, __beg=0x7fb8d64d5ce0 "append_log_latency_us", __end=0x7fb8d64d5cf5 "") at /usr/include/c++/10.3.1/bits/basic_string.tcc:219
+#3  0x00000000048787c3 in nebula::stats::CounterId::index[abi:cxx11]() const (this=0x6a866c0 <nebula::kAppendLogLatencyUs>) at /home/sch/sch/nebula-master/src/common/stats/StatsManager.h:57
+#4  0x000000000487ba9e in nebula::stats::StatsManager::addValue (id=..., value=686) at /home/sch/sch/nebula-master/src/common/stats/StatsManager.cpp:278
+#5  0x0000000004adda0c in operator() (__closure=0x7fb889c72910, resp=...) at /home/sch/sch/nebula-master/src/kvstore/raftex/Host.cpp:182
+#6  0x0000000004ae57be in operator() (this=0x7fb8b3af5b20) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:98
+#7  0x0000000004ae7a94 in folly::futures::detail::InvokeResultWrapper<void>::wrapResult<folly::futures::detail::wrapInvoke<nebula::raftex::cpp2::AppendLogResponse, nebula::raftex::Host::appendLogsInternal(folly::EventBase*, std::shared_ptr<nebula::raftex::cpp2::AppendLogRequest>)::<lambda(nebula::raftex::cpp2::AppendLogResponse&&)> >::<lambda()> >(struct {...}) (fn=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:90
+#8  0x0000000004ae5841 in folly::futures::detail::wrapInvoke<nebula::raftex::cpp2::AppendLogResponse, nebula::raftex::Host::appendLogsInternal(folly::EventBase*, std::shared_ptr<nebula::raftex::cpp2::AppendLogRequest>)::<lambda(nebula::raftex::cpp2::AppendLogResponse&&)> >(folly::Try<nebula::raftex::cpp2::AppendLogResponse> &&, struct {...} &&) (t=..., f=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:108
+#9  0x0000000004ae588b in operator() (this=0x7fb889c72910, t=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:991
+
+Thread 54 (LWP 30728):
+#0  0x000000000546d520 in folly::futures::detail::KeepAliveOrDeferred::getKeepAliveExecutor() const ()
+#1  0x000000000546d5c0 in folly::futures::detail::KeepAliveOrDeferred::operator bool() const ()
+#2  0x000000000546e6dc in folly::futures::detail::CoreBase::doCallback(folly::Executor::KeepAlive<folly::Executor>&&, folly::futures::detail::State) ()
+#3  0x00000000035beffe in folly::futures::detail::Core<folly::Unit>::setResult (this=0x7fb8d0263600, completingKA=..., t=...) at /home/sch/sch/3.3/include/folly/futures/detail/Core.h:666
+#4  0x00000000035bc376 in folly::Promise<folly::Unit>::setTry (this=0x7fb8b92f5c60, ka=..., t=...) at /home/sch/sch/3.3/include/folly/futures/Promise-inl.h:136
+#5  0x0000000004aea3ca in folly::futures::detail::CoreCallbackState<folly::Unit, folly::Future<T>::thenValue<nebula::raftex::Host::appendLogsInternal(folly::EventBase*, std::shared_ptr<nebula::raftex::cpp2::AppendLogRequest>)::<lambda(nebula::raftex::cpp2::AppendLogResponse&&)> >::<lambda(folly::Executor::KeepAlive<folly::Executor>&&, folly::Try<nebula::raftex::cpp2::AppendLogResponse>&&)> >::setTry(folly::Executor::KeepAlive<folly::Executor> &&, folly::Try<folly::Unit> &&) (this=0x7fb88c617c10, keepAlive=..., t=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:153
+#6  0x0000000004ae7d0f in operator() (this=0x7fb88c617c10, ka=..., t=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:382
+#7  0x0000000004aec837 in operator() (this=0x7fb88c617c10, coreBase=..., ka=..., ew=0x0) at /home/sch/sch/3.3/include/folly/futures/detail/Core.h:637
+#8  0x0000000004af0b89 in folly::detail::function::FunctionTraits<void(folly::futures::detail::CoreBase&, folly::Executor::KeepAlive<folly::Executor>&&, folly::exception_wrapper*)>::callSmall<folly::futures::detail::Core<T>::setCallback<folly::futures::detail::FutureBase<T>::thenImplementation<folly::Future<T>::thenValue<nebula::raftex::Host::appendLogsInternal(folly::EventBase*, std::shared_ptr<nebula::raftex::cpp2::AppendLogRequest>)::<lambda(nebula::raftex::cpp2::AppendLogResponse&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<nebula::raftex::cpp2::AppendLogResponse>&&)>, folly::futures::detail::tryExecutorCallableResult<nebula::raftex::cpp2::AppendLogResponse, folly::Future<T>::thenValue<nebula::raftex::Host::appendLogsInternal(folly::EventBase*, std::shared_ptr<nebula::raftex::cpp2::AppendLogRequest>)::<lambda(nebula::raftex::cpp2::AppendLogResponse&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<nebula::raftex::cpp2::AppendLogResponse>&&)>, void> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<nebula::raftex::cpp2::AppendLogResponse>&&)> >::<lambda(folly::futures::detail::CoreBase&, folly::Executor::KeepAlive<>&&, folly::exception_wrapper*)> >(folly::detail::function::CallArg, folly::detail::function::CallArg, folly::detail::function::CallArg, folly::detail::function::Data &) (args#0=..., args#1=..., args#2=0x0, p=...) at /home/sch/sch/3.3/include/folly/Function.h:371
+#9  0x000000000546e08c in ?? ()
+
+Thread 43 (LWP 30717):
+#0  std::_Head_base<1ul, std::default_delete<apache::thrift::transport::THeader>, true>::_M_head (__b=...) at /usr/include/c++/10.3.1/tuple:117
+#1  0x0000000003e52fca in std::_Tuple_impl<1ul, std::default_delete<apache::thrift::transport::THeader> >::_M_head (__t=...) at /usr/include/c++/10.3.1/tuple:349
+#2  0x0000000003e530c0 in std::__get_helper<1ul, std::default_delete<apache::thrift::transport::THeader>>(std::_Tuple_impl<1ul, std::default_delete<apache::thrift::transport::THeader>>&) (__t=...) at /usr/include/c++/10.3.1/tuple:1288
+#3  0x0000000003e40015 in std::get<1ul, apache::thrift::transport::THeader*, std::default_delete<apache::thrift::transport::THeader> > (__t=...) at /usr/include/c++/10.3.1/tuple:1299
+#4  0x0000000003e28578 in std::__uniq_ptr_impl<apache::thrift::transport::THeader, std::default_delete<apache::thrift::transport::THeader> >::_M_deleter (this=0x7fb8c53f4708) at /usr/include/c++/10.3.1/bits/unique_ptr.h:174
+#5  0x0000000003e280f8 in std::unique_ptr<apache::thrift::transport::THeader, std::default_delete<apache::thrift::transport::THeader> >::get_deleter (this=0x7fb8c53f4708) at /usr/include/c++/10.3.1/bits/unique_ptr.h:427
+#6  0x0000000003e0c43e in std::unique_ptr<apache::thrift::transport::THeader, std::default_delete<apache::thrift::transport::THeader> >::~unique_ptr (this=0x7fb8c53f4708, __in_chrg=<optimized out>) at /usr/include/c++/10.3.1/bits/unique_ptr.h:361
+#7  0x0000000003debfd1 in apache::thrift::ClientReceiveState::~ClientReceiveState (this=0x7fb8c53f46f0, __in_chrg=<optimized out>) at /home/sch/sch/3.3/include/thrift/lib/cpp2/async/RequestCallback.h:49
+#8  0x0000000005050331 in apache::thrift::RocketClientChannel::SingleRequestSingleResponseCallback::onResponsePayload(folly::Try<apache::thrift::rocket::Payload>&&) ()
+#9  0x00000000050a8c29 in ?? ()
+
+Thread 42 (LWP 30716):
+#0  0x00007fb8d6cd3c95 in __isoc99_vswscanf () from /usr/lib64/libc.so.6
+#1  0x00000000048a6c18 in std::__invoke<void (*)(const std::__cxx11::basic_string<char>&, const std::function<void()>&), std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::_Bind<nebula::time::TscHelper::TscHelper()::<lambda()>()> >(void (*&&)(const std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > &, const std::function<void()> &)) (__fn=@0x7fb8d69293b8: 0x4836f75 <nebula::thread::NamedThread::hook(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<void ()> const&)>) at /usr/include/c++/10.3.1/bits/invoke.h:95
+#2  0x00000000048a6b4c in std::thread::_Invoker<std::tuple<void (*)(const std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, const std::function<void()>&), std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::_Bind<nebula::time::TscHelper::TscHelper()::<lambda()>()> > >::_M_invoke<0, 1, 2>(std::_Index_tuple<0, 1, 2>) (this=0x7fb8d6929388) at /usr/include/c++/10.3.1/thread:264
+#3  0x00000000048a6ae8 in std::thread::_Invoker<std::tuple<void (*)(const std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, const std::function<void()>&), std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::_Bind<nebula::time::TscHelper::TscHelper()::<lambda()>()> > >::operator()(void) (this=0x7fb8d6929388) at /usr/include/c++/10.3.1/thread:271
+#4  0x00000000048a6acc in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)(const std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, const std::function<void()>&), std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::_Bind<nebula::time::TscHelper::TscHelper()::<lambda()>()> > > >::_M_run(void) (this=0x7fb8d6929380) at /usr/include/c++/10.3.1/thread:215
+#5  0x0000000005b38e70 in execute_native_thread_routine ()
+#6  0x00007fb8d6c8b43a in ?? () from /usr/lib64/libc.so.6
+Backtrace stopped: previous frame inner to this frame (corrupt stack?)
+
+Thread 19 (LWP 30693):
+#0  0x0000000004a86e8f in nebula::raftex::AppendLogsIterator::AppendLogsIterator (this=0x4a9b227 <std::enable_shared_from_this<nebula::raftex::RaftPart>::shared_from_this()+33>) at /home/sch/sch/nebula-master/src/kvstore/raftex/RaftPart.cpp:83
+#1  0x0000000004a892b3 in nebula::raftex::RaftPart::replicateLogs (this=0x7fb894eda810, eb=0x7fb8bb260000, iter=..., currTerm=2, lastLogId=9, committedId=8, prevLogTerm=2, prevLogId=8) at /home/sch/sch/nebula-master/src/kvstore/raftex/RaftPart.cpp:974
+#2  0x0000000004a8a6fe in nebula::raftex::RaftPart::processAppendLogResponses (this=0x7fb894eda810, resps=..., eb=0x7fb8bb260000, iter=..., currTerm=2, lastLogId=9, committedId=8, prevLogTerm=2, prevLogId=8, hosts=...) at /home/sch/sch/nebula-master/src/kvstore/raftex/RaftPart.cpp:1134
+#3  0x0000000004a88c2d in operator() (__closure=0x7fb890382200, result=...) at /home/sch/sch/nebula-master/src/kvstore/raftex/RaftPart.cpp:988
+#4  0x0000000004aa4618 in operator() (this=0x7fb890382200, t=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:934
+#5  0x0000000004aabd5e in folly::futures::detail::CoreCallbackState<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >, folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<folly::Executor>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > > >&&)> >::invoke<folly::Executor::KeepAlive<folly::Executor>, folly::Try<std::vector<std::pair<unsigned long, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<unsigned long, nebula::raftex::cpp2::AppendLogResponse> > > > >(void) (this=0x7fb890382200) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:144
+#6  0x0000000004aabdbc in folly::futures::detail::detail_msvc_15_7_workaround::invoke<folly::futures::detail::tryExecutorCallableResult<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> >, folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)>, void>, folly::futures::detail::CoreCallbackState<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> >, folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >, std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >(folly::futures::detail::tryExecutorCallableResult<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >, folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<folly::Executor>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > > >&&)>, void>, folly::futures::detail::CoreCallbackState<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >, folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<folly::Executor>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > > >&&)> > &, folly::Executor::KeepAlive<folly::Executor> &&, folly::Try<std::vector<std::pair<unsigned long, nebula::raftex::cpp2::AppendLogResponse>, std::allocator<std::pair<unsigned long, nebula::raftex::cpp2::AppendLogResponse> > > > &&) (state=..., ka=..., t=...) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:337
+#7  0x0000000004aabe13 in operator() (this=0x7fb8cf1f5fe0) at /home/sch/sch/3.3/include/folly/futures/Future-inl.h:384
+#8  0x0000000004abb19c in folly::makeTryWithNoUnwrap<folly::futures::detail::FutureBase<T>::thenImplementation<folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)>, folly::futures::detail::tryExecutorCallableResult<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> >, folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)>, void> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> mutable::<lambda()> >(struct {...} &&) (f=...) at /home/sch/sch/3.3/include/folly/Try-inl.h:257
+#9  0x0000000004ab3cfc in folly::makeTryWith<folly::futures::detail::FutureBase<T>::thenImplementation<folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)>, folly::futures::detail::tryExecutorCallableResult<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> >, folly::Future<T>::thenTry<nebula::raftex::RaftPart::replicateLogs(folly::EventBase*, nebula::raftex::AppendLogsIterator, nebula::TermID, nebula::LogID, nebula::LogID, nebula::TermID, nebula::LogID)::<lambda(folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)>, void> >::<lambda(folly::Executor::KeepAlive<>&&, folly::Try<std::vector<std::pair<long unsigned int, nebula::raftex::cpp2::AppendLogResponse> > >&&)> mutable::<lambda()> >(struct {...} &&) (f=...) at /home/sch/sch/3.3/include/folly/Try-inl.h:279
