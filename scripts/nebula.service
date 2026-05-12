@@ -135,8 +135,27 @@ function start_daemon {
     pid_file=$(get_pid_file_from_config ${config})
     if [[ -f ${pid_file} ]]; then
         if is_process_running ${pid_file}; then
-            ERROR "${daemon_name} already running: $(cat ${pid_file})"
-            exit 1
+            check_process_executable ${pid_file} ${executable}
+            case $? in
+                0)
+                    ERROR "${daemon_name} already running: $(cat ${pid_file})"
+                    exit 1
+                    ;;
+                1)
+                    WARN "${pid_file} is stale: $(cat ${pid_file}) belongs to another process"
+                    rm -f ${pid_file} ||
+                        ERROR_AND_EXIT "Failed to remove stale pid file ${pid_file}"
+                    ;;
+                *)
+                    ERROR "${daemon_name} already running or ${pid_file} cannot be verified:" \
+                        "$(cat ${pid_file})"
+                    exit 1
+                    ;;
+            esac
+        else
+            WARN "Removing stale pid file ${pid_file}"
+            rm -f ${pid_file} ||
+                ERROR_AND_EXIT "Failed to remove stale pid file ${pid_file}"
         fi
     fi
 
