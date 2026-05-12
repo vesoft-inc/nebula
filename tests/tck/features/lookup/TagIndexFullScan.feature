@@ -410,6 +410,42 @@ Feature: Lookup tag index full scan
       | id |
     When executing query:
       """
+      LOOKUP ON team WHERE team.name STARTS WITH "" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id              |
+      | "76ers"         |
+      | "Bucks"         |
+      | "Bulls"         |
+      | "Cavaliers"     |
+      | "Celtics"       |
+      | "Clippers"      |
+      | "Grizzlies"     |
+      | "Hawks"         |
+      | "Heat"          |
+      | "Hornets"       |
+      | "Jazz"          |
+      | "Kings"         |
+      | "Knicks"        |
+      | "Lakers"        |
+      | "Magic"         |
+      | "Mavericks"     |
+      | "Nets"          |
+      | "Nuggets"       |
+      | "Pacers"        |
+      | "Pelicans"      |
+      | "Pistons"       |
+      | "Raptors"       |
+      | "Rockets"       |
+      | "Spurs"         |
+      | "Suns"          |
+      | "Thunders"      |
+      | "Timberwolves"  |
+      | "Trail Blazers" |
+      | "Warriors"      |
+      | "Wizards"       |
+    When executing query:
+      """
       LOOKUP ON team WHERE team.name STARTS WITH 123 YIELD id(vertex)
       """
     Then a SemanticError should be raised at runtime: Column type error : name
