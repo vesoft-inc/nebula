@@ -798,6 +798,18 @@ class NebulaStore : public KVStore, public Handler {
                                       const std::string& walPath);
 
   /**
+   * @brief Build a new kv engine on the current thread
+   *
+   * @param spaceId
+   * @param dataPath
+   * @param walPath
+   * @return std::unique_ptr<KVEngine>
+   */
+  std::unique_ptr<KVEngine> createEngine(GraphSpaceID spaceId,
+                                         const std::string& dataPath,
+                                         const std::string& walPath);
+
+  /**
    * @brief Start a new part
    *
    * @param spaceId
