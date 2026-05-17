@@ -354,27 +354,36 @@ void NebulaStore::stop() {
 folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> NebulaStore::newEngineAsync(
     GraphSpaceID spaceId, const std::string& dataPath, const std::string& walPath) {
   return folly::via(folly::getGlobalIOExecutor().get(), [this, spaceId, dataPath, walPath]() {
-    std::unique_ptr<KVEngine> engine;
-    if (FLAGS_engine_type == "rocksdb") {
-      std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
-      if (options_.cffBuilder_ != nullptr) {
-        cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
-      }
-      auto vIdLen = getSpaceVidLen(spaceId);
-      engine = std::make_unique<RocksEngine>(
-          spaceId, vIdLen, dataPath, walPath, options_.mergeOp_, cfFactory);
-    } else {
-      LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
-    }
-    return std::make_pair(spaceId, std::move(engine));
+    return std::make_pair(spaceId, createEngine(spaceId, dataPath, walPath));
   });
+}
+
+std::unique_ptr<KVEngine> NebulaStore::createEngine(GraphSpaceID spaceId,
+                                                    const std::string& dataPath,
+                                                    const std::string& walPath) {
+  std::unique_ptr<KVEngine> engine;
+  if (FLAGS_engine_type == "rocksdb") {
+    std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
+    if (options_.cffBuilder_ != nullptr) {
+      cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
+    }
+    auto vIdLen = getSpaceVidLen(spaceId);
+    engine = std::make_unique<RocksEngine>(spaceId,
+                                           vIdLen,
+                                           dataPath,
+                                           walPath,
+                                           options_.mergeOp_,
+                                           cfFactory);
+  } else {
+    LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
+  }
+  return engine;
 }
 
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& dataPath,
                                                  const std::string& walPath) {
-  auto pair = this->newEngineAsync(spaceId, dataPath, walPath).get();
-  return std::move(pair.second);
+  return createEngine(spaceId, dataPath, walPath);
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, HostAddr> NebulaStore::partLeader(GraphSpaceID spaceId,
