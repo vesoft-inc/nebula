@@ -29,6 +29,17 @@ TEST(WorkerIdProcessorTest, WorkerIdTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     ASSERT_EQ(i, resp.get_workerid());
   }
+
+  // Getting the worker id of an existing host should return the id
+  // allocated when the host was first registered.
+  cpp2::GetWorkerIdReq req;
+  req.host_ref() = "0";
+  auto* processor = GetWorkerIdProcessor::instance(kv.get());
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  ASSERT_EQ(0, resp.get_workerid());
 }
 
 TEST(SegmentIdProcessorTest, SegmentIdTest) {
