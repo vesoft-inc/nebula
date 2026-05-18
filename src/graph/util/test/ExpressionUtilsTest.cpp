@@ -827,5 +827,62 @@ TEST_F(ExpressionUtilsTest, simplifyLogicalExpr) {
   }
 }
 
+TEST_F(ExpressionUtilsTest, rewriteRelExpr) {
+  auto e0 = parse("v.age +3 < 7");
+  auto e1 = parse("v.age < 7-3");
+  auto eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("v.age - 3 < 7");
+  e1 = parse("v.age < 7+3");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("v.age - 3 == 7");
+  e1 = parse("v.age == 7+3");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("3-v.age >= 7");
+  e1 = parse("v.age <= 3-7");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("v.age - 3 == 7");
+  e1 = parse("v.age == 7+3");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("3 + v.age <= 7");
+  e1 = parse("v.age <= 7-3");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("a > 5");
+  e1 = parse("a > 5");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("((v.age + 1) - 2) > 1");
+  e1 = parse("v.age > (1+2)-1");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("(v.age + v.player.height) + 5 < 15");
+  e1 = parse("v.age+v.player.height < 15-5");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("v.age * 2 < 10");
+  e1 = parse("v.age*2 < 10");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+
+  e0 = parse("x != y");
+  e1 = parse("x!=y");
+  eGot = ExpressionUtils::rewriteRelExpr(e0);
+  ASSERT_EQ(eGot->toString(), e1->toString()) << eGot->toString();
+}
+
 }  // namespace graph
 }  // namespace nebula

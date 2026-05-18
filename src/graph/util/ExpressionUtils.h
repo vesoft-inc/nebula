@@ -107,7 +107,7 @@ class ExpressionUtils {
   // Rewrites relational expression, gather all evaluable expressions in the left operands and move
   // them to the right
   static Expression* rewriteRelExpr(const Expression* expr);
-  static Expression* rewriteRelExprHelper(const Expression* expr, Expression*& relRightOperandExpr);
+  static Expression* rewriteRelExprHelper(ObjectPool* pool, const Expression* expr);
 
   // Rewrites IN expression into OR expression or relEQ expression
   static Expression* rewriteInExpr(const Expression* expr);
