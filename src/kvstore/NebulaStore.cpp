@@ -368,12 +368,8 @@ std::unique_ptr<KVEngine> NebulaStore::createEngine(GraphSpaceID spaceId,
       cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
     }
     auto vIdLen = getSpaceVidLen(spaceId);
-    engine = std::make_unique<RocksEngine>(spaceId,
-                                           vIdLen,
-                                           dataPath,
-                                           walPath,
-                                           options_.mergeOp_,
-                                           cfFactory);
+    engine = std::make_unique<RocksEngine>(
+      spaceId, vIdLen, dataPath, walPath, options_.mergeOp_, cfFactory);
   } else {
     LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
   }
