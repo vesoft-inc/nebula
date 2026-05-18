@@ -176,6 +176,15 @@ TEST_F(FoldConstantExprVisitorTest, TestFoldFunction) {
     ASSERT_FALSE(visitor.canBeFolded());
     ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
   }
+  // rand() + 1 => rand() + 1
+  {
+    auto expr = addExpr(fnExpr("rand", {}), constantExpr(1));
+    auto expected = addExpr(fnExpr("rand", {}), constantExpr(1));
+    FoldConstantExprVisitor visitor(pool);
+    expr->accept(&visitor);
+    ASSERT_FALSE(visitor.canBeFolded());
+    ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
+  }
 }
 
 TEST_F(FoldConstantExprVisitorTest, TestFoldFailed) {

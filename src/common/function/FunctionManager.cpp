@@ -1097,7 +1097,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["rand"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
-    attr.isAlwaysPure_ = true;
+    setCompleteNonPure(attr);
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
       return folly::Random::randDouble01();
