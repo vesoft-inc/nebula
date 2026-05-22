@@ -1714,7 +1714,15 @@ folly::Future<StatusOr<EdgeType>> MetaClient::createEdgeSchema(GraphSpaceID spac
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_createEdge(request); },
-      [](cpp2::ExecResp&& resp) -> EdgeType { return resp.get_id().get_edge_type(); },
+      [](cpp2::ExecResp&& resp) -> EdgeType {
+        // Check if the creation was skipped due to IF NOT EXISTS
+        if (resp.skipped_ref() && resp.skipped_ref().value()) {
+          // Return a special value to indicate skipped creation
+          // Using -1 as a sentinel value for skipped creation
+          return -1;
+        }
+        return resp.get_id().get_edge_type();
+      },
       std::move(promise));
   return future;
 }
