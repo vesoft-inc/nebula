@@ -58,7 +58,7 @@ void GetStatsHandler::onEOM() noexcept {
 
   // read stats
   folly::dynamic vals = getStats();
-  std::string body = returnJson_ ? folly::toPrettyJson(vals) : toStr(vals);
+  std::string body = returnJson_ ? std:strcat(folly::toPrettyJson(vals), "\n") : toStr(vals);
   ResponseBuilder(downstream_)
       .status(WebServiceUtils::to(HttpStatusCode::OK),
               WebServiceUtils::toString(HttpStatusCode::OK))
