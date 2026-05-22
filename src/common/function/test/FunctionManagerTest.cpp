@@ -583,6 +583,7 @@ TEST_F(FunctionManagerTest, time) {
     TEST_FUNCTION(
         date, {Map({{"year", 2020}, {"month", 12}, {"day", 31}})}, Value(Date(2020, 12, 31)));
   }
+  { TEST_FUNCTION(date, {573206400}, Value(Date(1988, 3, 1))); }
   // leap year February days
   {
     // 2020 is leap
@@ -1432,7 +1433,7 @@ TEST_F(FunctionManagerTest, returnType) {
   }
   // date
   {
-    auto result = FunctionManager::getReturnType("date", {Value::Type::INT});
+    auto result = FunctionManager::getReturnType("date", {Value::Type::FLOAT});
     ASSERT_FALSE(result.ok());
     EXPECT_EQ(result.status().toString(), "Parameter's type error");
   }
