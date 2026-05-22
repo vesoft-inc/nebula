@@ -983,6 +983,7 @@ WriteResult RowWriterV2::checkUnsetFields() {
       auto field = schema_->field(i);
       if (!field->nullable() && !field->hasDefault()) {
         // The field neither can be NULL, nor has a default value
+        LOG(ERROR) << "The property '" << field->name() << "' is not nullable and has no default value.";
         return WriteResult::FIELD_UNSET;
       }
 
