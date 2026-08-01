@@ -24,8 +24,12 @@ void FoldConstantExprVisitor::visit(UnaryExpression *expr) {
       if (!ok()) return;
     }
   } else {
-    canBeFolded_ = expr->kind() == Expression::Kind::kUnaryNegate ||
-                   expr->kind() == Expression::Kind::kUnaryPlus;
+    // When the operand is a constant, all pure unary expressions can be
+    // folded into constants, e.g. `1 IS NULL` should be folded into `false`.
+    // kUnaryIncr/kUnaryDecr modify variables, so they must not be folded
+    // even if the operand happens to be a constant expression.
+    canBeFolded_ = expr->kind() != Expression::Kind::kUnaryIncr &&
+                   expr->kind() != Expression::Kind::kUnaryDecr;
   }
 }
 

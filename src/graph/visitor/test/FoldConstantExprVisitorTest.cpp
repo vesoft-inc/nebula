@@ -45,6 +45,40 @@ TEST_F(FoldConstantExprVisitorTest, TestRelationExpr) {
   ASSERT_EQ(*root, *rootExpected) << root->toString() << " vs. " << rootExpected->toString();
 }
 
+TEST_F(FoldConstantExprVisitorTest, TestIsNullExpr) {
+  // 1 IS NULL => false
+  auto expr = isNullExpr(constantExpr(1));
+  FoldConstantExprVisitor visitor(pool);
+  expr->accept(&visitor);
+  ASSERT(visitor.canBeFolded());
+
+  auto root = visitor.fold(expr);
+  auto rootExpected = constantExpr(false);
+  ASSERT_EQ(*root, *rootExpected) << root->toString() << " vs. " << rootExpected->toString();
+
+  // NULL IS NULL => true
+  auto expr2 = isNullExpr(constantExpr(Value::kNullValue));
+  FoldConstantExprVisitor visitor2(pool);
+  expr2->accept(&visitor2);
+  ASSERT(visitor2.canBeFolded());
+
+  auto root2 = visitor2.fold(expr2);
+  auto rootExpected2 = constantExpr(true);
+  ASSERT_EQ(*root2, *rootExpected2) << root2->toString() << " vs. " << rootExpected2->toString();
+}
+
+TEST_F(FoldConstantExprVisitorTest, TestIsNotNullExpr) {
+  // 1 IS NOT NULL => true
+  auto expr = isNotNullExpr(constantExpr(1));
+  FoldConstantExprVisitor visitor(pool);
+  expr->accept(&visitor);
+  ASSERT(visitor.canBeFolded());
+
+  auto root = visitor.fold(expr);
+  auto rootExpected = constantExpr(true);
+  ASSERT_EQ(*root, *rootExpected) << root->toString() << " vs. " << rootExpected->toString();
+}
+
 TEST_F(FoldConstantExprVisitorTest, TestLogicalExpr) {
   {
     // false AND (false || (3 > (1 + 1))) => false AND true

@@ -106,6 +106,14 @@ class VisitorTestBase : public ::testing::Test {
     return UnaryExpression::makeNot(pool, expr);
   }
 
+  UnaryExpression *isNullExpr(Expression *expr) {
+    return UnaryExpression::makeIsNull(pool, expr);
+  }
+
+  UnaryExpression *isNotNullExpr(Expression *expr) {
+    return UnaryExpression::makeIsNotNull(pool, expr);
+  }
+
   LogicalExpression *andExpr(Expression *lhs, Expression *rhs) {
     return LogicalExpression::makeAnd(pool, lhs, rhs);
   }
