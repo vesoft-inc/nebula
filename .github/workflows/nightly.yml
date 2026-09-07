@@ -31,11 +31,11 @@ jobs:
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
-      - uses: webiny/action-post-run@3.1.0
+      - uses: vesoft-inc/action-post-run@4.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "^1.16.7"
       - name: package
@@ -48,7 +48,7 @@ jobs:
           find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
           subdir=$(date -u +%Y.%m.%d)
           echo "subdir=$subdir" >> $GITHUB_OUTPUT
-      # - uses: actions/upload-artifact@v4
+      # - uses: actions/upload-artifact@v6
       #   with:
       #     name: ${{ matrix.os }}-nightly
       #     path: pkg-build/cpack_output
@@ -62,63 +62,93 @@ jobs:
 
 
   docker:
-    name: build docker image
+    name: build docker image (${{ matrix.arch }})
     needs: package
-    runs-on: [self-hosted, nebula, linux]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: [self-hosted, nebula, linux, X64]
+          - arch: arm64
+            runner: [self-hosted, nebula, linux, nebula-arm]
+    runs-on: ${{ matrix.runner }}
     steps:
-      - uses: webiny/action-post-run@3.1.0
+      - uses: vesoft-inc/action-post-run@4.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           tags: |
-            vesoft/nebula-graphd:nightly
+            vesoft/nebula-graphd:nightly-${{ github.run_id }}-${{ matrix.arch }}
           target: graphd
-          cache-to: type=local,dest=/tmp/buildx-cache,mode=max
+          cache-to: type=local,dest=${{ runner.temp }}/buildx-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.arch }},mode=max
           push: true
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           tags: |
-            vesoft/nebula-storaged:nightly
+            vesoft/nebula-storaged:nightly-${{ github.run_id }}-${{ matrix.arch }}
           target: storaged
-          cache-from: type=local,src=/tmp/buildx-cache
+          cache-from: type=local,src=${{ runner.temp }}/buildx-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.arch }}
           push: true
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           tags: |
-            vesoft/nebula-metad:nightly
+            vesoft/nebula-metad:nightly-${{ github.run_id }}-${{ matrix.arch }}
           target: metad
-          cache-from: type=local,src=/tmp/buildx-cache
+          cache-from: type=local,src=${{ runner.temp }}/buildx-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.arch }}
           push: true
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           tags: |
-            vesoft/nebula-tools:nightly
+            vesoft/nebula-tools:nightly-${{ github.run_id }}-${{ matrix.arch }}
           target: tools
-          cache-from: type=local,src=/tmp/buildx-cache
+          cache-from: type=local,src=${{ runner.temp }}/buildx-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.arch }}
           push: true
       - name: delete the cache
+        if: ${{ always() }}
         run: |
-          rm -rf /tmp/buildx-cache
+          rm -rf "${{ runner.temp }}/buildx-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.arch }}"
+
+  docker-manifest:
+    name: publish multi-arch docker images
+    needs: docker
+    runs-on: [self-hosted, nebula, linux, X64]
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/setup-buildx-action@v4
+      - name: Merge architecture images
+        env:
+          BUILD_TAG: nightly-${{ github.run_id }}
+        run: |
+          for target in graphd storaged metad tools; do
+            image="vesoft/nebula-${target}"
+            docker buildx imagetools create \
+              --tag "${image}:nightly" \
+              "${image}:${BUILD_TAG}-amd64" \
+              "${image}:${BUILD_TAG}-arm64"
+          done
 
   coverage:
     name: coverage
@@ -139,10 +169,10 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
-      - uses: webiny/action-post-run@3.1.0
+      - uses: vesoft-inc/action-post-run@4.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Prepare environment
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
@@ -192,12 +222,12 @@ jobs:
       - name: coverage
         run: |
           ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v6
         with:
           files: fastcov.info
           fail_ci_if_error: false
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
@@ -235,10 +265,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: webiny/action-post-run@3.1.0
+      - uses: vesoft-inc/action-post-run@4.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: output some vars
         id: vars
         env:
@@ -304,7 +334,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
@@ -329,10 +359,10 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
-      - uses: webiny/action-post-run@3.1.0
+      - uses: vesoft-inc/action-post-run@4.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Prepare environment
         id: prepare
         run: |
@@ -394,7 +424,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
