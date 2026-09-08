@@ -39,6 +39,21 @@ TEST(ReservoirSamplingTest, Sample) {
       EXPECT_EQ(2, result[2]);
     }
   }
+  {
+    std::unordered_set<int64_t> hit;
+    for (size_t time = 0; time < 1024; time++) {
+      ReservoirSampling<int64_t> sampler(1);
+      sampler.sampling(1);
+      sampler.sampling(2);
+      auto result = sampler.samples();
+      EXPECT_EQ(1, result.size());
+      EXPECT_TRUE(result[0] == 1 || result[0] == 2);
+      hit.insert(result[0]);
+    }
+    EXPECT_EQ(2, hit.size());
+    EXPECT_TRUE(hit.find(1) != hit.end());
+    EXPECT_TRUE(hit.find(2) != hit.end());
+  }
 }
 }  // namespace algorithm
 }  // namespace nebula

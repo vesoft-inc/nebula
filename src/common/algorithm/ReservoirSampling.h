@@ -33,7 +33,7 @@ class ReservoirSampling final {
       ++cnt_;
       return true;
     } else {
-      auto index = folly::Random::rand64(cnt_);
+      auto index = folly::Random::rand64(cnt_ + 1);
       if (index < num_) {
         samples_[index] = (std::move(sample));
         ++cnt_;
