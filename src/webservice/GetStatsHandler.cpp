@@ -12,9 +12,13 @@
 
 #include "common/base/Base.h"
 #include "common/stats/StatsManager.h"
+#include "common/time/WallClock.h"
 #include "webservice/Common.h"
 
 namespace nebula {
+
+// Process start time (auto-recorded via static initialization)
+static const int64_t g_processStartTime = nebula::time::WallClock::fastNowInSec();
 
 using nebula::stats::StatsManager;
 using proxygen::HTTPMessage;
@@ -96,14 +100,24 @@ folly::dynamic GetStatsHandler::getStats() const {
   if (statNames_.empty()) {
     // Read all stats
     StatsManager::readAllValue(stats);
+    // Add process uptime metric to all stats
+    const int64_t uptimeSeconds = nebula::time::WallClock::fastNowInSec() - g_processStartTime;
+    addOneStat(stats, "process_uptime_seconds", uptimeSeconds);
   } else {
     for (auto& sn : statNames_) {
-      auto status = StatsManager::readValue(sn);
-      if (status.ok()) {
-        int64_t statValue = status.value();
-        addOneStat(stats, sn, statValue);
+      // Handle process uptime metrics specially
+      if (sn == "process_uptime_seconds") {
+        const int64_t uptimeSeconds = nebula::time::WallClock::fastNowInSec() - g_processStartTime;
+        addOneStat(stats, sn, uptimeSeconds);
       } else {
-        addOneStat(stats, sn, status.status().toString());
+        // Handle regular metrics
+        auto status = StatsManager::readValue(sn);
+        if (status.ok()) {
+          const int64_t statValue = status.value();
+          addOneStat(stats, sn, statValue);
+        } else {
+          addOneStat(stats, sn, status.status().toString());
+        }
       }
     }
   }
