@@ -196,6 +196,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "OUTER"                     { return TokenType::KW_OUTER; }
 "SEMI"                      { return TokenType::KW_SEMI; }
 "ANTI"                      { return TokenType::KW_ANTI; }
+"TRANSFER"                  { return TokenType::KW_TRANSFER; }
 
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,

@@ -760,6 +760,13 @@ struct BalanceTask {
     5: i64 stop_time,
 }
 
+struct LeaderTransferReq {
+   1: common.HostAddr       host,
+   2: common.GraphSpaceID   space_id,
+   3: i32                   concurrency,
+}
+
+
 enum ConfigModule {
     UNKNOWN = 0x00,
     ALL     = 0x01,
@@ -1261,6 +1268,8 @@ service MetaService {
 
     HBResp           heartBeat(1: HBReq req);
     AgentHBResp  agentHeartbeat(1: AgentHBReq req);
+
+    ExecResp         leaderTransfer(1: LeaderTransferReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);

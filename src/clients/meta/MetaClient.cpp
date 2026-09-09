@@ -2840,6 +2840,26 @@ folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::getUserRoles(st
   return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::transferLeader(const HostAddr& host,
+                                                         GraphSpaceID spaceId,
+                                                         int32_t concurrency) {
+  cpp2::LeaderTransferReq req;
+  req.space_id_ref() = spaceId;
+  req.host_ref() = host;
+  req.concurrency_ref() = concurrency;
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_leaderTransfer(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
+
 folly::Future<StatusOr<bool>> MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
   memory::MemoryCheckOffGuard g;
   cpp2::RegConfigReq req;

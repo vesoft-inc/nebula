@@ -712,5 +712,20 @@ Status KillQueryValidator::toPlan() {
   tail_ = root_;
   return Status::OK();
 }
+
+Status TransferLeaderValidator::validateImpl() { return Status::OK(); }
+
+Status TransferLeaderValidator::toPlan() {
+  auto sentence = static_cast<TransferLeaderSentence *>(sentence_);
+  auto *node = TransferLeader::make(qctx_,
+                                    nullptr,
+                                    *sentence->address(),
+                                    *sentence->spaceName(),
+                                    sentence->concurrency());
+  root_ = node;
+  tail_ = root_;
+  return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula

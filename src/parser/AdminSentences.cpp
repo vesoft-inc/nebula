@@ -442,4 +442,11 @@ std::string KillQuerySentence::toString() const {
   buf += ")";
   return buf;
 }
+
+std::string TransferLeaderSentence::toString() const {
+  return folly::stringPrintf("TRANSFER LEADER FROM %s ON %s %d",
+                             address_->toString().c_str(),
+                             spaceName_.get()->c_str(),
+                             concurrency_);
+}
 }  // namespace nebula

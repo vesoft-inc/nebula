@@ -883,6 +883,29 @@ class KillSessionSentence final : public Sentence {
   Expression* sessionId_{nullptr};
 };
 
+class TransferLeaderSentence final : public Sentence {
+ public:
+  explicit TransferLeaderSentence(HostAddr *address, std::string* spaceName, int32_t concurrency) {
+    address_.reset(address);
+    spaceName_.reset(spaceName);
+    concurrency_ = concurrency;
+    kind_ = Kind::kTransferLeader;
+  }
+
+  const std::string *spaceName() const { return spaceName_.get(); }
+
+  const HostAddr *address() const { return address_.get(); }
+
+  int32_t concurrency() const { return concurrency_; }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> spaceName_;
+  std::unique_ptr<HostAddr> address_;
+  int32_t concurrency_;
+};
+
 }  // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

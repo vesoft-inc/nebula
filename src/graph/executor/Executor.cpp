@@ -45,6 +45,7 @@
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
 #include "graph/executor/admin/ZoneExecutor.h"
+#include "graph/executor/admin/TransferLeaderExecutor.h"
 #include "graph/executor/algo/AllPathsExecutor.h"
 #include "graph/executor/algo/BFSShortestPathExecutor.h"
 #include "graph/executor/algo/CartesianProductExecutor.h"
@@ -451,6 +452,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kShowHosts: {
       return pool->makeAndAdd<ShowHostsExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kTransferLeader: {
+      return pool->add(new TransferLeaderExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowMetaLeader: {
       return pool->makeAndAdd<ShowMetaLeaderExecutor>(node, qctx);
