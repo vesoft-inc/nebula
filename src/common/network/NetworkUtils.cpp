@@ -65,11 +65,12 @@ StatusOr<std::vector<std::pair<std::string, std::string>>> NetworkUtils::listDev
     return Status::Error("%s", ::strerror(errno));
   }
   for (auto* ifa = iflist; ifa != nullptr; ifa = ifa->ifa_next) {
+    auto* addr_ptr = ifa->ifa_addr;
     // Skip non-IPv4 devices
-    if (ifa->ifa_addr->sa_family != AF_INET) {
+    if (nullptr == addr_ptr || addr_ptr->sa_family != AF_INET) {
       continue;
     }
-    auto* addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
+    auto* addr = reinterpret_cast<struct sockaddr_in*>(addr_ptr);
     // inet_ntoa is thread safe but not re-entrant,
     // we could use inet_ntop instead when we need support for IPv6
     dev2ipv4s.emplace_back(ifa->ifa_name, ::inet_ntoa(addr->sin_addr));
