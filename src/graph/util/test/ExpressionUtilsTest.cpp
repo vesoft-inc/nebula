@@ -6,6 +6,8 @@
 
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/expression/PropertyExpression.h"
+#include "common/expression/RelationalExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "graph/util/ExpressionUtils.h"
 #include "parser/GQLParser.h"
@@ -538,6 +540,37 @@ TEST_F(ExpressionUtilsTest, rewriteInExpr) {
     auto expected = RelationalExpression::makeEQ(
         pool, ConstantExpression::make(pool, 10), ConstantExpression::make(pool, 100));
     ASSERT_EQ(*expected, *ExpressionUtils::rewriteInExpr(inExpr));
+  }
+}
+
+TEST_F(ExpressionUtilsTest, rewriteStartsWithExpr) {
+  {
+    auto expr = RelationalExpression::makeStartsWith(
+        pool,
+        TagPropertyExpression::make(pool, "team", "name"),
+        ConstantExpression::make(pool, "abc"));
+    auto expected = LogicalExpression::makeAnd(
+        pool,
+        RelationalExpression::makeGE(pool,
+                                     TagPropertyExpression::make(pool, "team", "name"),
+                                     ConstantExpression::make(pool, "abc")),
+        RelationalExpression::makeLT(pool,
+                                     TagPropertyExpression::make(pool, "team", "name"),
+                                     ConstantExpression::make(pool, "abd")));
+
+    ASSERT_EQ(*expected, *ExpressionUtils::rewriteStartsWithExpr(expr));
+  }
+  {
+    auto expr = RelationalExpression::makeStartsWith(
+        pool,
+        TagPropertyExpression::make(pool, "team", "name"),
+        ConstantExpression::make(pool, ""));
+    auto expected = RelationalExpression::makeGE(
+        pool,
+        TagPropertyExpression::make(pool, "team", "name"),
+        ConstantExpression::make(pool, ""));
+
+    ASSERT_EQ(*expected, *ExpressionUtils::rewriteStartsWithExpr(expr));
   }
 }
 

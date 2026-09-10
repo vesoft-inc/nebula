@@ -460,10 +460,14 @@ Expression *ExpressionUtils::rewriteStartsWithExpr(const Expression *expr) {
   QueryExpressionContext ctx(nullptr);
   auto rightBoundary = startsWithExpr->right()->eval(ctx).getStr();
 
+  if (rightBoundary.empty()) {
+    return RelationalExpression::makeGE(pool, startsWithExpr->left(), startsWithExpr->right());
+  }
+
   // Increment the last char of the right boundary to get the range scan boundary
   // Do not increment the last char of the string if it could cause overflow
-  if (*rightBoundary.end() < 127) {
-    rightBoundary[rightBoundary.size() - 1] = ++rightBoundary[rightBoundary.size() - 1];
+  if (rightBoundary.back() < 127) {
+    ++rightBoundary.back();
   } else {  // If the last char is already 127, append a char of minimum value to the string
     rightBoundary += static_cast<char>(0);
   }
