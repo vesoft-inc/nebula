@@ -77,6 +77,27 @@ function is_process_running {
 }
 
 
+# Check whether the process in a pid file is the expected executable.
+# Returns 0 when matched, 1 when a different executable is running, and 2 when
+# the process/executable cannot be identified.
+function check_process_executable {
+    local pid_file=${1}
+    local executable=${2}
+    [[ -f ${pid_file} ]] || return 2
+
+    local pid=$(cat ${pid_file})
+    [[ -z ${pid} ]] && return 2
+    ps -p ${pid} &>/dev/null || return 2
+
+    local expected
+    expected=$(readlink -f ${executable} 2>/dev/null) || return 2
+    local actual
+    actual=$(readlink -f /proc/${pid}/exe 2>/dev/null) || return 2
+    [[ ${actual} == ${expected} ]] && return 0
+    return 1
+}
+
+
 # Tell if some process is listening on the target port
 # args: <port number>
 function is_port_listened_on {
@@ -159,4 +180,3 @@ function daemon_version {
     local version=$(${1} --version | head -n 1)
     echo ${version} | sed 's/.*Git: \([[:alnum:]]*\).*/\1/g'
 }
-
