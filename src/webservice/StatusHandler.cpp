@@ -47,7 +47,7 @@ void StatusHandler::onEOM() noexcept {
   ResponseBuilder(downstream_)
       .status(WebServiceUtils::to(HttpStatusCode::OK),
               WebServiceUtils::toString(HttpStatusCode::OK))
-      .body(folly::toJson(vals))
+      .body(folly::toJson(vals) + "\n")
       .sendWithEOM();
 }
 
