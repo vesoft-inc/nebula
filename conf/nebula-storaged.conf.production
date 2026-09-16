@@ -2,7 +2,7 @@
 # Whether to run as a daemon process
 --daemonize=true
 # The file to host the process id
---pid_file=pids/nebula-storaged-listener.pid
+--pid_file=pids/nebula-storaged.pid
 # Whether to use the configuration obtained from the configuration file
 --local_config=true
 
@@ -18,8 +18,8 @@
 # Whether to redirect stdout and stderr to separate output files
 --redirect_stdout=true
 # Destination filename of stdout and stderr, which will also reside in log_dir.
---stdout_log_file=storaged-listener-stdout.log
---stderr_log_file=storaged-listener-stderr.log
+--stdout_log_file=storaged-stdout.log
+--stderr_log_file=storaged-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
 --stderrthreshold=3
 # Wether logging files' name contain timestamp.
@@ -50,7 +50,7 @@
 --wal_ttl=14400
 
 ########## Disk ##########
-# Root data path. split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
+# Root data path. Split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
 # One path per Rocksdb instance.
 --data_path=data/storage
 
