@@ -207,6 +207,8 @@ struct ExecResp {
     2: ID               id,
     // Valid if ret equals E_LEADER_CHANGED.
     3: common.HostAddr  leader,
+    // Indicates if the operation was skipped due to IF NOT EXISTS
+    4: optional bool    skipped,
 }
 
 enum AlterSpaceOp {
