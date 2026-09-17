@@ -178,6 +178,21 @@ TEST(DatetimeReader, DateTimeFailed) {
     auto result = parser.readDatetime("1999-01-32T22:22:3.2333");
     EXPECT_FALSE(result.ok()) << result.value();
   }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDatetime("1999-00-03T12:34:56.2333");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDatetime("1999-01-00T22:00:03.2333");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDatetime("1999-00-00T22:22:05.2333");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
 }
 
 TEST(DatetimeReader, Date) {
@@ -276,6 +291,21 @@ TEST(DatetimeReader, DateFailed) {
   {
     auto parser = time::DatetimeReader();
     auto result = parser.readDate("1999-01-32");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDate("1999-00-03");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDate("1999-01-00");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDate("1999-00-00");
     EXPECT_FALSE(result.ok()) << result.value();
   }
 }
