@@ -154,6 +154,7 @@ class OptimizerUtils {
   static Status appendColHint(std::vector<storage::cpp2::IndexColumnHint> &hints,
                               const std::vector<FilterItem> &items,
                               const meta::cpp2::ColumnDef &col);
+  static Value normalizeFilterValue(const Value &val, nebula::cpp2::PropertyType propType);
   static bool verifyType(const Value &val);
   static size_t hintCount(const std::vector<FilterItem> &items);
   static IndexItemPtr findOptimalIndex(graph::QueryContext *qctx,

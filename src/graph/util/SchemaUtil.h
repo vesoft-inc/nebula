@@ -65,6 +65,9 @@ class SchemaUtil final {
   // Returns the corresponding Value type of the given PropertyType.
   static Value::Type propTypeToValueType(nebula::cpp2::PropertyType propType);
 
+  // Coerce compatible numeric Value types to the expected PropertyType if representable.
+  static Value coerceValue(const Value& val, nebula::cpp2::PropertyType propType);
+
   // Validates whether the value type matches the ColumnTypeDef.
   static bool isValidVid(const Value& value, const meta::cpp2::ColumnTypeDef& type);
   static bool isValidVid(const Value& value, nebula::cpp2::PropertyType type);

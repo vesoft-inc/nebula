@@ -726,20 +726,29 @@ bool OptimizerUtils::verifyType(const Value& val) {
   }
 }
 
+Value OptimizerUtils::normalizeFilterValue(const Value& val, nebula::cpp2::PropertyType propType) {
+  return graph::SchemaUtil::coerceValue(val, propType);
+}
+
 Status OptimizerUtils::appendColHint(std::vector<IndexColumnHint>& hints,
                                      const std::vector<FilterItem>& items,
                                      const meta::cpp2::ColumnDef& col) {
   IndexColumnHint hint;
   std::pair<Value, bool> begin, end;
   bool isRangeScan = true;
+  auto expectedType = graph::SchemaUtil::propTypeToValueType(col.type.type);
   for (const auto& item : items) {
     if (!verifyType(item.value_)) {
       return Status::SemanticError(
           fmt::format("Not supported value type {} for index.", item.value_.type()));
     }
+    Value val = graph::SchemaUtil::coerceValue(item.value_, col.type.type);
     if (item.relOP_ == Expression::Kind::kRelEQ) {
+      if (val.type() != expectedType) {
+        return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
+      }
       isRangeScan = false;
-      begin = {item.value_, true};
+      begin = {val, true};
       break;
     }
     // because only type for bool is true/false, which can not satisfy [start,
@@ -747,7 +756,7 @@ Status OptimizerUtils::appendColHint(std::vector<IndexColumnHint>& hints,
     if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
       return Status::SemanticError("Range scan for bool type is illegal");
     }
-    if (item.value_.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
+    if (val.type() != expectedType) {
       return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
     }
     bool include = false;
@@ -757,10 +766,10 @@ Status OptimizerUtils::appendColHint(std::vector<IndexColumnHint>& hints,
         [[fallthrough]];
       case Expression::Kind::kRelLT: {
         if (end.first.empty()) {
-          end.first = item.value_;
+          end.first = val;
           end.second = include;
         } else {
-          auto tmp = std::make_pair(item.value_, include);
+          auto tmp = std::make_pair(val, include);
           OptimizerUtils::compareAndSwapBound(end, tmp);
         }
       } break;
@@ -769,10 +778,10 @@ Status OptimizerUtils::appendColHint(std::vector<IndexColumnHint>& hints,
         [[fallthrough]];
       case Expression::Kind::kRelGT: {
         if (begin.first.empty()) {
-          begin.first = item.value_;
+          begin.first = val;
           begin.second = include;
         } else {
-          auto tmp = std::make_pair(item.value_, include);
+          auto tmp = std::make_pair(val, include);
           OptimizerUtils::compareAndSwapBound(tmp, begin);
         }
       } break;
