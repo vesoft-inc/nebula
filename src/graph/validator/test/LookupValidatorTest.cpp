@@ -132,6 +132,10 @@ TEST_F(LookupValidatorTest, InvalidFilterExpression) {
     const std::string query = "LOOKUP ON person where person.age > abs(-5) YIELD id(vertex);";
     EXPECT_TRUE(checkResult(query, {}));
   }
+  {
+    const std::string query = "LOOKUP ON person where person.age == 35.0 YIELD id(vertex);";
+    EXPECT_TRUE(checkResult(query, {}));
+  }
 }
 
 TEST_F(LookupValidatorTest, wrongYield) {

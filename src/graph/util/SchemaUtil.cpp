@@ -319,6 +319,20 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
   return Value::Type::__EMPTY__;
 }
 
+Value SchemaUtil::coerceValue(const Value& val, nebula::cpp2::PropertyType propType) {
+  auto expectedType = propTypeToValueType(propType);
+  if (expectedType == Value::Type::INT && val.isFloat()) {
+    double d = val.getFloat();
+    if (std::trunc(d) == d && d >= static_cast<double>(std::numeric_limits<int64_t>::min()) &&
+        d <= static_cast<double>(std::numeric_limits<int64_t>::max())) {
+      return Value(static_cast<int64_t>(d));
+    }
+  } else if (expectedType == Value::Type::FLOAT && val.isInt()) {
+    return Value(static_cast<double>(val.getInt()));
+  }
+  return val;
+}
+
 bool SchemaUtil::isValidVid(const Value &value, const meta::cpp2::ColumnTypeDef &type) {
   return isValidVid(value, type.get_type());
 }

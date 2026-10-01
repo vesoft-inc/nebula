@@ -282,6 +282,32 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       EXPECT_EQ(5, hint.get_end_value());
       EXPECT_TRUE(hint.get_include_end());
     }
+    {
+      std::vector<storage::cpp2::IndexColumnHint> hints;
+      // col_int == 3000000000.0 (float literal coerced to int64)
+      std::vector<FilterItem> items;
+      items.emplace_back("col_int", RelationalExpression::Kind::kRelEQ, Value(3000000000.0));
+      auto status = OptimizerUtils::appendColHint(hints, items, col);
+      EXPECT_TRUE(status.ok());
+      EXPECT_EQ(1, hints.size());
+      const auto& hint = hints[0];
+      EXPECT_EQ("col_int", *hint.column_name_ref());
+      EXPECT_EQ(storage::cpp2::ScanType::PREFIX, *hint.scan_type_ref());
+      EXPECT_EQ(3000000000L, hint.get_begin_value().getInt());
+    }
+    {
+      std::vector<storage::cpp2::IndexColumnHint> hints;
+      // col_int < 3000000000.0 (float literal in range scan coerced to int64)
+      std::vector<FilterItem> items;
+      items.emplace_back("col_int", RelationalExpression::Kind::kRelLT, Value(3000000000.0));
+      auto status = OptimizerUtils::appendColHint(hints, items, col);
+      EXPECT_TRUE(status.ok());
+      EXPECT_EQ(1, hints.size());
+      const auto& hint = hints[0];
+      EXPECT_EQ("col_int", *hint.column_name_ref());
+      EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+      EXPECT_EQ(3000000000L, hint.get_end_value().getInt());
+    }
   }
   {
     meta::cpp2::ColumnDef col;
