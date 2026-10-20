@@ -20,11 +20,17 @@ inline ALWAYS_INLINE size_t alignToSizeT(std::align_val_t align) noexcept {
   return static_cast<size_t>(align);
 }
 
+inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size);
+inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size, std::align_val_t align);
+
+// The new* functions are only called after trackMemory*() has counted the request, so on failure
+// they must un-count it, otherwise the tracker stays over its limit for good.
 inline ALWAYS_INLINE void* newImpl(std::size_t size) {
   void* ptr = malloc(size);
 
   if (LIKELY(ptr != nullptr)) return ptr;
 
+  MemoryTracker::free(getActualAllocationSize(size));
   throw std::bad_alloc{};
 }
 
@@ -33,15 +39,22 @@ inline ALWAYS_INLINE void* newImpl(std::size_t size, std::align_val_t align) {
 
   if (LIKELY(ptr != nullptr)) return ptr;
 
+  MemoryTracker::free(getActualAllocationSize(size, align));
   throw std::bad_alloc{};
 }
 
 inline ALWAYS_INLINE void* newNoException(std::size_t size) noexcept {
-  return malloc(size);
+  void* ptr = malloc(size);
+
+  if (UNLIKELY(ptr == nullptr)) MemoryTracker::free(getActualAllocationSize(size));
+  return ptr;
 }
 
 inline ALWAYS_INLINE void* newNoException(std::size_t size, std::align_val_t align) noexcept {
-  return aligned_alloc(static_cast<size_t>(align), size);
+  void* ptr = aligned_alloc(static_cast<size_t>(align), size);
+
+  if (UNLIKELY(ptr == nullptr)) MemoryTracker::free(getActualAllocationSize(size, align));
+  return ptr;
 }
 
 inline ALWAYS_INLINE void deleteImpl(void* ptr) noexcept {

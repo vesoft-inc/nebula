@@ -69,10 +69,7 @@ class MemoryStats {
 
     if (UNLIKELY(willBe < 0)) {
       // if local reserved is not enough, calculate how many bytes needed to get from global.
-      int64_t getFromGlobal = kLocalReservedLimit_;
-      while (willBe + getFromGlobal <= 0) {
-        getFromGlobal += kLocalReservedLimit_;
-      }
+      int64_t getFromGlobal = (-willBe / kLocalReservedLimit_ + 1) * kLocalReservedLimit_;
       // allocGlobal() may end with bad_alloc, only invoke allocGlobal() once (ALL_OR_NOTHING
       // semantic)
       allocGlobal(getFromGlobal, throw_if_memory_exceeded);
@@ -86,11 +83,13 @@ class MemoryStats {
   /// Inform size of memory deallocation
   inline ALWAYS_INLINE void free(int64_t size) {
     threadMemoryStats_.reserved += size;
-    // Return if local reserved exceed limit
-    while (threadMemoryStats_.reserved > kLocalReservedLimit_) {
-      // freeGlobal() never fail, can be invoked multiple times.
-      freeGlobal(kLocalReservedLimit_);
-      threadMemoryStats_.reserved -= kLocalReservedLimit_;
+    // Return if local reserved exceed limit, in whole kLocalReservedLimit_ units. Computed rather
+    // than looped, since a single huge free would otherwise take one iteration per MiB.
+    if (threadMemoryStats_.reserved > kLocalReservedLimit_) {
+      int64_t toGlobal =
+          (threadMemoryStats_.reserved - 1) / kLocalReservedLimit_ * kLocalReservedLimit_;
+      freeGlobal(toGlobal);
+      threadMemoryStats_.reserved -= toGlobal;
     }
   }
 
