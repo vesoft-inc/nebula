@@ -19,13 +19,13 @@ class NetworkUtils final {
 
   static std::string getHostname();
 
-  // Get the Ipv4 address bound to a specific net device.
+  // Get the IP address bound to a specific net device.
   // If given "any", it returns "0.0.0.0".
-  static StatusOr<std::string> getIPv4FromDevice(const std::string& device);
-  // List out all Ipv4 addresses, including the loopback one.
-  static StatusOr<std::vector<std::string>> listIPv4s();
-  // List out all network devices and its corresponding Ipv4 address.
-  static StatusOr<std::vector<std::pair<std::string, std::string>>> listDeviceAndIPv4s();
+  static StatusOr<std::string> getIPFromDevice(const std::string& device);
+  // List out all IP addresses, including the loopback one.
+  static StatusOr<std::vector<std::string>> listIPs();
+  // List out all network devices and its corresponding IP address.
+  static StatusOr<std::vector<std::pair<std::string, std::string>>> listDeviceAndIPs();
 
   // Get the local dynamic port range [low, high], only works for IPv4
   static bool getDynamicPortRange(uint16_t& low, uint16_t& high);
