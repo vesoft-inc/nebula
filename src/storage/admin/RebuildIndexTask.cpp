@@ -154,6 +154,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
 
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     batchHolder->reserve(kReserveNum);
+    size_t totalBytesThisRound = 0;
     while (operationIter->valid()) {
       auto opKey = operationIter->key();
       auto opVal = operationIter->val();
@@ -177,6 +178,9 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
           LOG(INFO) << "Write Operation Failed";
           return ret;
         }
+        totalBytesThisRound += batchHolder->size();
+        batchHolder = std::make_unique<kvstore::BatchHolder>();
+        batchHolder->reserve(kReserveNum);
       }
       operationIter->next();
     }
@@ -186,11 +190,12 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
       LOG(INFO) << "Write Operation Failed";
       return ret;
     }
+    totalBytesThisRound += batchHolder->size();
 
     // When the processed operation size is less than the batch size,
     // we will mark the lock's building in StorageEnv and refuse writing for
     // a short piece of time.
-    if (batchHolder->size() <= FLAGS_rebuild_index_batch_size) {
+    if (totalBytesThisRound <= FLAGS_rebuild_index_batch_size) {
       // lock the part
       auto key = std::make_tuple(space, part);
       auto stateIter = env_->rebuildIndexGuard_->find(key);

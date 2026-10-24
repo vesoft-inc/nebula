@@ -7,6 +7,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include "common/utils/OperationKeyUtils.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include "storage/admin/AdminTaskManager.h"
@@ -530,6 +531,190 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
     LOG(INFO) << "sleep for " << i << "s";
     sleep(1);
   }
+}
+
+// Regression test for multi-batch rebuild index replay.
+// Verifies:
+// 1. Multiple batches are flushed within a single round when operation logs exceed batch_size
+// 2. The remainder batch after all flushes is correctly handled
+// 3. totalBytesThisRound accumulates across flushes so the round converges (no infinite loop)
+// 4. Operation logs are properly cleaned up after replay
+TEST_F(RebuildIndexTest, RebuildIndexMultiBatchReplay) {
+  // Save original batch size and set a small value to force multiple flushes
+  auto originalBatchSize = FLAGS_rebuild_index_batch_size;
+  FLAGS_rebuild_index_batch_size = 128;  // 128 bytes per batch
+
+  GraphSpaceID space = 1;
+  PartitionID part = 1;
+
+  // Write enough operation logs to trigger multiple flushes
+  // Each modify operation key is ~20+ bytes, so 20 operations should be ~400+ bytes
+  // With batch_size=128, this triggers at least 3 flushes + a remainder
+  const int numOps = 20;
+  {
+    std::vector<std::string> opKeys;
+    for (int i = 0; i < numOps; ++i) {
+      std::string keyData = "test_key_" + std::to_string(i) + "_padding_data";
+      std::string opKey = OperationKeyUtils::modifyOperationKey(part, keyData);
+      opKeys.push_back(std::move(keyData));
+
+      std::string opVal = "test_value_" + std::to_string(i);
+      std::vector<kvstore::KV> kvs;
+      kvs.emplace_back(std::move(opKey), opVal);
+
+      folly::Baton<true, std::atomic> baton;
+      auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
+      RebuildIndexTest::env_->kvstore_->asyncMultiPut(space, part, std::move(kvs),
+          [&result, &baton](nebula::cpp2::ErrorCode code) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+              result = code;
+            }
+            baton.post();
+          });
+      baton.wait();
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
+    }
+
+    // Verify operation logs are written
+    {
+      std::unique_ptr<kvstore::KVIterator> iter;
+      auto prefix = OperationKeyUtils::operationPrefix(part);
+      auto ret = RebuildIndexTest::env_->kvstore_->prefix(space, part, prefix, &iter);
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
+      int count = 0;
+      while (iter && iter->valid()) {
+        count++;
+        iter->next();
+      }
+      EXPECT_EQ(numOps, count);
+    }
+  }
+
+  // Create a rebuild tag index task and run it
+  cpp2::TaskPara parameter;
+  parameter.space_id_ref() = space;
+  parameter.parts_ref() = {part};
+  parameter.task_specific_paras_ref() = {"4"};  // tag index id
+
+  cpp2::AddTaskRequest request;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 20;
+  request.para_ref() = std::move(parameter);
+
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
+  TaskContext context(request, callback);
+  auto task = std::make_shared<RebuildTagIndexTask>(RebuildIndexTest::env_, std::move(context));
+  manager_->addAsyncTask(task);
+
+  // Wait for the task to finish
+  do {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  } while (!manager_->isFinished(context.jobId_, context.taskId_));
+
+  // Verify operation logs are cleaned up after replay
+  {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto prefix = OperationKeyUtils::operationPrefix(part);
+    auto ret = RebuildIndexTest::env_->kvstore_->prefix(space, part, prefix, &iter);
+    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      int count = 0;
+      while (iter && iter->valid()) {
+        count++;
+        iter->next();
+      }
+      // All operation logs should be cleaned up
+      EXPECT_EQ(0, count);
+    }
+  }
+
+  RebuildIndexTest::env_->rebuildIndexGuard_->clear();
+
+  // Restore original batch size
+  FLAGS_rebuild_index_batch_size = originalBatchSize;
+}
+
+// Test that totalBytesThisRound converges correctly when operation logs
+// span multiple batches. Even if the final remainder is small, the
+// accumulated total should exceed batch_size, preventing the round from
+// entering LOCKED state and causing an infinite loop.
+TEST_F(RebuildIndexTest, RebuildIndexRoundConvergence) {
+  auto originalBatchSize = FLAGS_rebuild_index_batch_size;
+  // Set batch size so that 3 operations trigger one flush, leaving 1 as remainder
+  FLAGS_rebuild_index_batch_size = 256;
+
+  GraphSpaceID space = 1;
+  PartitionID part = 2;
+
+  // Write 4 operation logs: 3 will trigger a flush, 1 will be the remainder
+  // totalBytesThisRound = flushed_bytes + remainder_bytes > batch_size
+  // So the round should NOT enter LOCKED state
+  const int numOps = 4;
+  {
+    for (int i = 0; i < numOps; ++i) {
+      std::string keyData = "convergence_test_key_" + std::to_string(i) + "_extra_padding_for_size";
+      std::string opKey = OperationKeyUtils::modifyOperationKey(part, keyData);
+      std::string opVal = "convergence_value_" + std::to_string(i);
+      std::vector<kvstore::KV> kvs;
+      kvs.emplace_back(std::move(opKey), opVal);
+
+      folly::Baton<true, std::atomic> baton;
+      auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
+      RebuildIndexTest::env_->kvstore_->asyncMultiPut(space, part, std::move(kvs),
+          [&result, &baton](nebula::cpp2::ErrorCode code) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+              result = code;
+            }
+            baton.post();
+          });
+      baton.wait();
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
+    }
+  }
+
+  cpp2::TaskPara parameter;
+  parameter.space_id_ref() = space;
+  parameter.parts_ref() = {part};
+  parameter.task_specific_paras_ref() = {"4"};
+
+  cpp2::AddTaskRequest request;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 21;
+  request.para_ref() = std::move(parameter);
+
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
+  TaskContext context(request, callback);
+  auto task = std::make_shared<RebuildTagIndexTask>(RebuildIndexTest::env_, std::move(context));
+  manager_->addAsyncTask(task);
+
+  // Wait with timeout to detect infinite loop
+  int waitCount = 0;
+  do {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    waitCount++;
+    if (waitCount > 200) {  // 10 second timeout
+      FAIL() << "Rebuild index task did not finish, possible infinite loop in replay";
+    }
+  } while (!manager_->isFinished(context.jobId_, context.taskId_));
+
+  // Verify operation logs are cleaned up
+  {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto prefix = OperationKeyUtils::operationPrefix(part);
+    auto ret = RebuildIndexTest::env_->kvstore_->prefix(space, part, prefix, &iter);
+    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      int count = 0;
+      while (iter && iter->valid()) {
+        count++;
+        iter->next();
+      }
+      EXPECT_EQ(0, count);
+    }
+  }
+
+  RebuildIndexTest::env_->rebuildIndexGuard_->clear();
+  FLAGS_rebuild_index_batch_size = originalBatchSize;
 }
 
 TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
