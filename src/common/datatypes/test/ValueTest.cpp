@@ -1247,6 +1247,9 @@ TEST(Value, TypeCast) {
 
     vf = Value("1.2abc").toFloat();
     EXPECT_EQ(Value::kNullValue, vf);
+
+    vf = Value("").toFloat();
+    EXPECT_EQ(Value::kNullValue, vf);
   }
   {
     auto vi = vInt.toInt();
@@ -1314,6 +1317,9 @@ TEST(Value, TypeCast) {
     EXPECT_EQ(Value::kNullValue, vi);
 
     vi = Value("1.2abc").toInt();
+    EXPECT_EQ(Value::kNullValue, vi);
+
+    vi = Value("").toInt();
     EXPECT_EQ(Value::kNullValue, vi);
 
     // string representing scientific notation

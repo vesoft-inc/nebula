@@ -1689,7 +1689,7 @@ Value Value::toFloat() const {
       const auto& str = getStr();
       char* pEnd;
       double val = strtod(str.c_str(), &pEnd);
-      if (*pEnd != '\0') {
+      if (pEnd == str.c_str() || *pEnd != '\0') {
         return Value::kNullValue;
       }
       return val;
@@ -1737,7 +1737,7 @@ Value Value::toInt() const {
                      isSciNotation)  // if the string contains '.' or 'e' or 'E', parse as a double
                         ? int64_t(strtod(str.c_str(), &pEnd))        // string representing double
                         : int64_t(strtoll(str.c_str(), &pEnd, 10));  // string representing int
-      if (*pEnd != '\0') {
+      if (pEnd == str.c_str() || *pEnd != '\0') {
         return Value::kNullValue;
       }
 
