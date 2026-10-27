@@ -97,7 +97,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
         if (filterVal.empty() || filterVal.isNull()) {
-          return Value::kNullValue;
+          result_ = Value::kNullValue;
         } else if (!filterVal.isImplicitBool()) {
           return Value::kNullBadType;
         } else if (!filterVal.implicitBool()) {
@@ -159,7 +159,6 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& filterVal = filter_->eval(ctx);
         if (filterVal.empty() || filterVal.isNull()) {
           result_ = Value::kNullValue;
-          return result_;
         } else if (!filterVal.isImplicitBool()) {
           return Value::kNullBadType;
         } else if (filterVal.implicitBool()) {

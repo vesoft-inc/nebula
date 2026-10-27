@@ -128,6 +128,40 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_EQ(Value::kNullValue, value.getNull());
   }
+  {
+    // all(n IN [null, false] WHERE n) -> should be false
+    auto *listItems = ExpressionList::make(&pool);
+    (*listItems)
+        .add(ConstantExpression::make(&pool, Value(NullType::__NULL__)))
+        .add(ConstantExpression::make(&pool, false));
+    auto expr = PredicateExpression::make(
+        &pool,
+        "all",
+        "n",
+        ListExpression::make(&pool, listItems),
+        VariableExpression::makeInner(&pool, "n"));
+
+    auto value = Expression::eval(expr, gExpCtxt);
+    ASSERT_TRUE(value.isBool());
+    ASSERT_EQ(false, value.getBool());
+  }
+  {
+    // none(n IN [null, true] WHERE n) -> should be false
+    auto *listItems = ExpressionList::make(&pool);
+    (*listItems)
+        .add(ConstantExpression::make(&pool, Value(NullType::__NULL__)))
+        .add(ConstantExpression::make(&pool, true));
+    auto expr = PredicateExpression::make(
+        &pool,
+        "none",
+        "n",
+        ListExpression::make(&pool, listItems),
+        VariableExpression::makeInner(&pool, "n"));
+
+    auto value = Expression::eval(expr, gExpCtxt);
+    ASSERT_TRUE(value.isBool());
+    ASSERT_EQ(false, value.getBool());
+  }
 }
 
 TEST_F(PredicateExpressionTest, PredicateExprToString) {
