@@ -10,7 +10,7 @@ RUN cd /home/nebula/BUILD/package \
   
 FROM centos:7 as graphd
 
-RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
+RUN groupadd -r -g 10001 nebula && useradd -r -u 10001 -g nebula -d /usr/local/nebula nebula
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-graph.rpm /usr/local/nebula/nebula-graphd.rpm
@@ -30,7 +30,7 @@ ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula
 
 FROM centos:7 as metad
 
-RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
+RUN groupadd -r -g 10001 nebula && useradd -r -u 10001 -g nebula -d /usr/local/nebula nebula
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-meta.rpm /usr/local/nebula/nebula-metad.rpm
@@ -50,7 +50,7 @@ ENTRYPOINT ["/usr/local/nebula/bin/nebula-metad", "--flagfile=/usr/local/nebula/
 
 FROM centos:7 as storaged
 
-RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
+RUN groupadd -r -g 10001 nebula && useradd -r -u 10001 -g nebula -d /usr/local/nebula nebula
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /usr/local/nebula/nebula-storaged.rpm
@@ -70,7 +70,7 @@ ENTRYPOINT ["/usr/local/nebula/bin/nebula-storaged", "--flagfile=/usr/local/nebu
 
 FROM centos:7 as tools
 
-RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
+RUN groupadd -r -g 10001 nebula && useradd -r -u 10001 -g nebula -d /usr/local/nebula nebula
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
 
