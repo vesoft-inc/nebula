@@ -83,6 +83,8 @@ class Part : public raftex::RaftPart {
    */
   void asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb);
 
+  void multiPutLocal(const std::vector<KV>& keyValues);
+
   /**
    * @brief Remove a key from kvstore asynchronously
    *

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+ /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -66,12 +66,20 @@ class RebuildIndexTask : public AdminTask {
                                     size_t batchSize,
                                     kvstore::RateLimiter* rateLimiter);
 
+  nebula::cpp2::ErrorCode writeDataLocal(GraphSpaceID space,
+                                         PartitionID part,
+                                         std::vector<kvstore::KV> data,
+                                         size_t batchSize,
+                                         kvstore::RateLimiter* rateLimiter);
+
   nebula::cpp2::ErrorCode writeOperation(GraphSpaceID space,
                                          PartitionID part,
                                          kvstore::BatchHolder* batchHolder,
                                          kvstore::RateLimiter* rateLimiter);
 
-  nebula::cpp2::ErrorCode invoke(GraphSpaceID space, PartitionID part, const IndexItems& items);
+  virtual nebula::cpp2::ErrorCode invoke(GraphSpaceID space,
+                                         PartitionID part,
+                                         const IndexItems& items);
 
  protected:
   GraphSpaceID space_;

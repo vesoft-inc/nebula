@@ -28,8 +28,10 @@ Status AdminJobValidator::validateImpl() {
       const auto &spaceName = spaceInfo.name;
 
       if (jobType == meta::cpp2::JobType::REBUILD_TAG_INDEX ||
-          jobType == meta::cpp2::JobType::REBUILD_EDGE_INDEX) {
-        auto ret = jobType == meta::cpp2::JobType::REBUILD_TAG_INDEX
+          jobType == meta::cpp2::JobType::REBUILD_EDGE_INDEX ||
+          jobType == meta::cpp2::JobType::REBUILD_TAG_INDEX_OFFLINE) {
+        auto ret = (jobType == meta::cpp2::JobType::REBUILD_TAG_INDEX ||
+                    jobType == meta::cpp2::JobType::REBUILD_TAG_INDEX_OFFLINE)
                        ? qctx()->indexMng()->getTagIndexes(spaceId)
                        : qctx()->indexMng()->getEdgeIndexes(spaceId);
         if (!ret.ok()) {

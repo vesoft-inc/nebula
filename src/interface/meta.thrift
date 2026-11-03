@@ -229,18 +229,19 @@ enum JobOp {
 } (cpp.enum_strict)
 
 enum JobType {
-    COMPACT                  = 0,
-    FLUSH                    = 1,
-    REBUILD_TAG_INDEX        = 2,
-    REBUILD_EDGE_INDEX       = 3,
-    REBUILD_FULLTEXT_INDEX   = 4,
-    STATS                    = 5,
-    DATA_BALANCE             = 6,
-    DOWNLOAD                 = 7,
-    INGEST                   = 8,
-    LEADER_BALANCE           = 9,
-    ZONE_BALANCE             = 10,
-    UNKNOWN                  = 99,
+    COMPACT                    = 0,
+    FLUSH                      = 1,
+    REBUILD_TAG_INDEX          = 2,
+    REBUILD_EDGE_INDEX         = 3,
+    REBUILD_FULLTEXT_INDEX     = 4,
+    STATS                      = 5,
+    DATA_BALANCE               = 6,
+    DOWNLOAD                   = 7,
+    INGEST                     = 8,
+    LEADER_BALANCE             = 9,
+    ZONE_BALANCE               = 10,
+    REBUILD_TAG_INDEX_OFFLINE  = 11,
+    UNKNOWN                    = 99,
 } (cpp.enum_strict)
 
 struct AdminJobReq {

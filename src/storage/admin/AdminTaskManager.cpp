@@ -312,10 +312,11 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
     }
 
     auto unFinishedSubTask = --task->unFinishedSubTask_;
-    FLOG_INFO("subtask of task(%d, %d) finished, unfinished task %zu",
+    FLOG_INFO("subtask of task(%d, %d) finished, unfinished task %zu status %d",
               task->getJobId(),
               task->getTaskId(),
-              unFinishedSubTask);
+              unFinishedSubTask,
+              task->status());
     if (0 == unFinishedSubTask) {
       task->finish();
       tasks_.erase(handle);

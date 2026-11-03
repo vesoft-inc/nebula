@@ -251,6 +251,9 @@ std::string AdminJobSentence::toString() const {
           return "SUBMIT JOB FLUSH";
         case meta::cpp2::JobType::REBUILD_TAG_INDEX:
           return folly::stringPrintf("REBUILD TAG INDEX %s", folly::join(",", paras_).c_str());
+        case meta::cpp2::JobType::REBUILD_TAG_INDEX_OFFLINE:
+          return folly::stringPrintf("REBUILDOFFLINE TAG INDEX %s",
+                                     folly::join(",", paras_).c_str());
         case meta::cpp2::JobType::REBUILD_EDGE_INDEX:
           return folly::stringPrintf("REBUILD EDGE INDEX %s", folly::join(",", paras_).c_str());
         case meta::cpp2::JobType::REBUILD_FULLTEXT_INDEX:

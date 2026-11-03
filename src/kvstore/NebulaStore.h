@@ -345,6 +345,10 @@ class NebulaStore : public KVStore, public Handler {
                      std::vector<KV>&& keyValues,
                      KVCallback cb) override;
 
+  void multiPutLocal(GraphSpaceID spaceId,
+                     PartitionID partId,
+                     std::vector<KV>&& keyValues) override;
+
   /**
    * @brief Remove a key from kvstore asynchronously
    *

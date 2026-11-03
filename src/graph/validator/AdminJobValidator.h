@@ -32,6 +32,7 @@ class AdminJobValidator final : public Validator {
         switch (sentence_->getJobType()) {
           // All jobs are space-level, except for the jobs that need to be refactored.
           case meta::cpp2::JobType::REBUILD_TAG_INDEX:
+          case meta::cpp2::JobType::REBUILD_TAG_INDEX_OFFLINE:
           case meta::cpp2::JobType::REBUILD_EDGE_INDEX:
           case meta::cpp2::JobType::REBUILD_FULLTEXT_INDEX:
           case meta::cpp2::JobType::STATS:

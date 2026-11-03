@@ -259,6 +259,10 @@ class KVStore {
                              std::vector<KV>&& keyValues,
                              KVCallback cb) = 0;
 
+  virtual void multiPutLocal(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             std::vector<KV>&& keyValues) = 0;
+
   /**
    * @brief Remove a key from kvstore asynchronously
    *
