@@ -2891,6 +2891,13 @@ rebuild_edge_index_sentence
         delete $4;
         $$ = sentence;
     }
+    | KW_REBUILD_OFFLINE KW_EDGE KW_INDEX name_label_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::REBUILD_EDGE_INDEX_OFFLINE);
+        sentence->addPara(*$4);
+        delete $4;
+        $$ = sentence;
+    }
     | KW_REBUILD KW_EDGE KW_INDEX {
         $$ = new AdminJobSentence(meta::cpp2::JobOp::ADD,
                                   meta::cpp2::JobType::REBUILD_EDGE_INDEX);

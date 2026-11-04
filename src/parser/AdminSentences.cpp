@@ -256,6 +256,9 @@ std::string AdminJobSentence::toString() const {
                                      folly::join(",", paras_).c_str());
         case meta::cpp2::JobType::REBUILD_EDGE_INDEX:
           return folly::stringPrintf("REBUILD EDGE INDEX %s", folly::join(",", paras_).c_str());
+        case meta::cpp2::JobType::REBUILD_EDGE_INDEX_OFFLINE:
+          return folly::stringPrintf("REBUILDOFFLINE EDGE INDEX %s",
+                                     folly::join(",", paras_).c_str());
         case meta::cpp2::JobType::REBUILD_FULLTEXT_INDEX:
           return "REBUILD FULLTEXT INDEX";
         case meta::cpp2::JobType::STATS:

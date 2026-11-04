@@ -13,6 +13,7 @@
 #include "storage/admin/RebuildFTIndexTask.h"
 #include "storage/admin/RebuildTagIndexTask.h"
 #include "storage/admin/RebuildTagOfflineIndexTask.h"
+#include "storage/admin/RebuildEdgeOfflineIndexTask.h"
 #include "storage/admin/StatsTask.h"
 
 namespace nebula {
@@ -36,6 +37,9 @@ std::shared_ptr<AdminTask> AdminTaskFactory::createAdminTask(StorageEnv* env, Ta
       break;
     case meta::cpp2::JobType::REBUILD_EDGE_INDEX:
       ret = std::make_shared<RebuildEdgeIndexTask>(env, std::move(ctx));
+      break;
+    case meta::cpp2::JobType::REBUILD_EDGE_INDEX_OFFLINE:
+      ret = std::make_shared<RebuildEdgeOfflineIndexTask>(env, std::move(ctx));
       break;
     case meta::cpp2::JobType::REBUILD_FULLTEXT_INDEX:
       ret = std::make_shared<RebuildFTIndexTask>(env, std::move(ctx));

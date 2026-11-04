@@ -42,7 +42,6 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
       return a.get_job_id() > b.get_job_id();
     });
 
-
     std::unordered_map<std::string, cpp2::JobStatus> tmp;
     for (auto& jobDesc : jobs) {
       auto paras = jobDesc.get_paras();
@@ -54,8 +53,6 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
       }
       tmp.emplace(tagIndexJobName, jobDesc.get_status());
     }
-
-
 
     std::vector<cpp2::IndexStatus> statuses;
     for (auto& kv : tmp) {
