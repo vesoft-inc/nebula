@@ -79,7 +79,9 @@ nebula_add_library(
     processors/job/LeaderBalanceJobExecutor.cpp
     processors/job/RebuildJobExecutor.cpp
     processors/job/RebuildTagJobExecutor.cpp
+    processors/job/RebuildTagOfflineJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp
+    processors/job/RebuildEdgeOfflineJobExecutor.cpp
     processors/job/RebuildFTJobExecutor.cpp
     processors/job/StatsJobExecutor.cpp
     processors/job/GetStatsProcessor.cpp

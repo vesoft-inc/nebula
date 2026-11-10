@@ -19,8 +19,10 @@
 #include "meta/processors/job/IngestJobExecutor.h"
 #include "meta/processors/job/LeaderBalanceJobExecutor.h"
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
+#include "meta/processors/job/RebuildEdgeOfflineJobExecutor.h"
 #include "meta/processors/job/RebuildFTJobExecutor.h"
 #include "meta/processors/job/RebuildTagJobExecutor.h"
+#include "meta/processors/job/RebuildTagOfflineJobExecutor.h"
 #include "meta/processors/job/StatsJobExecutor.h"
 #include "meta/processors/job/StorageJobExecutor.h"
 #include "meta/processors/job/TaskDescription.h"
@@ -73,9 +75,17 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
       ret.reset(
           new RebuildTagJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
+    case cpp2::JobType::REBUILD_TAG_INDEX_OFFLINE:
+      ret.reset(new RebuildTagOfflineJobExecutor(jd.getSpace(),
+                                                 jd.getJobId(), store, client, jd.getParas()));
+      break;
     case cpp2::JobType::REBUILD_EDGE_INDEX:
       ret.reset(
           new RebuildEdgeJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
+      break;
+    case cpp2::JobType::REBUILD_EDGE_INDEX_OFFLINE:
+      ret.reset(new RebuildEdgeOfflineJobExecutor(jd.getSpace(),
+                                                 jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::REBUILD_FULLTEXT_INDEX:
       ret.reset(

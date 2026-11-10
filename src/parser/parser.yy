@@ -191,7 +191,7 @@ using namespace nebula;
 %token KW_SHORTEST KW_PATH KW_NOLOOP KW_SHORTESTPATH KW_ALLSHORTESTPATHS
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
-%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT KW_STATS KW_STATUS
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_REBUILD_OFFLINE KW_SUBMIT KW_STATS KW_STATUS
 %token KW_BIDIRECT
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
@@ -584,6 +584,7 @@ unreserved_keyword
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_CLEAR              { $$ = new std::string("clear"); }
     | KW_ANALYZER           { $$ = new std::string("analyzer"); }
+    | KW_REBUILD_OFFLINE    { $$ = new std::string("rebuildoffline"); }
     ;
 
 expression
@@ -2873,12 +2874,26 @@ rebuild_tag_index_sentence
         $$ = new AdminJobSentence(meta::cpp2::JobOp::ADD,
                                   meta::cpp2::JobType::REBUILD_TAG_INDEX);
     }
+    | KW_REBUILD_OFFLINE KW_TAG KW_INDEX name_label_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::REBUILD_TAG_INDEX_OFFLINE);
+        sentence->addPara(*$4);
+        delete $4;
+        $$ = sentence;
+    }
     ;
 
 rebuild_edge_index_sentence
     : KW_REBUILD KW_EDGE KW_INDEX name_label_list {
         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
                                              meta::cpp2::JobType::REBUILD_EDGE_INDEX);
+        sentence->addPara(*$4);
+        delete $4;
+        $$ = sentence;
+    }
+    | KW_REBUILD_OFFLINE KW_EDGE KW_INDEX name_label_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::REBUILD_EDGE_INDEX_OFFLINE);
         sentence->addPara(*$4);
         delete $4;
         $$ = sentence;

@@ -88,6 +88,29 @@ void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
           [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
+void Part::multiPutLocal(const std::vector<KV>& keyValues) {
+  std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
+  auto kvs = decodeMultiValues(log);
+
+  auto batch = engine_->startBatchWrite();
+  DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
+  for (size_t i = 0; i < kvs.size(); i += 2) {
+    auto code = batch->put(kvs[i], kvs[i + 1]);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "rocksdb part data failed! key = " << kvs[i];
+      return;
+    }
+  }
+
+  auto code = engine_->commitBatchWrite(std::move(batch), FLAGS_rocksdb_disable_wal,
+                                        FLAGS_rocksdb_wal_sync, true);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "rocksdb commitBatchWrite data failed!";
+  }
+
+  return;
+}
+
 void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
   std::string log = encodeSingleValue(OP_REMOVE, key);
 

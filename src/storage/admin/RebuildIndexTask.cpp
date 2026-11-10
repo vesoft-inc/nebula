@@ -255,6 +255,19 @@ nebula::cpp2::ErrorCode RebuildIndexTask::writeData(GraphSpaceID space,
   return result;
 }
 
+nebula::cpp2::ErrorCode RebuildIndexTask::writeDataLocal(GraphSpaceID space,
+                                                         PartitionID part,
+                                                         std::vector<kvstore::KV> data,
+                                                         size_t batchSize,
+                                                         kvstore::RateLimiter* rateLimiter) {
+  auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
+  rateLimiter->consume(static_cast<double>(batchSize),                             // toConsume
+                       static_cast<double>(FLAGS_rebuild_index_part_rate_limit),   // rate
+                       static_cast<double>(FLAGS_rebuild_index_part_rate_limit));  // burstSize
+  env_->kvstore_->multiPutLocal(space, part, std::move(data));
+  return result;
+}
+
 nebula::cpp2::ErrorCode RebuildIndexTask::writeOperation(GraphSpaceID space,
                                                          PartitionID part,
                                                          kvstore::BatchHolder* batchHolder,

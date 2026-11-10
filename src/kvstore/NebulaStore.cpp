@@ -913,6 +913,17 @@ void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
   part->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
 
+void NebulaStore::multiPutLocal(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                std::vector<KV>&& keyValues) {
+  auto ret = part(spaceId, partId);
+  if (!ok(ret)) {
+    return;
+  }
+  auto part = nebula::value(ret);
+  part->multiPutLocal(std::move(keyValues));
+}
+
 void NebulaStore::asyncRemove(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& key,

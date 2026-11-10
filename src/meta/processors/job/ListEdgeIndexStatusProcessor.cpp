@@ -31,7 +31,8 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
         continue;
       }
       auto optJob = nebula::value(optJobRet);
-      if (optJob.getJobType() == cpp2::JobType::REBUILD_EDGE_INDEX) {
+      if (optJob.getJobType() == cpp2::JobType::REBUILD_EDGE_INDEX ||
+          optJob.getJobType() == cpp2::JobType::REBUILD_EDGE_INDEX_OFFLINE) {
         auto jobDesc = optJob.toJobDesc();
         jobs.emplace_back(jobDesc);
       }

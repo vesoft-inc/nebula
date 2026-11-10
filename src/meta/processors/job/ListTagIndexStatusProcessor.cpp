@@ -32,38 +32,39 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
       }
 
       auto optJob = nebula::value(optJobRet);
-      if (optJob.getJobType() == cpp2::JobType::REBUILD_TAG_INDEX) {
+      if (optJob.getJobType() == cpp2::JobType::REBUILD_TAG_INDEX ||
+          optJob.getJobType() == cpp2::JobType::REBUILD_TAG_INDEX_OFFLINE) {
         auto jobDesc = optJob.toJobDesc();
         jobs.emplace_back(jobDesc);
       }
     }
-  }
-  std::sort(jobs.begin(), jobs.end(), [](const auto& a, const auto& b) {
-    return a.get_job_id() > b.get_job_id();
-  });
+    std::sort(jobs.begin(), jobs.end(), [](const auto& a, const auto& b) {
+      return a.get_job_id() > b.get_job_id();
+    });
 
-  std::unordered_map<std::string, cpp2::JobStatus> tmp;
-  for (auto& jobDesc : jobs) {
-    auto paras = jobDesc.get_paras();
-    std::string tagIndexJobName;
-    if (paras.empty()) {
-      tagIndexJobName = "all_tag_indexes";
-    } else {
-      tagIndexJobName = folly::join(",", paras);
+    std::unordered_map<std::string, cpp2::JobStatus> tmp;
+    for (auto& jobDesc : jobs) {
+      auto paras = jobDesc.get_paras();
+      std::string tagIndexJobName;
+      if (paras.empty()) {
+        tagIndexJobName = "all_tag_indexes";
+      } else {
+        tagIndexJobName = folly::join(",", paras);
+      }
+      tmp.emplace(tagIndexJobName, jobDesc.get_status());
     }
-    tmp.emplace(tagIndexJobName, jobDesc.get_status());
-  }
 
-  std::vector<cpp2::IndexStatus> statuses;
-  for (auto& kv : tmp) {
-    cpp2::IndexStatus status;
-    status.name_ref() = std::move(kv.first);
-    status.status_ref() = apache::thrift::util::enumNameSafe(kv.second);
-    statuses.emplace_back(std::move(status));
+    std::vector<cpp2::IndexStatus> statuses;
+    for (auto& kv : tmp) {
+      cpp2::IndexStatus status;
+      status.name_ref() = std::move(kv.first);
+      status.status_ref() = apache::thrift::util::enumNameSafe(kv.second);
+      statuses.emplace_back(std::move(status));
+    }
+    resp_.statuses_ref() = std::move(statuses);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
+    onFinished();
   }
-  resp_.statuses_ref() = std::move(statuses);
-  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  onFinished();
 }
 
 }  // namespace meta

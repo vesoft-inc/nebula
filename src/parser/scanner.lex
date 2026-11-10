@@ -125,6 +125,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "INDEX"                     { return TokenType::KW_INDEX; }
 "INDEXES"                   { return TokenType::KW_INDEXES; }
 "REBUILD"                   { return TokenType::KW_REBUILD; }
+"REBUILDOFFLINE"            { return TokenType::KW_REBUILD_OFFLINE; }
 "BOOL"                      { return TokenType::KW_BOOL; }
 "INT8"                      { return TokenType::KW_INT8; }
 "INT16"                     { return TokenType::KW_INT16; }
