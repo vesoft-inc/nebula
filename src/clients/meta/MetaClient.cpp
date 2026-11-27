@@ -845,7 +845,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_EXISTED:
       return Status::Error("Existed!");
     case nebula::cpp2::ErrorCode::E_HISTORY_CONFLICT:
-      return Status::Error("Schema exisited before!");
+      return Status::Error("Schema existed before!");
     case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
       return Status::SpaceNotFound("Space not existed!");
     case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:

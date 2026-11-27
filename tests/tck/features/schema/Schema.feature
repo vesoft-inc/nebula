@@ -986,7 +986,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG person ADD (age int);
       """
-    Then a ExecutionError should be raised at runtime: Schema exisited before!
+    Then a ExecutionError should be raised at runtime: Schema existed before!
 
   Scenario: Create and test a tag with List< string >, List< int >, and List< float > data types
     Given an empty graph
