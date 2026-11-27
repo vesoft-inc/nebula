@@ -96,7 +96,7 @@ Feature: DDL test
       ALTER TAG B ADD (name string)
       """
     # IMHO, this is really confusing. https://github.com/vesoft-inc/nebula/issues/2671
-    Then a ExecutionError should be raised at runtime: Schema exisited before!
+    Then a ExecutionError should be raised at runtime: Schema existed before!
     When executing query:
       """
       ALTER TAG B ADD (namex string)
@@ -310,7 +310,7 @@ Feature: DDL test
       """
       ALTER EDGE E2 ADD (name string)
       """
-    Then a ExecutionError should be raised at runtime: Schema exisited before!
+    Then a ExecutionError should be raised at runtime: Schema existed before!
     When executing query:
       """
       ALTER EDGE E2 ADD (namex string)
